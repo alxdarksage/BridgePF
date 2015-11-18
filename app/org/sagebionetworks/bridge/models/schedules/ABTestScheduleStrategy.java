@@ -3,13 +3,11 @@ package org.sagebionetworks.bridge.models.schedules;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-import org.sagebionetworks.bridge.models.accounts.User;
-import org.sagebionetworks.bridge.models.studies.StudyIdentifier;
 import org.sagebionetworks.bridge.validators.ScheduleValidator;
 import org.springframework.validation.Errors;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 public class ABTestScheduleStrategy implements ScheduleStrategy {
@@ -79,14 +77,14 @@ public class ABTestScheduleStrategy implements ScheduleStrategy {
     }
     
     @Override
-    public Schedule getScheduleForUser(StudyIdentifier study, SchedulePlan plan, User user) {
+    public Schedule getScheduleForUser(SchedulePlan plan, ScheduleContext context) {
         if (groups.isEmpty()) {
             return null;
         }
         // Randomly assign to a group, weighted based on the percentage representation of the group.
         ScheduleGroup group = null;
         long seed = UUID.fromString(plan.getGuid()).getLeastSignificantBits()
-                + UUID.fromString(user.getHealthCode()).getLeastSignificantBits();        
+                + UUID.fromString(context.getHealthCode()).getLeastSignificantBits();        
         
         int i = 0;
         int perc = (int)(seed % 100.0) + 1;
@@ -121,12 +119,7 @@ public class ABTestScheduleStrategy implements ScheduleStrategy {
 
     @Override
     public List<Schedule> getAllPossibleSchedules() {
-        List<Schedule> lists = Lists.newArrayListWithCapacity(groups.size());
-        for (ScheduleGroup group : groups) {
-            lists.add(group.getSchedule());
-        }
-        // The list is immutable, the contents are not. We use this to fix up activities, for example.
-        return ImmutableList.copyOf(lists);
+        return groups.stream().map(ScheduleGroup::getSchedule).collect(Collectors.toList());
     }
 
     @Override

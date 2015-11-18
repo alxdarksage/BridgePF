@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.sagebionetworks.bridge.json.BridgeTypeName;
-import org.sagebionetworks.bridge.models.accounts.User;
-import org.sagebionetworks.bridge.models.studies.StudyIdentifier;
 import org.sagebionetworks.bridge.validators.ScheduleValidator;
 import org.springframework.validation.Errors;
 
@@ -30,7 +28,7 @@ public class SimpleScheduleStrategy implements ScheduleStrategy {
     }
     
     @Override
-    public Schedule getScheduleForUser(StudyIdentifier studyIdentifier, SchedulePlan plan, User user) {
+    public Schedule getScheduleForUser(SchedulePlan plan, ScheduleContext context) {
         return schedule;
     }
     

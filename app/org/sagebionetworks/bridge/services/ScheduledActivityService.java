@@ -204,7 +204,7 @@ public class ScheduledActivityService {
         List<SchedulePlan> plans = schedulePlanService.getSchedulePlans(context.getClientInfo(), studyId);
         
         for (SchedulePlan plan : plans) {
-            Schedule schedule = plan.getStrategy().getScheduleForUser(studyId, plan, user);
+            Schedule schedule = plan.getStrategy().getScheduleForUser(plan, context);
             
             List<ScheduledActivity> activities = schedule.getScheduler().getScheduledActivities(plan, context);
             for (ScheduledActivity activity : activities) {

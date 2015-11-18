@@ -107,11 +107,10 @@ public class DynamoScheduledActivityDaoTest {
         events.put("enrollment", ENROLLMENT);
         
         ScheduleContext context = new ScheduleContext.Builder()
-            .withStudyIdentifier(TEST_STUDY)
+            .withUser(user)
             .withClientInfo(ClientInfo.UNKNOWN_CLIENT)
             .withTimeZone(DateTimeZone.UTC)
             .withEndsOn(endsOn)
-            .withHealthCode(user.getHealthCode())
             .withEvents(events).build();
         
         List<ScheduledActivity> activitiesToSchedule = TestUtils.runSchedulerForActivities(user, context);
@@ -153,11 +152,10 @@ public class DynamoScheduledActivityDaoTest {
         events.put("enrollment", ENROLLMENT);
         
         ScheduleContext context = new ScheduleContext.Builder()
-            .withStudyIdentifier(TEST_STUDY)
+            .withUser(user)
             .withClientInfo(ClientInfo.UNKNOWN_CLIENT)
             .withTimeZone(DateTimeZone.UTC)
             .withEndsOn(endsOn)
-            .withHealthCode(user.getHealthCode())
             .withEvents(events).build();
         
         // Schedule plans are specific to this test because we're going to delete them;

@@ -205,11 +205,10 @@ public class ScheduledActivityServiceTest {
     private ScheduleContext getContext(DateTimeZone zone, DateTime endsOn) {
         // Setting the endsOn value to the end of the day, as we do in the controller.
         return new ScheduleContext.Builder()
-            .withStudyIdentifier(TEST_STUDY)
+            .withUser(testUser.getUser())
             .withClientInfo(ClientInfo.UNKNOWN_CLIENT)
             .withTimeZone(zone)
             // Setting the endsOn value to the end of the day, as we do in the controller.
-            .withEndsOn(endsOn.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59))
-            .withHealthCode(testUser.getUser().getHealthCode()).build();
+            .withEndsOn(endsOn.withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59)).build();
     }
 }

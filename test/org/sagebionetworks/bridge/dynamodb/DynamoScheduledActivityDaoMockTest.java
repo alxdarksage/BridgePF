@@ -8,7 +8,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.sagebionetworks.bridge.TestConstants.ENROLLMENT;
-import static org.sagebionetworks.bridge.TestConstants.TEST_STUDY;
 
 import java.util.List;
 import java.util.Map;
@@ -128,11 +127,10 @@ public class DynamoScheduledActivityDaoMockTest {
         Map<String, DateTime> events = Maps.newHashMap();
         events.put("enrollment", ENROLLMENT);
         ScheduleContext context = new ScheduleContext.Builder()
-            .withStudyIdentifier(TEST_STUDY)
+            .withUser(user)
             .withClientInfo(ClientInfo.UNKNOWN_CLIENT)
             .withTimeZone(PACIFIC_TIME_ZONE)
             .withEndsOn(endsOn)
-            .withHealthCode(HEALTH_CODE)
             .withEvents(events).build();
 
         List<ScheduledActivity> activities = TestUtils.runSchedulerForActivities(user, context);
@@ -159,11 +157,10 @@ public class DynamoScheduledActivityDaoMockTest {
         Map<String, DateTime> events = Maps.newHashMap();
         events.put("enrollment", ENROLLMENT);
         ScheduleContext context = new ScheduleContext.Builder()
-            .withStudyIdentifier(TEST_STUDY)
+            .withUser(user)
             .withClientInfo(ClientInfo.fromUserAgentCache("App/5"))
             .withTimeZone(PACIFIC_TIME_ZONE)
             .withEndsOn(endsOn)
-            .withHealthCode(HEALTH_CODE)
             .withEvents(events).build();
 
         List<ScheduledActivity> activities = TestUtils.runSchedulerForActivities(user, context);
@@ -195,11 +192,10 @@ public class DynamoScheduledActivityDaoMockTest {
         events.put("enrollment", ENROLLMENT);
 
         ScheduleContext context = new ScheduleContext.Builder()
-            .withStudyIdentifier(TEST_STUDY)
+            .withUser(user)
             .withClientInfo(ClientInfo.UNKNOWN_CLIENT)
             .withTimeZone(PACIFIC_TIME_ZONE)
             .withEndsOn(endsOn)
-            .withHealthCode(HEALTH_CODE)
             .withEvents(events).build();
 
         List<ScheduledActivity> activities = TestUtils.runSchedulerForActivities(user, context);

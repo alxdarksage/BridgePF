@@ -8,10 +8,12 @@ import org.sagebionetworks.bridge.models.ClientInfo;
 import org.sagebionetworks.bridge.models.ResourceList;
 import org.sagebionetworks.bridge.models.accounts.UserSession;
 import org.sagebionetworks.bridge.models.schedules.Schedule;
+import org.sagebionetworks.bridge.models.schedules.ScheduleContext;
 import org.sagebionetworks.bridge.models.schedules.SchedulePlan;
 import org.sagebionetworks.bridge.models.schedules.ScheduleType;
 import org.sagebionetworks.bridge.models.studies.StudyIdentifier;
 import org.sagebionetworks.bridge.services.SchedulePlanService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
@@ -44,10 +46,14 @@ public class ScheduleController extends BaseController {
         StudyIdentifier studyId = session.getStudyIdentifier();
         ClientInfo clientInfo = getClientInfoFromUserAgentHeader();
         
+        ScheduleContext context = new ScheduleContext.Builder()
+                .withClientInfo(clientInfo)
+                .withUser(session.getUser()).build();
+        
         List<SchedulePlan> plans = schedulePlanService.getSchedulePlans(clientInfo, studyId);
         List<Schedule> schedules = Lists.newArrayListWithCapacity(plans.size());
         for (SchedulePlan plan : plans) {
-            Schedule schedule = plan.getStrategy().getScheduleForUser(session.getStudyIdentifier(), plan, session.getUser());
+            Schedule schedule = plan.getStrategy().getScheduleForUser(plan, context);
             schedules.add(schedule);
         }
         
@@ -68,10 +74,14 @@ public class ScheduleController extends BaseController {
         StudyIdentifier studyId = session.getStudyIdentifier();
         ClientInfo clientInfo = getClientInfoFromUserAgentHeader();
         
+        ScheduleContext context = new ScheduleContext.Builder()
+                .withClientInfo(clientInfo)
+                .withUser(session.getUser()).build();
+        
         List<SchedulePlan> plans = schedulePlanService.getSchedulePlans(clientInfo, studyId);
         List<Schedule> schedules = Lists.newArrayListWithCapacity(plans.size());
         for (SchedulePlan plan : plans) {
-            Schedule schedule = plan.getStrategy().getScheduleForUser(session.getStudyIdentifier(), plan, session.getUser());
+            Schedule schedule = plan.getStrategy().getScheduleForUser(plan, context);
             schedules.add(schedule);
         }
         return okResult(schedules);
