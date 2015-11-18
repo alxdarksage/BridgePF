@@ -31,6 +31,7 @@ public final class ScheduleContext {
     private final Map<String,DateTime> events;
     private final DateTime now;
     private final User user;
+    private final Set<String> dataGroups;
     
     private ScheduleContext(ClientInfo clientInfo, DateTimeZone zone, DateTime endsOn,
             Map<String, DateTime> events, DateTime now, User user) {
@@ -42,6 +43,7 @@ public final class ScheduleContext {
         this.events = events;
         this.now = now;
         this.user = user;
+        this.dataGroups = (user == null) ? null : user.getDataGroups();
     }
     
     /**
@@ -114,7 +116,7 @@ public final class ScheduleContext {
     }
     
     public Set<String> getUserDataGroups() {
-        return Sets.newHashSet(); // TODO
+        return dataGroups;
     }
     
     @Override

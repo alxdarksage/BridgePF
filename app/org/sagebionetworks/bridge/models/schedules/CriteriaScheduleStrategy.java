@@ -132,21 +132,20 @@ public class CriteriaScheduleStrategy implements ScheduleStrategy {
     public boolean matches(ScheduleCriteria crit, ScheduleContext context) {
         Integer appVersion = context.getClientInfo().getAppVersion();
         if (appVersion != null) {
-            if (crit.getMinAppVersion() != null && appVersion < crit.getMinAppVersion()) {
-                return false;
-            }
-            if (crit.getMaxAppVersion() != null && appVersion > crit.getMaxAppVersion()) {
+            if ((crit.getMinAppVersion() != null && appVersion < crit.getMinAppVersion()) ||
+                (crit.getMaxAppVersion() != null && appVersion > crit.getMaxAppVersion())) {
                 return false;
             }
         }
-        
         Set<String> dataGroups = context.getUserDataGroups();
-        if (!dataGroups.containsAll(crit.getAllOfGroups())) {
-            return false;
-        }
-        for (String group : crit.getNoneOfGroups()) {
-            if (dataGroups.contains(group)) {
+        if (dataGroups != null) {
+            if (!dataGroups.containsAll(crit.getAllOfGroups())) {
                 return false;
+            }
+            for (String group : crit.getNoneOfGroups()) {
+                if (dataGroups.contains(group)) {
+                    return false;
+                }
             }
         }
         return true;
