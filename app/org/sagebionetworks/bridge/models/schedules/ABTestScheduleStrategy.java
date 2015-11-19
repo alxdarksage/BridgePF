@@ -1,9 +1,11 @@
 package org.sagebionetworks.bridge.models.schedules;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.sagebionetworks.bridge.validators.ScheduleValidator;
 import org.springframework.validation.Errors;
@@ -11,7 +13,7 @@ import org.springframework.validation.Errors;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
-public class ABTestScheduleStrategy implements ScheduleStrategy {
+public final class ABTestScheduleStrategy implements ScheduleStrategy {
     
     public static class ScheduleGroup {
         private int percentage;
@@ -120,31 +122,21 @@ public class ABTestScheduleStrategy implements ScheduleStrategy {
 
     @Override
     public List<Schedule> getAllPossibleSchedules() {
-        return ImmutableList.copyOf(groups.stream().map(ScheduleGroup::getSchedule).collect(Collectors.toList()));
+        return ImmutableList.copyOf(groups.stream().map(ScheduleGroup::getSchedule).collect(toList()));
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((groups == null) ? 0 : groups.hashCode());
-        return result;
+        return Objects.hash(groups);
     }
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
+        if (obj == null || getClass() != obj.getClass())
             return false;
         ABTestScheduleStrategy other = (ABTestScheduleStrategy) obj;
-        if (groups == null) {
-            if (other.groups != null)
-                return false;
-        } else if (!groups.equals(other.groups))
-            return false;
-        return true;
+        return Objects.equals(groups, other.groups);
     }
     @Override
     public String toString() {

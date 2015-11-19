@@ -25,6 +25,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Sets;
 
+import nl.jqno.equalsverifier.EqualsVerifier;
+
 public class CriteriaScheduleStrategyTest {
     
     private Schedule strategyWithAppVersions = makeValidSchedule("Strategy With App Versions");
@@ -37,6 +39,11 @@ public class CriteriaScheduleStrategyTest {
     private CriteriaScheduleStrategy strategy;
     private SchedulePlan plan;
     private SchedulePlanValidator validator;
+    
+    @Test
+    public void hashCodeEquals() {
+        EqualsVerifier.forClass(CriteriaScheduleStrategy.class).allFieldsShouldBeUsed().verify();
+    }
     
     @Before
     public void before() {

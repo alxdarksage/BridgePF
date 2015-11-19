@@ -16,7 +16,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-public class CriteriaScheduleStrategy implements ScheduleStrategy {
+public final class CriteriaScheduleStrategy implements ScheduleStrategy {
 
     public static class ScheduleCriteria {
         private final Schedule schedule;
@@ -132,7 +132,7 @@ public class CriteriaScheduleStrategy implements ScheduleStrategy {
         }
     }
     
-    private List<ScheduleCriteria> scheduleCriteria = Lists.newArrayList();
+    private final List<ScheduleCriteria> scheduleCriteria = Lists.newArrayList();
     
     public void addCriteria(ScheduleCriteria criteria) {
         this.scheduleCriteria.add(criteria);
@@ -143,7 +143,9 @@ public class CriteriaScheduleStrategy implements ScheduleStrategy {
     }
     
     public void setScheduleCriteria(List<ScheduleCriteria> criteria) {
-        this.scheduleCriteria = criteria;
+        if (criteria != null) {
+            this.scheduleCriteria.addAll(criteria);    
+        }
     }
     
     @Override
