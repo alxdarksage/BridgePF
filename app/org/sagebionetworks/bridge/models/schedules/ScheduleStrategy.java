@@ -13,7 +13,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo( use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
     @Type(name="SimpleScheduleStrategy", value=SimpleScheduleStrategy.class),
-    @Type(name="ABTestScheduleStrategy", value=ABTestScheduleStrategy.class)
+    @Type(name="ABTestScheduleStrategy", value=ABTestScheduleStrategy.class),
+    @Type(name="CriteriaScheduleStrategy", value=CriteriaScheduleStrategy.class)
 })
 public interface ScheduleStrategy {
     
@@ -30,10 +31,11 @@ public interface ScheduleStrategy {
     
     /**
      * Validate that the strategy implementation instance is valid.
+     * @param dataGroups
      * @param taskIdentifiers
      * @param errors
      */
-    public void validate(Set<String> taskIdentifiers, Errors errors);
+    public void validate(Set<String> dataGroups, Set<String> taskIdentifiers, Errors errors);
     
     /**
      * Get all possible schedules that this schedule strategy might schedule. This can be used to 

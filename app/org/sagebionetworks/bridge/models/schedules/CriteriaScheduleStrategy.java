@@ -7,8 +7,11 @@ import java.util.stream.Collectors;
 
 import org.springframework.validation.Errors;
 
+import org.sagebionetworks.bridge.validators.ScheduleValidator;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -22,8 +25,10 @@ public class CriteriaScheduleStrategy implements ScheduleStrategy {
         private final Set<String> noneOfGroups;
 
         @JsonCreator
-        private ScheduleCriteria(@JsonProperty("schedule") Schedule schedule, @JsonProperty("minAppVersin") Integer minAppVersion, 
-                @JsonProperty("maxAppVersion") Integer maxAppVersion, @JsonProperty("allOfGroups") Set<String> allOfGroups, 
+        private ScheduleCriteria(@JsonProperty("schedule") Schedule schedule, 
+                @JsonProperty("minAppVersin") Integer minAppVersion, 
+                @JsonProperty("maxAppVersion") Integer maxAppVersion, 
+                @JsonProperty("allOfGroups") Set<String> allOfGroups, 
                 @JsonProperty("noneOfGroups") Set<String> noneOfGroups) {
             this.schedule = schedule;
             this.minAppVersion = minAppVersion;
@@ -45,6 +50,27 @@ public class CriteriaScheduleStrategy implements ScheduleStrategy {
         }
         public Set<String> getNoneOfGroups() {
             return noneOfGroups;
+        }
+        public boolean matches(ScheduleContext context) {
+            Integer appVersion = context.getClientInfo().getAppVersion();
+            if (appVersion != null) {
+                if ((minAppVersion != null && appVersion < minAppVersion) ||
+                    (maxAppVersion != null && appVersion > maxAppVersion)) {
+                    return false;
+                }
+            }
+            Set<String> dataGroups = context.getUserDataGroups();
+            if (dataGroups != null) {
+                if (!dataGroups.containsAll(allOfGroups)) {
+                    return false;
+                }
+                for (String group : noneOfGroups) {
+                    if (dataGroups.contains(group)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
         
         public static class Builder {
@@ -105,65 +131,86 @@ public class CriteriaScheduleStrategy implements ScheduleStrategy {
         }
     }
     
-    private List<ScheduleCriteria> criteria = Lists.newArrayList();
+    private List<ScheduleCriteria> scheduleCriteria = Lists.newArrayList();
     
     public void addCriteria(ScheduleCriteria criteria) {
-        this.criteria.add(criteria);
+        this.scheduleCriteria.add(criteria);
     }
     
-    public List<ScheduleCriteria> getCriteria() {
-        return criteria;
+    public List<ScheduleCriteria> getScheduleCriteria() {
+        return scheduleCriteria;
     }
     
-    public void setCriteria(List<ScheduleCriteria> criteria) {
-        this.criteria = criteria;
+    public void setScheduleCriteria(List<ScheduleCriteria> criteria) {
+        this.scheduleCriteria = criteria;
     }
     
     @Override
     public Schedule getScheduleForUser(SchedulePlan plan, ScheduleContext context) {
-        for (ScheduleCriteria crit : criteria) {
-            if (matches(crit, context)){
-                return crit.getSchedule();    
+        for (ScheduleCriteria criteria : scheduleCriteria) {
+            if (criteria.matches(context)) {
+                return criteria.getSchedule();    
             }
         }
         return null;
     }
-    
-    public boolean matches(ScheduleCriteria crit, ScheduleContext context) {
-        Integer appVersion = context.getClientInfo().getAppVersion();
-        if (appVersion != null) {
-            if ((crit.getMinAppVersion() != null && appVersion < crit.getMinAppVersion()) ||
-                (crit.getMaxAppVersion() != null && appVersion > crit.getMaxAppVersion())) {
-                return false;
+
+    @Override
+    public void validate(Set<String> dataGroups, Set<String> taskIdentifiers, Errors errors) {
+        for (int i=0; i < scheduleCriteria.size(); i++) {
+            ScheduleCriteria criteria = scheduleCriteria.get(i);
+            errors.pushNestedPath("scheduleCriteria["+i+"]");
+            if (criteria.getSchedule() == null){
+                errors.rejectValue("schedule", "is required");
+            } else {
+                errors.pushNestedPath("schedule");
+                new ScheduleValidator(taskIdentifiers).validate(criteria.getSchedule(), errors);
+                errors.popNestedPath();
             }
+            if ((criteria.getMinAppVersion() != null && criteria.getMaxAppVersion() != null) && 
+                (criteria.getMaxAppVersion() < criteria.getMinAppVersion())) {
+                errors.rejectValue("maxAppVersion", "cannot be less than minAppVersion");
+            }
+            if (criteria.getMinAppVersion() != null && criteria.getMinAppVersion() < 0) {
+                errors.rejectValue("minAppVersion", "cannot be negative");
+            }
+            if (criteria.getMaxAppVersion() != null && criteria.getMaxAppVersion() < 0) {
+                errors.rejectValue("maxAppVersion", "cannot be negative");
+            }
+            validateDataGroups(errors, dataGroups, criteria.getAllOfGroups(), "allOfGroups");
+            validateDataGroups(errors, dataGroups, criteria.getNoneOfGroups(), "noneOfGroups");
+            errors.popNestedPath();
         }
-        Set<String> dataGroups = context.getUserDataGroups();
-        if (dataGroups != null) {
-            if (!dataGroups.containsAll(crit.getAllOfGroups())) {
-                return false;
-            }
-            for (String group : crit.getNoneOfGroups()) {
-                if (dataGroups.contains(group)) {
-                    return false;
+    }
+    
+    private void validateDataGroups(Errors errors, Set<String> dataGroups, Set<String> criteriaGroups, String propName) {
+        if (criteriaGroups != null) {
+            for (String dataGroup : criteriaGroups) {
+                if (!dataGroups.contains(dataGroup)) {
+                    errors.rejectValue(propName, getDataGroupMessage(dataGroup, dataGroups));
                 }
             }
         }
-        return true;
     }
 
-    @Override
-    public void validate(Set<String> taskIdentifiers, Errors errors) {
-        
+    private String getDataGroupMessage(String identifier, Set<String> dataGroups) {
+        String message = "'" + identifier + "' is not in enumeration: ";
+        if (dataGroups.isEmpty()) {
+            message += "<no data groups declared>";
+        } else {
+            message += Joiner.on(", ").join(dataGroups);
+        }
+        return message;
     }
-
+    
     @Override
     public List<Schedule> getAllPossibleSchedules() {
-        return criteria.stream().map(ScheduleCriteria::getSchedule).collect(Collectors.toList());
+        return scheduleCriteria.stream().map(ScheduleCriteria::getSchedule).collect(Collectors.toList());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(criteria);
+        return Objects.hash(scheduleCriteria);
     }
 
     @Override
@@ -173,12 +220,12 @@ public class CriteriaScheduleStrategy implements ScheduleStrategy {
         if (obj == null || getClass() != obj.getClass())
             return false;
         CriteriaScheduleStrategy other = (CriteriaScheduleStrategy) obj;
-        return Objects.equals(criteria, other.criteria);
+        return Objects.equals(scheduleCriteria, other.scheduleCriteria);
     }
 
     @Override
     public String toString() {
-        return "CriteriaScheduleStrategy [criteria=" + criteria + "]";
+        return "CriteriaScheduleStrategy [scheduleCriteria=" + scheduleCriteria + "]";
     }
 
 }
