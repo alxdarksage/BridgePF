@@ -54,7 +54,9 @@ public class ScheduleController extends BaseController {
         List<Schedule> schedules = Lists.newArrayListWithCapacity(plans.size());
         for (SchedulePlan plan : plans) {
             Schedule schedule = plan.getStrategy().getScheduleForUser(plan, context);
-            schedules.add(schedule);
+            if (schedule != null) {
+                schedules.add(schedule);    
+            }
         }
         
         JsonNode node = BridgeObjectMapper.get().valueToTree(new ResourceList<Schedule>(schedules));
@@ -82,7 +84,9 @@ public class ScheduleController extends BaseController {
         List<Schedule> schedules = Lists.newArrayListWithCapacity(plans.size());
         for (SchedulePlan plan : plans) {
             Schedule schedule = plan.getStrategy().getScheduleForUser(plan, context);
-            schedules.add(schedule);
+            if (schedule != null) {
+                schedules.add(schedule);    
+            }
         }
         return okResult(schedules);
     }

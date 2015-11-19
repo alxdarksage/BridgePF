@@ -104,7 +104,9 @@ public class TestUtils {
         List<ScheduledActivity> scheduledActivities = Lists.newArrayList();
         for (SchedulePlan plan : plans) {
             Schedule schedule = plan.getStrategy().getScheduleForUser(plan, context);
-            scheduledActivities.addAll(schedule.getScheduler().getScheduledActivities(plan, context));
+            if (schedule != null) {
+                scheduledActivities.addAll(schedule.getScheduler().getScheduledActivities(plan, context));    
+            }
         }
         Collections.sort(scheduledActivities, ScheduledActivity.SCHEDULED_ACTIVITY_COMPARATOR);
         return scheduledActivities;

@@ -205,10 +205,11 @@ public class ScheduledActivityService {
         
         for (SchedulePlan plan : plans) {
             Schedule schedule = plan.getStrategy().getScheduleForUser(plan, context);
-            
-            List<ScheduledActivity> activities = schedule.getScheduler().getScheduledActivities(plan, context);
-            for (ScheduledActivity activity : activities) {
-                scheduledActivities.put(activity.getRunKey(), activity);
+            if (schedule != null) {
+                List<ScheduledActivity> activities = schedule.getScheduler().getScheduledActivities(plan, context);
+                for (ScheduledActivity activity : activities) {
+                    scheduledActivities.put(activity.getRunKey(), activity);
+                }
             }
         }
         return scheduledActivities;

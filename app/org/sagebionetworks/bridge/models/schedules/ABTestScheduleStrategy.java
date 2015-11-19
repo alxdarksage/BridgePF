@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.sagebionetworks.bridge.validators.ScheduleValidator;
 import org.springframework.validation.Errors;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 public class ABTestScheduleStrategy implements ScheduleStrategy {
@@ -119,7 +120,7 @@ public class ABTestScheduleStrategy implements ScheduleStrategy {
 
     @Override
     public List<Schedule> getAllPossibleSchedules() {
-        return groups.stream().map(ScheduleGroup::getSchedule).collect(Collectors.toList());
+        return ImmutableList.copyOf(groups.stream().map(ScheduleGroup::getSchedule).collect(Collectors.toList()));
     }
 
     @Override

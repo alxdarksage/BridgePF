@@ -47,7 +47,8 @@ public class CriteriaScheduleStrategyTest {
         plan.setStudyKey(TEST_STUDY_IDENTIFIER);
         plan.setStrategy(strategy);
         
-        validator = new SchedulePlanValidator(Sets.newHashSet(), Sets.newHashSet("tapTest"));
+        validator = new SchedulePlanValidator(Sets.newHashSet(),
+                Sets.newHashSet(TestConstants.TEST_3_ACTIVITY.getTask().getIdentifier()));
     }
     
     @Test
@@ -82,9 +83,11 @@ public class CriteriaScheduleStrategyTest {
         setUpStrategyWithAppVersions();
         setUpStrategyNoCriteria();
         
+        // First returned because context has no version info
         Schedule schedule = getSchedule(ClientInfo.UNKNOWN_CLIENT);
         assertEquals(strategyWithAppVersions, schedule);
         
+        // Context version info outside minimum range of first criteria, last one returned
         schedule = getSchedule(ClientInfo.fromUserAgentCache("app/2"));
         assertEquals(strategyNoCriteria, schedule);
     }
@@ -94,9 +97,11 @@ public class CriteriaScheduleStrategyTest {
         setUpStrategyWithAppVersions();
         setUpStrategyNoCriteria();
         
+        // First one is returned because client has no version info
         Schedule schedule = getSchedule(ClientInfo.UNKNOWN_CLIENT);
         assertEquals(strategyWithAppVersions, schedule);
         
+        // Context version info outside maximum range of first criteria, last one returned
         schedule = getSchedule(ClientInfo.fromUserAgentCache("app/44"));
         assertEquals(strategyNoCriteria, schedule);
     }
@@ -106,9 +111,11 @@ public class CriteriaScheduleStrategyTest {
         setUpStrategyWithOneRequiredDataGroup();
         setUpStrategyNoCriteria();
         
+        // context has a group required by first group, it's returned
         Schedule schedule = getSchedule(Sets.newHashSet("group1"));
         assertEquals(strategyWithOneRequiredDataGroup, schedule);
         
+        // context does not have a required group, last one returned
         schedule = getSchedule(Sets.newHashSet("someRandomToken"));
         assertEquals(strategyNoCriteria, schedule);
     }
@@ -118,13 +125,16 @@ public class CriteriaScheduleStrategyTest {
         setUpStrategyWithRequiredDataGroups();
         setUpStrategyNoCriteria();
         
-        Schedule schedule = getSchedule(Sets.newHashSet("group1"));
-        assertEquals(strategyNoCriteria, schedule);
-        
-        schedule = getSchedule(Sets.newHashSet("group1","group2","group3"));
+        // context has all the required groups so the first one is returned
+        Schedule schedule = getSchedule(Sets.newHashSet("group1","group2","group3"));
         assertEquals(strategyWithRequiredDataGroups, schedule);
         
+        // context does not have *any* the required groups, last one returned
         schedule = getSchedule(Sets.newHashSet("someRandomToken"));
+        assertEquals(strategyNoCriteria, schedule);
+        
+        // context does not have *all* the required groups, last one returned
+        schedule = getSchedule(Sets.newHashSet("group1"));
         assertEquals(strategyNoCriteria, schedule);
     }
     
@@ -133,9 +143,11 @@ public class CriteriaScheduleStrategyTest {
         setUpStrategyWithOneProhibitedDataGroup();
         setUpStrategyNoCriteria();
         
+        // Group not prohibited so first schedule returned
         Schedule schedule = getSchedule(Sets.newHashSet("groupNotProhibited"));
         assertEquals(strategyWithOneProhibitedDataGroup, schedule);
         
+        // this group is prohibited so second schedule is returned
         schedule = getSchedule(Sets.newHashSet("group1"));
         assertEquals(strategyNoCriteria, schedule);
     }
@@ -145,12 +157,15 @@ public class CriteriaScheduleStrategyTest {
         setUpStrategyWithProhibitedDataGroups();
         setUpStrategyNoCriteria();
         
+        // context has a prohibited group, so the last schedule is returned
         Schedule schedule = getSchedule(Sets.newHashSet("group1"));
         assertEquals(strategyNoCriteria, schedule);
         
-        schedule = getSchedule(Sets.newHashSet("group1","foo"));
+        // context has one of the prohibited groups, same thing
+        schedule = getSchedule(Sets.newHashSet("foo","group1"));
         assertEquals(strategyNoCriteria, schedule);
         
+        // context has no prohibited groups, first schedule is returned
         schedule = getSchedule(Sets.newHashSet());
         assertEquals(strategyWithProhibitedDataGroups, schedule);
     }
@@ -182,6 +197,8 @@ public class CriteriaScheduleStrategyTest {
                 .withClientInfo(ClientInfo.fromUserAgentCache("app/44"))
                 .withUser(user).build();
         
+        // First two don't match because app version is wrong and missing required groups
+        // The last is returned because the context has no prohibited groups
         Schedule schedule = strategy.getScheduleForUser(plan, context);
         assertEquals(strategyWithProhibitedDataGroups, schedule);
     }

@@ -120,7 +120,7 @@ public final class ScheduleContext {
     
     @Override
     public int hashCode() {
-        return Objects.hash(studyId, healthCode, clientInfo, zone, endsOn, events, now, user);
+        return Objects.hash(studyId, healthCode, clientInfo, zone, endsOn, events, now, user, dataGroups);
     }
 
     @Override
@@ -133,13 +133,14 @@ public final class ScheduleContext {
         return (Objects.equals(studyId, other.studyId) && Objects.equals(healthCode, other.healthCode)
                 && Objects.equals(endsOn, other.endsOn) && Objects.equals(zone, other.zone)
                 && Objects.equals(clientInfo, other.clientInfo) && Objects.equals(events, other.events)
-                && Objects.equals(now, other.now) && Objects.equals(user, other.user));
+                && Objects.equals(now, other.now) && Objects.equals(user, other.user)
+                && Objects.equals(dataGroups, other.dataGroups));
     }
 
     @Override
     public String toString() {
         return "ScheduleContext [clientInfo=" + clientInfo + ", zone=" + zone + ", endsOn=" + 
-                endsOn + ", events=" + events + ", user=" + user + "]";
+                endsOn + ", events=" + events + ", user=" + user + ", dataGroups=" + dataGroups + "]";
     }
     
     public static class Builder {

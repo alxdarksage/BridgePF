@@ -12,6 +12,7 @@ import org.sagebionetworks.bridge.validators.ScheduleValidator;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -205,7 +206,8 @@ public class CriteriaScheduleStrategy implements ScheduleStrategy {
     
     @Override
     public List<Schedule> getAllPossibleSchedules() {
-        return scheduleCriteria.stream().map(ScheduleCriteria::getSchedule).collect(Collectors.toList());
+        return ImmutableList.copyOf(
+                scheduleCriteria.stream().map(ScheduleCriteria::getSchedule).collect(Collectors.toList()));
     }
 
     @Override
