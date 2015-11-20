@@ -17,7 +17,6 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper.FailedBatch;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -27,17 +26,11 @@ import com.google.common.collect.Lists;
 public class DynamoScheduledActivityDao implements ScheduledActivityDao {
     
     private DynamoDBMapper mapper;
-    private DynamoIndexHelper runKeyIndex;
     private DynamoIndexHelper schedulePlanIndex;
     
     @Resource(name = "activityDdbMapper")
     public final void setDdbMapper(DynamoDBMapper mapper) {
         this.mapper = mapper;
-    }
-    
-    @Resource(name = "activityRunKeyIndex")
-    public final void setActivityRunKeyIndex(DynamoIndexHelper index) {
-        this.runKeyIndex = index;
     }
     
     @Resource(name = "activitySchedulePlanGuidIndex")
@@ -83,14 +76,6 @@ public class DynamoScheduledActivityDao implements ScheduledActivityDao {
             activities.add(activity);
         }
         return activities;
-    }
-    
-    /** {@inheritDoc} */
-    @Override
-    public boolean activityRunHasNotOccurred(String healthCode, String runKey) {
-        RangeKeyCondition rangeKeyCondition = new RangeKeyCondition("runKey").eq(runKey);
-        int count = runKeyIndex.queryKeyCount("healthCode", healthCode, rangeKeyCondition);
-        return (count == 0);
     }
     
     /** {@inheritDoc} */

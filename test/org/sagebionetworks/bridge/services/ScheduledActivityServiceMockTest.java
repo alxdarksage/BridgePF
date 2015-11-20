@@ -101,7 +101,6 @@ public class ScheduledActivityServiceMockTest {
             return schActivity;
         });
         when(activityDao.getActivities(context)).thenReturn(scheduledActivities);
-        when(activityDao.activityRunHasNotOccurred(anyString(), anyString())).thenReturn(true);
         
         Survey survey = new DynamoSurvey();
         survey.setGuid("guid");

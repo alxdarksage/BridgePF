@@ -108,13 +108,11 @@ public class ScheduledActivityService {
         // ScheduleContext has caused them to no longer be valid. We do this without any reference to the 
         // original schedule plan's strategy for selecting activities. 
         
-        List<String> scheduledGuids = scheduledActivities.stream().map(ScheduledActivity::getGuid).collect(toList());
-        List<String> dbGuids = dbActivities.stream().map(ScheduledActivity::getGuid).collect(toList());
-        
-        // equals/hashCode implementation will de-duplicate these
-        Set<ScheduledActivity> actsToSave = Sets.newHashSet();
-        Set<ScheduledActivity> actsToDelete = Sets.newHashSet();
-        Set<ScheduledActivity> actsToReturn = Sets.newHashSet();
+        List<String> scheduledGuids = scheduledActivities.stream()
+                .map(ScheduledActivity::getGuid).collect(toList());
+        List<String> dbGuids = dbActivities.stream()
+                .map(ScheduledActivity::getGuid).collect(toList());
+        ScheduledActivityOperations ops = new ScheduledActivityOperations();
 
         // Are database activities in the list of activities we would schedule? 
         // If they are a deletable status and not in the list, delete them, otherwise, return them.
@@ -122,40 +120,39 @@ public class ScheduledActivityService {
 
             // This one exists in both, add it.
             if (scheduledGuids.contains(activity.getGuid())) {
-                actsToReturn.add(activity); // It's in both, use the db version
+                ops.result(activity); // It's in both, use the db version
             } else {
                 if (activity.getStatus() == ScheduledActivityStatus.STARTED) {
-                    actsToReturn.add(activity); // It's in both, use the db version
+                    ops.result(activity); // It's in both, use the db version
                 } else {
-                    actsToDelete.add(activity); // It's in db but not produced by scheduler, delete it
+                    ops.delete(activity); // It's in db but not produced by scheduler, delete it
                 }
             }
         }
         // Are scheduled activities already in db? If they are brand new, persist them and also return them
         for (ScheduledActivity activity : scheduledActivities) {
             if (!dbGuids.contains(activity.getGuid())) {
-                actsToSave.add(activity); // It's in db but not produced by scheduler, delete it
+                ops.save(activity); // It's in db but not produced by scheduler, delete it
             }
         }
         
         // delete
-        if (!actsToDelete.isEmpty()) {
-            activityDao.deleteActivities(actsToDelete.stream().collect(toList()));    
+        if (!ops.getDeletables().isEmpty()) {
+            activityDao.deleteActivities(ops.getDeletables().stream().collect(toList()));    
         }
         // save
-        if (!actsToSave.isEmpty()) {
+        if (!ops.getSavables().isEmpty()) {
             // if a survey activity, it may need a survey response generated (currently we're not using this though).
-            for (ScheduledActivity schActivity : actsToSave) {
+            for (ScheduledActivity schActivity : ops.getSavables()) {
                 // If they have not been persisted yet, get each activity one by one, create a survey 
                 // response for survey activities, and add the activities to the list of activities to save.
                 Activity activity = createResponseActivityIfNeeded(context.getStudyIdentifier(),
                         context.getHealthCode(), schActivity.getActivity());
                 schActivity.setActivity(activity);
             }
-            activityDao.saveActivities(actsToSave.stream().collect(toList()));
-            actsToReturn.addAll(actsToSave);
+            activityDao.saveActivities(ops.getSavables().stream().collect(toList()));
         }
-        return actsToReturn.stream()
+        return ops.getResults().stream()
                 .filter(activity -> ScheduledActivityStatus.VISIBLE_STATUSES.contains(activity.getStatus()))
                 .sorted(comparing(ScheduledActivity::getScheduledOn))
                 .collect(toList());
