@@ -68,4 +68,11 @@ public interface ScheduledActivityDao {
      */
     public void deleteActivitiesForSchedulePlan(String schedulePlanGuid);
     
+    /**
+     * In calculating activities to return to a user, any activities found that are no longer in the list of scheduled
+     * activites are deleted through this method
+     * 
+     * @param activitiesToDelete
+     */
+    public void deleteActivities(List<ScheduledActivity> activitiesToDelete);
 }

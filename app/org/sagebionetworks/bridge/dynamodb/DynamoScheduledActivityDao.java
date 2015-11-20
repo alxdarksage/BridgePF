@@ -1,6 +1,5 @@
 package org.sagebionetworks.bridge.dynamodb;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -71,25 +70,18 @@ public class DynamoScheduledActivityDao implements ScheduledActivityDao {
         Condition condition = new Condition()
             .withComparisonOperator(ComparisonOperator.GT)
             .withAttributeValueList(attribute);
-
+        
         DynamoDBQueryExpression<DynamoScheduledActivity> query = new DynamoDBQueryExpression<DynamoScheduledActivity>()
             .withQueryFilterEntry("hidesOn", condition)
             .withHashKeyValues(hashKey);
-
+        
         PaginatedQueryList<DynamoScheduledActivity> queryResults = mapper.query(DynamoScheduledActivity.class, query);
         
         List<ScheduledActivity> activities = Lists.newArrayList();
         for (DynamoScheduledActivity activity : queryResults) {
-            // Although we don't create activities for applications that are of the wrong version for a schedule,
-            // we do create activities into the future, and that means activities can get out of sync with the version 
-            // of the app requesting activities. We must filter here, as well as when we retrieve schedule plans for 
-            // scheduling.
-            if (context.getClientInfo().isTargetedAppVersion(activity.getMinAppVersion(), activity.getMaxAppVersion())) {
-                activity.setTimeZone(context.getZone());
-                activities.add(activity);
-            }
+            activity.setTimeZone(context.getZone());
+            activities.add(activity);
         }
-        Collections.sort(activities, ScheduledActivity.SCHEDULED_ACTIVITY_COMPARATOR);
         return activities;
     }
     
@@ -131,13 +123,10 @@ public class DynamoScheduledActivityDao implements ScheduledActivityDao {
         PaginatedQueryList<DynamoScheduledActivity> queryResults = mapper.query(DynamoScheduledActivity.class, query);
         
         // Confirmed that you have to transfer these activities to a list or the batchDelete does not work. 
-        List<DynamoScheduledActivity> activitiesToDelete = Lists.newArrayListWithCapacity(queryResults.size());
+        List<ScheduledActivity> activitiesToDelete = Lists.newArrayListWithCapacity(queryResults.size());
         activitiesToDelete.addAll(queryResults);
         
-        if (!activitiesToDelete.isEmpty()) {
-            List<FailedBatch> failures = mapper.batchDelete(activitiesToDelete);
-            BridgeUtils.ifFailuresThrowException(failures);
-        }
+        deleteActivities(activitiesToDelete);
     }
     
     /** {@inheritDoc} */
@@ -151,7 +140,12 @@ public class DynamoScheduledActivityDao implements ScheduledActivityDao {
                 .stream()
                 .filter(act -> ScheduledActivityStatus.DELETABLE_STATUSES.contains(act.getStatus()))
                 .collect(Collectors.toList());
-        
+        deleteActivities(activitiesToDelete);
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public void deleteActivities(List<ScheduledActivity> activitiesToDelete) {
         if (!activitiesToDelete.isEmpty()) {
             List<FailedBatch> failures = mapper.batchDelete(activitiesToDelete);
             BridgeUtils.ifFailuresThrowException(failures);

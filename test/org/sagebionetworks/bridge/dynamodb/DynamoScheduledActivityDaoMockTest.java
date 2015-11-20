@@ -150,39 +150,7 @@ public class DynamoScheduledActivityDaoMockTest {
         verifyNoMoreInteractions(mapper);
     }
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void activitySchedulerFiltersActivities() throws Exception {
-        DateTime endsOn = NOW.plus(Period.parse("P4D"));
-        Map<String, DateTime> events = Maps.newHashMap();
-        events.put("enrollment", ENROLLMENT);
-        ScheduleContext context = new ScheduleContext.Builder()
-            .withUser(user)
-            .withClientInfo(ClientInfo.fromUserAgentCache("App/5"))
-            .withTimeZone(PACIFIC_TIME_ZONE)
-            .withEndsOn(endsOn)
-            .withEvents(events).build();
-
-        List<ScheduledActivity> activities = TestUtils.runSchedulerForActivities(user, context);
-        mockQuery(activities);
-        List<ScheduledActivity> activities2 = activityDao.getActivities(context);
-
-        // The test schedules have these appVersions applied to them
-        // SchedulePlan DDD/Activity 1: version 2-5
-        // SchedulePlan BBB/Activity 2: version 9+
-        // SchedulePlan CCC/Activity 3: version 5-8
-        // Activity_1 and Activity_3 will match v5, Activity_2 will not. These results are 
-        // just like the next test of 4 days, but without the Activity_2 activity
-        // Activities are sorted first by date, then by label ("Activity1", "Activity2" & "Activity3")
-        assertEquals(3, activities2.size());
-        assertScheduledActivity(activities2.get(0), ACTIVITY_3_REF, "2015-04-13T13:00:00-07:00");
-        assertScheduledActivity(activities2.get(1), ACTIVITY_1_REF, "2015-04-14T13:00:00-07:00");
-        assertScheduledActivity(activities2.get(2), ACTIVITY_3_REF, "2015-04-15T13:00:00-07:00");
-
-        verify(mapper).query((Class<DynamoScheduledActivity>) any(Class.class),
-                        (DynamoDBQueryExpression<DynamoScheduledActivity>) any(DynamoDBQueryExpression.class));
-        verifyNoMoreInteractions(mapper);
-    }
+    // The test here involved filtering that now happens in the service. New tests created there.
     
     @SuppressWarnings("unchecked")
     @Test
