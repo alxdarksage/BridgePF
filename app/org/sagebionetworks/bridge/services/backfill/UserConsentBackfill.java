@@ -33,18 +33,21 @@ public class UserConsentBackfill extends AsyncBackfillTemplate {
     
     @Override
     int getLockExpireInSeconds() {
-        return 30 * 60;
+        return 6*60*60; // 21,600 seconds, or six hours
     }
 
     @Override
     void doBackfill(BackfillTask task, BackfillCallback callback) {
         callback.newRecords(getBackfillRecordFactory().createOnly(task, "Starting to examine accounts"));
+        int count = 0;
         
+        // Reducing the logging to speed up the process a little, and clear out some noise, so we can easily see
+        // when a record is migrated.
         Iterator<Account> i = accountDao.getAllAccounts();
         while (i.hasNext()) {
             Account account = i.next();
             
-            callback.newRecords(getBackfillRecordFactory().createOnly(task, "Examining account: " + account.getId()));
+            //callback.newRecords(getBackfillRecordFactory().createOnly(task, "Examining account: " + account.getId()));
             
             HealthId mapping = healthCodeService.getMapping(account.getHealthId());
             if (mapping != null) {
@@ -53,11 +56,15 @@ public class UserConsentBackfill extends AsyncBackfillTemplate {
                 if (success) {
                     callback.newRecords(getBackfillRecordFactory().createOnly(task, "Consent record migrated"));
                 } else {
-                    callback.newRecords(getBackfillRecordFactory().createOnly(task, "Could not migrate consent record"));
+                    //callback.newRecords(getBackfillRecordFactory().createOnly(task, "Could not migrate consent record"));
                 }
             }  else {
-                callback.newRecords(getBackfillRecordFactory().createOnly(task, "Health code not found"));
+                //callback.newRecords(getBackfillRecordFactory().createOnly(task, "Health code not found"));
             }
+            if (count % 100 == 0) {
+                callback.newRecords(getBackfillRecordFactory().createOnly(task, Integer.toString(count)));
+            }
+            count++;
         }
     }
 
