@@ -59,17 +59,18 @@ import com.google.common.collect.Sets;
 @RunWith(MockitoJUnitRunner.class)
 public class AuthenticationServiceMockTest {
     
+    private static final String SESSION_TOKEN = "sessionToken";
     private static final String HEALTH_CODE = "healthCode";
     private static final String HEALTH_ID = "healthId";
-    private static final String PASSWORD = "password";
+    private static final String PASSWORD = "P@ssword1";
     private static final String STUDY_ID = "test-study";
     private static final String EMAIL = "bridge-testing@sagebase.org";
     private static final String USERNAME = "userName";
     private static final Set<String> DATA_GROUPS = Sets.newHashSet("group1","group2");
-    private static final EmailVerificationValidator verificationValidator = new EmailVerificationValidator();
-    private static final SignInValidator signInValidator = new SignInValidator();
-    private static final PasswordResetValidator passwordResetValidator = new PasswordResetValidator();
-    private static final EmailValidator emailValidator = new EmailValidator();
+    private static final EmailVerificationValidator VERIFICATION_VALIDATOR = new EmailVerificationValidator();
+    private static final SignInValidator SIGN_IN_VALIDATOR = new SignInValidator();
+    private static final PasswordResetValidator PASSWORD_RESET_VALIDATOR = new PasswordResetValidator();
+    private static final EmailValidator EMAIL_VALIDATOR = new EmailValidator();
 
     @Mock
     private DistributedLockDao lockDao;
@@ -105,12 +106,11 @@ public class AuthenticationServiceMockTest {
         study = new DynamoStudy();
         study.setIdentifier(STUDY_ID);
         
-        PasswordPolicy pp =  new PasswordPolicy(2, false, false, false, false);
-        study.setPasswordPolicy(pp);
+        study.setPasswordPolicy(PasswordPolicy.DEFAULT_PASSWORD_POLICY);
         study.setDataGroups(DATA_GROUPS);
         
         session = new UserSession();
-        session.setSessionToken("sessionToken");
+        session.setSessionToken(SESSION_TOKEN);
 
         user = new User();
         user.setUsername(USERNAME);
@@ -123,8 +123,8 @@ public class AuthenticationServiceMockTest {
         signIn = new SignIn(USERNAME, PASSWORD);
         
         account = mock(Account.class);
-        when(account.getUsername()).thenReturn(user.getUsername());
-        when(account.getEmail()).thenReturn(user.getEmail());
+        when(account.getUsername()).thenReturn(USERNAME);
+        when(account.getEmail()).thenReturn(EMAIL);
         when(account.getId()).thenReturn(HEALTH_ID);
         when(accountDao.authenticate(study, signIn)).thenReturn(account);
         
@@ -135,7 +135,7 @@ public class AuthenticationServiceMockTest {
         
         when(healthCodeService.getMapping(HEALTH_ID)).thenReturn(healthId);
         
-        when(cacheProvider.getUserSession("sessionToken")).thenReturn(session);
+        when(cacheProvider.getUserSession(SESSION_TOKEN)).thenReturn(session);
         
         when(optionsService.getEnum(HEALTH_CODE, ParticipantOption.SHARING_SCOPE, 
                 SharingScope.class)).thenReturn(SharingScope.NO_SHARING);
@@ -149,10 +149,10 @@ public class AuthenticationServiceMockTest {
         authService.setAccountDao(accountDao);
         authService.setHealthCodeService(healthCodeService);
         authService.setStudyEnrollmentService(studyEnrollmentService);
-        authService.setEmailVerificationValidator(verificationValidator);
-        authService.setSignInValidator(signInValidator);
-        authService.setPasswordResetValidator(passwordResetValidator);
-        authService.setEmailValidator(emailValidator);
+        authService.setEmailVerificationValidator(VERIFICATION_VALIDATOR);
+        authService.setSignInValidator(SIGN_IN_VALIDATOR);
+        authService.setPasswordResetValidator(PASSWORD_RESET_VALIDATOR);
+        authService.setEmailValidator(EMAIL_VALIDATOR);
     }
     
     @Test(expected = BridgeServiceException.class)
@@ -288,7 +288,7 @@ public class AuthenticationServiceMockTest {
         assertEquals(userDataGroups, session.getUser().getDataGroups());
     }
     
-    // The validators are all tested separately, we're verifying here that we're using the validator
+    // This verifies that the SignUpValidatorIsUsed... TODO: tests for all other validators
     @Test
     public void invalidDataGroupsAreRejected() throws Exception {
         try {
