@@ -38,6 +38,7 @@ import org.sagebionetworks.bridge.models.ClientInfo;
 import org.sagebionetworks.bridge.models.accounts.Account;
 import org.sagebionetworks.bridge.models.accounts.ConsentStatus;
 import org.sagebionetworks.bridge.models.accounts.Email;
+import org.sagebionetworks.bridge.models.accounts.EmailVerification;
 import org.sagebionetworks.bridge.models.accounts.HealthId;
 import org.sagebionetworks.bridge.models.accounts.PasswordReset;
 import org.sagebionetworks.bridge.models.accounts.SignIn;
@@ -58,7 +59,7 @@ import com.google.common.collect.Sets;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AuthenticationServiceMockTest {
-    
+
     private static final String SESSION_TOKEN = "sessionToken";
     private static final String HEALTH_CODE = "healthCode";
     private static final String HEALTH_ID = "healthId";
@@ -66,7 +67,7 @@ public class AuthenticationServiceMockTest {
     private static final String STUDY_ID = "test-study";
     private static final String EMAIL = "bridge-testing@sagebase.org";
     private static final String USERNAME = "userName";
-    private static final Set<String> DATA_GROUPS = Sets.newHashSet("group1","group2");
+    private static final Set<String> DATA_GROUPS = Sets.newHashSet("group1", "group2");
     private static final EmailVerificationValidator VERIFICATION_VALIDATOR = new EmailVerificationValidator();
     private static final SignInValidator SIGN_IN_VALIDATOR = new SignInValidator();
     private static final PasswordResetValidator PASSWORD_RESET_VALIDATOR = new PasswordResetValidator();
@@ -88,27 +89,27 @@ public class AuthenticationServiceMockTest {
     private HealthCodeService healthCodeService;
     @Mock
     private StudyEnrollmentService studyEnrollmentService;
-    
+
     private AuthenticationService authService;
-    
+
     private Study study;
-    
+
     private UserSession session;
-    
+
     private SignIn signIn;
-    
+
     private User user;
-    
+
     private Account account;
-    
+
     @Before
     public void before() {
         study = new DynamoStudy();
         study.setIdentifier(STUDY_ID);
-        
+
         study.setPasswordPolicy(PasswordPolicy.DEFAULT_PASSWORD_POLICY);
         study.setDataGroups(DATA_GROUPS);
-        
+
         session = new UserSession();
         session.setSessionToken(SESSION_TOKEN);
 
@@ -119,27 +120,27 @@ public class AuthenticationServiceMockTest {
         user.setEmail(EMAIL);
         user.setSharingScope(SharingScope.NO_SHARING);
         session.setUser(user);
-        
+
         signIn = new SignIn(USERNAME, PASSWORD);
-        
+
         account = mock(Account.class);
         when(account.getUsername()).thenReturn(USERNAME);
         when(account.getEmail()).thenReturn(EMAIL);
         when(account.getId()).thenReturn(HEALTH_ID);
         when(accountDao.authenticate(study, signIn)).thenReturn(account);
-        
+
         HealthId healthId = mock(HealthId.class);
         when(healthId.getCode()).thenReturn(HEALTH_CODE);
         when(healthId.getId()).thenReturn(HEALTH_ID);
         when(healthCodeService.createMapping(study)).thenReturn(healthId);
-        
+
         when(healthCodeService.getMapping(HEALTH_ID)).thenReturn(healthId);
-        
+
         when(cacheProvider.getUserSession(SESSION_TOKEN)).thenReturn(session);
-        
-        when(optionsService.getEnum(HEALTH_CODE, ParticipantOption.SHARING_SCOPE, 
-                SharingScope.class)).thenReturn(SharingScope.NO_SHARING);
-        
+
+        when(optionsService.getEnum(HEALTH_CODE, ParticipantOption.SHARING_SCOPE, SharingScope.class))
+                .thenReturn(SharingScope.NO_SHARING);
+
         authService = new AuthenticationService();
         authService.setDistributedLockDao(lockDao);
         authService.setCacheProvider(cacheProvider);
@@ -154,19 +155,19 @@ public class AuthenticationServiceMockTest {
         authService.setPasswordResetValidator(PASSWORD_RESET_VALIDATOR);
         authService.setEmailValidator(EMAIL_VALIDATOR);
     }
-    
+
     @Test(expected = BridgeServiceException.class)
     public void signInNoUsername() throws Exception {
         when(accountDao.authenticate(study, signIn)).thenThrow(mock(BridgeServiceException.class));
-        
+
         authService.signIn(study, ClientInfo.UNKNOWN_CLIENT, new SignIn(null, "bar"));
         verify(cacheProvider, never()).setUserSession(any());
     }
-    
+
     @Test(expected = BridgeServiceException.class)
     public void signInNoPassword() throws Exception {
         when(accountDao.authenticate(study, signIn)).thenThrow(mock(BridgeServiceException.class));
-        
+
         authService.signIn(study, ClientInfo.UNKNOWN_CLIENT, new SignIn("foobar", null));
         verify(cacheProvider, never()).setUserSession(any());
     }
@@ -174,7 +175,7 @@ public class AuthenticationServiceMockTest {
     @Test(expected = EntityNotFoundException.class)
     public void signInInvalidCredentials() throws Exception {
         when(accountDao.authenticate(study, signIn)).thenThrow(mock(EntityNotFoundException.class));
-        
+
         authService.signIn(study, ClientInfo.UNKNOWN_CLIENT, signIn);
         verify(cacheProvider, never()).setUserSession(any());
     }
@@ -182,25 +183,25 @@ public class AuthenticationServiceMockTest {
     @Test
     public void signInCorrectCredentials() throws Exception {
         UserSession session = authService.signIn(study, ClientInfo.UNKNOWN_CLIENT, signIn);
-        
+
         assertEquals("Username is for test2 user", session.getUser().getUsername(), user.getUsername());
         assertTrue("Session token has been assigned", StringUtils.isNotBlank(session.getSessionToken()));
     }
-    
+
     @Test
     public void signInWhenSignedIn() throws Exception {
         // session exists in cache
         when(cacheProvider.getUserSessionByUserId(any())).thenReturn(session);
-        
+
         String sessionToken = session.getSessionToken();
         UserSession newSession = authService.signIn(study, ClientInfo.UNKNOWN_CLIENT, signIn);
         assertEquals("Username is for test2 user", user.getUsername(), newSession.getUser().getUsername());
-        assertEquals("Should update the existing session instead of creating a new one.",
-                sessionToken, newSession.getSessionToken());
+        assertEquals("Should update the existing session instead of creating a new one.", sessionToken,
+                newSession.getSessionToken());
     }
 
     @Test
-    public void signInSetsSharingScope() { 
+    public void signInSetsSharingScope() {
         UserSession newSession = authService.signIn(study, ClientInfo.UNKNOWN_CLIENT, signIn);
         assertEquals(SharingScope.NO_SHARING, newSession.getUser().getSharingScope()); // this is the default.
     }
@@ -236,7 +237,7 @@ public class AuthenticationServiceMockTest {
     @Test(expected = EntityNotFoundException.class)
     public void resetPasswordWithBadTokenFails() throws Exception {
         doThrow(mock(EntityNotFoundException.class)).when(accountDao).resetPassword(any());
-        
+
         authService.resetPassword(new PasswordReset("newpassword", "resettoken"));
     }
 
@@ -256,14 +257,14 @@ public class AuthenticationServiceMockTest {
     @Test
     public void createAdminAndSignInWithoutConsentError() {
         user.setRoles(Sets.newHashSet(Roles.ADMIN));
-        
+
         authService.signIn(study, ClientInfo.UNKNOWN_CLIENT, signIn);
     }
 
     @Test
     public void testSignOut() {
         authService.signOut(session);
-        
+
         verify(cacheProvider).removeSession(session);
     }
 
@@ -271,7 +272,7 @@ public class AuthenticationServiceMockTest {
     public void signUpWillCreateDataGroups() {
         Set<String> list = Sets.newHashSet("group1");
         SignUp signUp = new SignUp(USERNAME, EMAIL, PASSWORD, null, list);
-        
+
         when(accountDao.signUp(study, signUp, true)).thenReturn(account);
 
         authService.signUp(study, signUp, true);
@@ -282,22 +283,57 @@ public class AuthenticationServiceMockTest {
     public void userCreatedWithDataGroupsHasThemOnSignIn() throws Exception {
         Set<String> userDataGroups = Sets.newHashSet(DATA_GROUPS.iterator().next());
         when(optionsService.getStringSet(HEALTH_CODE, ParticipantOption.DATA_GROUPS)).thenReturn(userDataGroups);
-        
+
         UserSession session = authService.signIn(study, ClientInfo.UNKNOWN_CLIENT, signIn);
 
         assertEquals(userDataGroups, session.getUser().getDataGroups());
     }
-    
+
     // This verifies that the SignUpValidatorIsUsed... TODO: tests for all other validators
-    @Test
+    @Test // aka signUpValidatorIsUsed
     public void invalidDataGroupsAreRejected() throws Exception {
         try {
             SignUp signUp = new SignUp(USERNAME, EMAIL, PASSWORD, null, Sets.newHashSet("bugleboy"));
             authService.signUp(study, signUp, true);
             fail("Should have thrown exception");
-        } catch(InvalidEntityException e) {
+        } catch (InvalidEntityException e) {
             assertTrue(e.getMessage().contains("dataGroups 'bugleboy' is not one of these valid values"));
         }
+    }
+
+    @Test(expected = InvalidEntityException.class)
+    public void emailVerificationValidatorIsUsed() {
+        EmailVerification verification = new EmailVerification(null);
+
+        authService.verifyEmail(study, ClientInfo.UNKNOWN_CLIENT, verification);
+    }
+
+    @Test(expected = InvalidEntityException.class)
+    public void signInValidatorIsUsed() {
+        SignIn signIn = new SignIn(USERNAME, "");
+        
+        authService.signIn(study, ClientInfo.UNKNOWN_CLIENT, signIn);
+    }
+
+    @Test(expected = InvalidEntityException.class)
+    public void passwordResetValidatorIsUsed() {
+        PasswordReset reset = new PasswordReset("", "asdf");
+        
+        authService.resetPassword(reset);
+    }
+
+    @Test(expected = InvalidEntityException.class)
+    public void emailValidatorIsUsedOnEmailVerification() {
+        Email email = new Email(study, "");
+        
+        authService.resendEmailVerification(study.getStudyIdentifier(), email);
+    }
+    
+    @Test(expected = InvalidEntityException.class)
+    public void emailValidatorIsUsedOnResetPassword() {
+        Email email = new Email(study, "");
+        
+        authService.requestResetPassword(study, email);
     }
 
     // Account enumeration security. Verify the service is quite (throws no exceptions) when we don't
@@ -306,25 +342,25 @@ public class AuthenticationServiceMockTest {
     @Test
     public void secondSignUpTriggersResetPasswordInstead() {
         SignUp signUp = new SignUp(USERNAME, EMAIL, PASSWORD, null, null);
-        
+
         when(accountDao.signUp(study, signUp, true)).thenThrow(mock(EntityAlreadyExistsException.class));
-        
+
         authService.signUp(study, signUp, true);
         verify(accountDao).requestResetPassword(any(Study.class), any(Email.class));
     }
-    
+
     @Test
     public void secondSignUpWithUsernameButDifferentEmailThrowsException() {
         SignUp signUp = new SignUp(USERNAME, EMAIL, PASSWORD, null, null);
-        
+
         EntityAlreadyExistsException eaee = new EntityAlreadyExistsException(mock(Account.class), "");
         when(accountDao.signUp(study, signUp, true)).thenThrow(eaee);
         doThrow(mock(EntityNotFoundException.class)).when(accountDao).requestResetPassword(eq(study), any());
-        
+
         try {
             authService.signUp(study, signUp, true);
             fail("Should have thrown an exception");
-        } catch(EntityAlreadyExistsException e) {
+        } catch (EntityAlreadyExistsException e) {
             assertEquals("Username already exists.", e.getMessage());
         }
     }
@@ -334,29 +370,29 @@ public class AuthenticationServiceMockTest {
     public void resendEmailVerificationLooksSuccessfulWhenNoAccount() throws Exception {
         Email email = new Email(study.getStudyIdentifier(), "notarealaccount@sagebase.org");
         doThrow(new EntityNotFoundException(Account.class)).when(accountDao).resendEmailVerificationToken(any(), any());
-        
+
         authService.resendEmailVerification(study.getStudyIdentifier(), email);
     }
-    
+
     @Test
     public void requestResetPasswordLooksSuccessfulWhenNoAccount() throws Exception {
         Email email = new Email(study.getStudyIdentifier(), "notarealaccount@sagebase.org");
         doThrow(new EntityNotFoundException(Account.class)).when(accountDao).requestResetPassword(any(), any());
-        
+
         authService.requestResetPassword(study, email);
     }
-    
+
     // Consent statuses passed on to sessionInfo
     @Test
     public void consentStatusesPresentInSession() {
         SubpopulationGuid guid = SubpopulationGuid.create(study.getIdentifier());
-        Map<SubpopulationGuid,ConsentStatus> statuses = Maps.newHashMap();
+        Map<SubpopulationGuid, ConsentStatus> statuses = Maps.newHashMap();
         statuses.put(guid, new ConsentStatus.Builder().withName("Name").withConsented(true).withGuid(guid).build());
-        
+
         when(consentService.getConsentStatuses(any())).thenReturn(statuses);
-        
+
         UserSession newSession = authService.signIn(study, ClientInfo.UNKNOWN_CLIENT, signIn);
-        
+
         ConsentStatus status = Iterables.getFirst(newSession.getUser().getConsentStatuses().values(), null);
         assertTrue(status.isConsented());
         assertEquals(study.getStudyIdentifier().getIdentifier(), status.getSubpopulationGuid());
