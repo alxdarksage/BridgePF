@@ -86,7 +86,7 @@ public class ScheduledActivityControllerTest {
     public void getScheduledActivitiesAsScheduledActivitiesReturnsCorrectType() throws Exception {
         DateTime now = DateTime.parse("2011-05-13T12:37:31.985+03:00");
         
-        Result result = controller.getScheduledActivities(now.toString(), null, null);
+        Result result = controller.getScheduledActivities(now.toString(), null, null, null);
         String output = Helpers.contentAsString(result);
 
         JsonNode results = BridgeObjectMapper.get().readTree(output);
@@ -101,7 +101,7 @@ public class ScheduledActivityControllerTest {
     public void getScheduledActivitesAsTasks() throws Exception {
         DateTime now = DateTime.parse("2011-05-13T12:37:31.985+03:00");
         
-        Result result = controller.getTasks(now.toString(), null, null);
+        Result result = controller.getTasks(now.toString(), null, null, null);
         String output = Helpers.contentAsString(result);
         
         // Verify that even without the writer, we are not leaking these values
@@ -122,7 +122,7 @@ public class ScheduledActivityControllerTest {
         // Until value is simply passed along as is to the scheduler.
         DateTime now = DateTime.parse("2011-05-13T12:37:31.985+03:00");
         
-        controller.getScheduledActivities(now.toString(), null, null);
+        controller.getScheduledActivities(now.toString(), null, null, null);
         verify(scheduledActivityService).getScheduledActivities(any(User.class), argument.capture());
         verifyNoMoreInteractions(scheduledActivityService);
         assertEquals(now, argument.getValue().getEndsOn());
@@ -137,7 +137,7 @@ public class ScheduledActivityControllerTest {
             .withZone(DateTimeZone.forOffsetHours(3)).plusDays(3)
             .withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59).withMillisOfSecond(0);
         
-        controller.getScheduledActivities(null, "+03:00", "3");
+        controller.getScheduledActivities(null, "+03:00", "3", null);
         verify(scheduledActivityService).getScheduledActivities(any(User.class), argument.capture());
         verifyNoMoreInteractions(scheduledActivityService);
         assertEquals(expectedEndsOn, argument.getValue().getEndsOn().withMillisOfSecond(0));
@@ -156,7 +156,6 @@ public class ScheduledActivityControllerTest {
     @Test(expected = NotAuthenticatedException.class)
     public void mustBeAuthenticated() throws Exception {
         controller = new ScheduledActivityController();
-        controller.getScheduledActivities(DateTime.now().toString(), null, null);
+        controller.getScheduledActivities(DateTime.now().toString(), null, null, null);
     }
-    
 }

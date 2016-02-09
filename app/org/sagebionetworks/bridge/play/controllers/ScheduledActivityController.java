@@ -1,9 +1,10 @@
 package org.sagebionetworks.bridge.play.controllers;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.sagebionetworks.bridge.exceptions.BadRequestException;
@@ -41,14 +42,14 @@ public class ScheduledActivityController extends BaseController {
     
     // This annotation adds a deprecation header to the REST API method.
     @Deprecated
-    public Result getTasks(String untilString, String offset, String daysAhead) throws Exception {
-        List<ScheduledActivity> scheduledActivities = getScheduledActivitiesInternal(untilString, offset, daysAhead);
+    public Result getTasks(String untilString, String offset, String daysAhead, String daysBehind) throws Exception {
+        List<ScheduledActivity> scheduledActivities = getScheduledActivitiesInternal(untilString, offset, daysAhead, daysBehind);
         
         return okResultAsTasks(scheduledActivities);
     }
 
-    public Result getScheduledActivities(String untilString, String offset, String daysAhead) throws Exception {
-        List<ScheduledActivity> scheduledActivities = getScheduledActivitiesInternal(untilString, offset, daysAhead);
+    public Result getScheduledActivities(String untilString, String offset, String daysAhead, String daysBehind) throws Exception {
+        List<ScheduledActivity> scheduledActivities = getScheduledActivitiesInternal(untilString, offset, daysAhead, daysBehind);
         
         return ok(ScheduledActivity.SCHEDULED_ACTIVITY_WRITER
                 .writeValueAsString(new ResourceList<ScheduledActivity>(scheduledActivities)));
@@ -76,18 +77,18 @@ public class ScheduledActivityController extends BaseController {
         return ok(node);
     }
     
-    private List<ScheduledActivity> getScheduledActivitiesInternal(String untilString, String offset, String daysAhead)
-            throws Exception {
+    private List<ScheduledActivity> getScheduledActivitiesInternal(
+            String untilString, String offset, String daysAhead, String daysBehind) throws Exception {
         UserSession session = getAuthenticatedAndConsentedSession();
 
         DateTime endsOn = null;
         DateTimeZone zone = null;
-
-        if (StringUtils.isNotBlank(untilString)) {
+        
+        if (isNotBlank(untilString)) {
             // Old API, infer time zone from the until parameter. This is not ideal.
             endsOn = DateTime.parse(untilString);
             zone = endsOn.getZone();
-        } else if (StringUtils.isNotBlank(daysAhead) && StringUtils.isNotBlank(offset)) {
+        } else if (isNotBlank(daysAhead) && isNotBlank(offset)) {
             zone = DateUtils.parseZoneFromOffsetString(offset);
             int numDays = Integer.parseInt(daysAhead);
             // When querying for days, we ignore the time of day of the request and query to then end of the day.
@@ -95,13 +96,26 @@ public class ScheduledActivityController extends BaseController {
         } else {
             throw new BadRequestException("Supply either 'until' parameter, or 'daysAhead' and 'offset' parameters.");
         }
+
+        DateTime startsOn = getStartsOn(zone, daysBehind);
+        
         ClientInfo clientInfo = getClientInfoFromUserAgentHeader();
 
         ScheduleContext context = new ScheduleContext.Builder()
                 .withUser(session.getUser())
                 .withClientInfo(clientInfo)
-                .withTimeZone(zone)
-                .withEndsOn(endsOn).build();
+                .withStartsOn(startsOn)
+                .withEndsOn(endsOn)
+                .withTimeZone(zone).build();
         return scheduledActivityService.getScheduledActivities(session.getUser(), context);
+    }
+    
+    private DateTime getStartsOn(DateTimeZone zone, String daysBehind) {
+        if (isNotBlank(daysBehind)) {
+            int numDays = Integer.parseInt(daysBehind);
+            return DateTime.now(zone).minusDays(numDays).withTimeAtStartOfDay();
+        } else {
+            return DateTime.now(zone).withTimeAtStartOfDay();
+        }        
     }
 }

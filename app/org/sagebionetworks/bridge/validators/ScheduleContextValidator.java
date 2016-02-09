@@ -30,14 +30,19 @@ public class ScheduleContextValidator implements Validator {
         if (context.getHealthCode() == null) {
             errors.rejectValue("healthCode", "is required");
         }
-        // Very the ending timestamp is not invalid.
-        DateTime now = context.getNow();
+        DateTime now = DateTime.now();
+        
         if (context.getEndsOn() == null) {
             errors.rejectValue("endsOn", "is required");
         } else if (context.getEndsOn().isBefore(now)) {
             errors.rejectValue("endsOn", "must be after the time of the request");
         } else if (context.getEndsOn().minusDays(MAX_EXPIRES_ON_DAYS).isAfter(now)) {
             errors.rejectValue("endsOn", "must be "+MAX_EXPIRES_ON_DAYS+" days or less");
+        }
+        if (context.getStartsOn() != null && context.getEndsOn() != null) {
+            if (context.getEndsOn().isBefore(context.getStartsOn())) {
+                errors.rejectValue("endsOn", "must be after startsOn");
+            }
         }
     }
 

@@ -29,22 +29,23 @@ public final class ScheduleContext {
     private final String userId; // for debugging purposes only.
     private final ClientInfo clientInfo;
     private final DateTimeZone zone;
+    private final DateTime startsOn;
     private final DateTime endsOn;
     private final Map<String,DateTime> events;
     private final String healthCode;
-    private final DateTime now;
     private final Set<String> userDataGroups;
     
-    private ScheduleContext(StudyIdentifier studyId, String userId, ClientInfo clientInfo, DateTimeZone zone, DateTime endsOn, String healthCode,
-                    Map<String, DateTime> events, DateTime now, Set<String> userDataGroups) {
+    private ScheduleContext(StudyIdentifier studyId, String userId, ClientInfo clientInfo, DateTimeZone zone,
+            DateTime endsOn, String healthCode, Map<String, DateTime> events, DateTime startsOn,
+            Set<String> userDataGroups) {
         this.studyId = studyId;
         this.userId = userId;
         this.clientInfo = clientInfo;
         this.zone = zone;
+        this.startsOn = startsOn;
         this.endsOn = endsOn;
         this.healthCode = healthCode;
         this.events = events;
-        this.now = now;
         this.userDataGroups = (userDataGroups == null) ? ImmutableSet.of() : ImmutableSet.copyOf(userDataGroups);
     }
     
@@ -121,8 +122,8 @@ public final class ScheduleContext {
      * to reason about.
      * @return
      */
-    public DateTime getNow() {
-        return now;
+    public DateTime getStartsOn() {
+        return startsOn;
     }
     
     public Set<String> getUserDataGroups() {
@@ -131,7 +132,7 @@ public final class ScheduleContext {
     
     @Override
     public int hashCode() {
-        return Objects.hash(studyId, userId, clientInfo, zone, endsOn, healthCode, events, now, userDataGroups);
+        return Objects.hash(studyId, userId, clientInfo, zone, endsOn, healthCode, events, startsOn, userDataGroups);
     }
 
     @Override
@@ -145,7 +146,7 @@ public final class ScheduleContext {
                 Objects.equals(userId, other.userId) &&
                 Objects.equals(clientInfo, other.clientInfo) && 
                 Objects.equals(healthCode, other.healthCode) && Objects.equals(events, other.events) && 
-                Objects.equals(studyId, other.studyId) && Objects.equals(now, other.now) && 
+                Objects.equals(studyId, other.studyId) && Objects.equals(startsOn, other.startsOn) && 
                 Objects.equals(userDataGroups, other.userDataGroups));
     }
 
@@ -160,10 +161,10 @@ public final class ScheduleContext {
         private String userId;
         private ClientInfo clientInfo;
         private DateTimeZone zone;
+        private DateTime startsOn;
         private DateTime endsOn;
         private Map<String,DateTime> events;
         private String healthCode;
-        private DateTime now;
         private Set<String> userDataGroups;
         
         public Builder withUser(User user) {
@@ -217,8 +218,8 @@ public final class ScheduleContext {
             this.userDataGroups = userDataGroups;
             return this;
         }
-        public Builder withNow(DateTime now) {
-            this.now = now;
+        public Builder withStartsOn(DateTime startsOn) {
+            this.startsOn = startsOn;
             return this;
         }
         public Builder withContext(ScheduleContext context) {
@@ -229,7 +230,7 @@ public final class ScheduleContext {
             this.endsOn = context.endsOn;
             this.events = context.events;
             this.healthCode = context.healthCode;
-            this.now = context.now;
+            this.startsOn = context.startsOn;
             this.userDataGroups = context.userDataGroups;
             return this;
         }
@@ -238,13 +239,13 @@ public final class ScheduleContext {
             checkNotNull(studyId, "studyId cannot be null");
             // pretty much everything else is optional. I would like healthCode to be required, but it's not:
             // we use these selection criteria to select subpopulations on sign up.
-            if (now == null) {
-                now = (zone == null) ? DateTime.now() : DateTime.now(zone);
+            if (startsOn == null) {
+                startsOn = (zone == null) ? DateTime.now() : DateTime.now(zone);
             }
             if (clientInfo == null) {
                 clientInfo = ClientInfo.UNKNOWN_CLIENT;
             }
-            return new ScheduleContext(studyId, userId, clientInfo, zone, endsOn, healthCode, events, now, userDataGroups);
+            return new ScheduleContext(studyId, userId, clientInfo, zone, endsOn, healthCode, events, startsOn, userDataGroups);
         }
     }
     

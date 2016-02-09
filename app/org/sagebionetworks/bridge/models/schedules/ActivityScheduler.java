@@ -63,7 +63,7 @@ public abstract class ActivityScheduler {
         if (isInWindow(scheduledTime)) {
             // As long at the activities are not already expired, add them.
             DateTime expiresOn = getExpiresOn(scheduledTime);
-            if (expiresOn == null || expiresOn.isAfter(context.getNow())) {
+            if (expiresOn == null || expiresOn.isAfter(context.getStartsOn())) {
                 for (Activity activity : schedule.getActivities()) {
                     ScheduledActivity schActivity = ScheduledActivity.create();
                     schActivity.setSchedulePlanGuid(plan.getGuid());

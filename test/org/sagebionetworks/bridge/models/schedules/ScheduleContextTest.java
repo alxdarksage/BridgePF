@@ -51,7 +51,7 @@ public class ScheduleContextTest {
         ScheduleContext context = new ScheduleContext.Builder().withStudyIdentifier(TestConstants.TEST_STUDY).build();
         
         assertEquals(ClientInfo.UNKNOWN_CLIENT, context.getClientInfo());
-        assertNotNull(context.getNow());
+        assertNotNull(context.getStartsOn());
     }
     
     @Test
@@ -71,7 +71,7 @@ public class ScheduleContextTest {
         
         // There are defaults
         assertEquals(ClientInfo.UNKNOWN_CLIENT, context.getClientInfo());
-        assertNotNull(context.getNow());
+        assertNotNull(context.getStartsOn());
         
         ClientInfo clientInfo = ClientInfo.fromUserAgentCache("app/5");
         StudyIdentifier studyId = new StudyIdentifierImpl("study-key");
@@ -93,7 +93,7 @@ public class ScheduleContextTest {
                 .withEvents(events)
                 .withHealthCode("healthCode")
                 .withUserDataGroups(dataGroups)
-                .withNow(now).build();
+                .withStartsOn(now).build();
         assertEquals(studyId, context.getStudyIdentifier());
         assertEquals("userId", context.getUserId());
         assertEquals(clientInfo, context.getClientInfo());
@@ -102,7 +102,7 @@ public class ScheduleContextTest {
         assertEquals(events.get("enrollment"), context.getEvent("enrollment"));
         assertEquals("healthCode", context.getHealthCode());
         assertEquals(dataGroups, context.getUserDataGroups());
-        assertEquals(now, context.getNow());
+        assertEquals(now, context.getStartsOn());
 
         // and the other studyId setter
         context = new ScheduleContext.Builder().withStudyIdentifier("study-key").build();

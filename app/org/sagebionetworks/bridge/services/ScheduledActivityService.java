@@ -168,7 +168,6 @@ public class ScheduledActivityService {
             } else if (activity.getStatus() != ScheduledActivityStatus.EXPIRED) {
                 saves.add(activity);    
             }
-            
         }
         return saves;
     }

@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,6 +30,7 @@ import org.sagebionetworks.bridge.dao.ScheduledActivityDao;
 import org.sagebionetworks.bridge.dao.UserConsentDao;
 import org.sagebionetworks.bridge.dynamodb.DynamoSurvey;
 import org.sagebionetworks.bridge.dynamodb.DynamoSurveyResponse;
+import org.sagebionetworks.bridge.dynamodb.DynamoSchedulePlan;
 import org.sagebionetworks.bridge.dynamodb.DynamoScheduledActivity;
 import org.sagebionetworks.bridge.dynamodb.DynamoScheduledActivityDao;
 import org.sagebionetworks.bridge.dynamodb.DynamoUserConsent3;
@@ -39,8 +41,13 @@ import org.sagebionetworks.bridge.models.GuidCreatedOnVersionHolder;
 import org.sagebionetworks.bridge.models.accounts.User;
 import org.sagebionetworks.bridge.models.accounts.UserConsent;
 import org.sagebionetworks.bridge.models.schedules.Activity;
+import org.sagebionetworks.bridge.models.schedules.Schedule;
 import org.sagebionetworks.bridge.models.schedules.ScheduleContext;
+import org.sagebionetworks.bridge.models.schedules.SchedulePlan;
+import org.sagebionetworks.bridge.models.schedules.ScheduleTestUtils;
+import org.sagebionetworks.bridge.models.schedules.ScheduleType;
 import org.sagebionetworks.bridge.models.schedules.ScheduledActivity;
+import org.sagebionetworks.bridge.models.schedules.SimpleScheduleStrategy;
 import org.sagebionetworks.bridge.models.studies.StudyIdentifier;
 import org.sagebionetworks.bridge.models.subpopulations.Subpopulation;
 import org.sagebionetworks.bridge.models.surveys.Survey;
@@ -377,7 +384,6 @@ public class ScheduledActivityServiceMockTest {
         activity = scheduled.stream()
                 .filter(act -> act.getGuid().equals("AAA")).findFirst().get();
         assertTrue(activity.getStartedOn() > 0L);
-        
     }
     
     @Test
@@ -400,6 +406,52 @@ public class ScheduledActivityServiceMockTest {
         assertEquals(time2, result.get(1).getScheduledOn());
         assertEquals(time4, result.get(2).getScheduledOn());
         
+    }
+    
+    @Test
+    public void canLookBehind() {
+        // Here the activities are valid 7 days, so will go back to 2/1/2016, to the 8th ("today") 
+        // because no daysAhead
+        DateTimeUtils.setCurrentMillisFixed(DateTime.parse("2016-02-08T10:00:00.000Z").getMillis());
+        
+        activityEventService = mock(ActivityEventService.class);
+        Map<String,DateTime> map = Maps.newHashMap();
+        map.put("enrollment", DateTime.now().minusDays(30));
+        when(activityEventService.getActivityEventMap(HEALTH_CODE)).thenReturn(map);
+        service.setActivityEventService(activityEventService);
+        
+        // schedulePlan
+        Schedule schedule = new Schedule();
+        schedule.setLabel("Schedule Label");
+        schedule.setScheduleType(ScheduleType.RECURRING);
+        schedule.setInterval("P1D");
+        schedule.setExpires("P7D");
+        schedule.addTimes("10:00");
+        schedule.addActivity(new Activity.Builder().withLabel("label").withTask("taskId").build());
+        
+        SimpleScheduleStrategy strategy = new SimpleScheduleStrategy(); 
+        strategy.setSchedule(schedule);
+        
+        SchedulePlan schedulePlan = new DynamoSchedulePlan();
+        schedulePlan.setStrategy(strategy);
+        
+        schedulePlanService = mock(SchedulePlanService.class);
+        when(schedulePlanService.getSchedulePlans(any(), any())).thenReturn(Lists.newArrayList(schedulePlan));
+        service.setSchedulePlanService(schedulePlanService);
+        
+        ScheduleContext context = new ScheduleContext.Builder().withHealthCode(HEALTH_CODE)
+                .withTimeZone(DateTimeZone.UTC).withStartsOn(DateTime.now().minusDays(7))
+                .withEndsOn(DateTime.now().plusDays(1)).withStudyIdentifier(TEST_STUDY).build();
+        
+        User user = new User();
+        user.setHealthCode(HEALTH_CODE);
+        
+        // In order to do this, we have to modify the enrollment event in the events table.
+        List<ScheduledActivity> activities = service.getScheduledActivities(user, context);
+        ScheduleTestUtils.assertDates(activities, "2016-02-01 10:00", "2016-02-02 10:00", "2016-02-03 10:00",
+                "2016-02-04 10:00", "2016-02-05 10:00", "2016-02-06 10:00", "2016-02-07 10:00", "2016-02-08 10:00");
+        
+        DateTimeUtils.setCurrentMillisSystem();
     }
     
     private List<ScheduledActivity> createActivities(String... guids) {

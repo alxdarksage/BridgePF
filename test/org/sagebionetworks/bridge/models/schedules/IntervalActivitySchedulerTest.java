@@ -14,6 +14,7 @@ import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Period;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -479,14 +480,42 @@ public class IntervalActivitySchedulerTest {
         scheduledActivities = schedule.getScheduler().getScheduledActivities(plan, getContext(ENROLLMENT.plusWeeks(3)));
         assertEquals(0, scheduledActivities.size());
     }
+    @Test
+    public void recurringCronScheduleIncludesDaysBehindInSchedule() {
+        Schedule schedule = createScheduleWith(RECURRING);
+        schedule.setInterval(Period.parse("P7D"));
+        schedule.setExpires(Period.parse("P7D"));
+        
+        // This is a Tuesday in May. We want to see the task before this day, given the enrollment 
+        // date in user here, that's be 4/27
+        DateTime now = DateTime.parse("2015-05-05T13:00:00.000Z");
+        DateTimeUtils.setCurrentMillisFixed(now.getMillis());
+        DateTime startsOn = now.minusDays(7);
+        DateTime endsOn = now.plusDays(4);
+        
+        ScheduleContext context = getContext(startsOn, endsOn);
 
-    private ScheduleContext getContext(DateTime endsOn) {
+        scheduledActivities = schedule.getScheduler().getScheduledActivities(plan, context);
+        assertDates(scheduledActivities, "2015-04-27 09:40", "2015-04-27 13:40", "2015-05-04 09:40", "2015-05-04 13:40");
+        assertEquals(ScheduledActivityStatus.EXPIRED, scheduledActivities.get(0).getStatus());
+        assertEquals(ScheduledActivityStatus.EXPIRED, scheduledActivities.get(1).getStatus());
+        assertEquals(ScheduledActivityStatus.AVAILABLE, scheduledActivities.get(2).getStatus());
+        assertEquals(ScheduledActivityStatus.AVAILABLE, scheduledActivities.get(3).getStatus());
+        DateTimeUtils.setCurrentMillisSystem();
+    }
+    
+    private ScheduleContext getContext(DateTime startsOn, DateTime endsOn) {
         return new ScheduleContext.Builder()
             .withStudyIdentifier(TEST_STUDY)
             .withTimeZone(DateTimeZone.UTC)
+            .withStartsOn(startsOn)
             .withEndsOn(endsOn)
             .withHealthCode("AAA")
             .withEvents(events).build();
+    }
+
+    private ScheduleContext getContext(DateTime endsOn) {
+        return getContext(null, endsOn);
     }
     
     private Schedule createScheduleWith(ScheduleType type) {

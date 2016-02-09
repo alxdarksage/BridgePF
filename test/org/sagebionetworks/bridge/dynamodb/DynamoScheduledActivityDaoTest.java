@@ -142,7 +142,7 @@ public class DynamoScheduledActivityDaoTest {
         
         // Finish one of the activities.  
         ScheduledActivity activity = savedActivities.get(1);
-        activity.setFinishedOn(context.getNow().getMillis());
+        activity.setFinishedOn(context.getStartsOn().getMillis());
         assertEquals("activity deleted", ScheduledActivityStatus.DELETED, activity.getStatus());
         activityDao.updateActivities(user.getHealthCode(), Lists.newArrayList(activity));
         

@@ -45,7 +45,7 @@ public class ScheduleContextValidatorTest {
     public void endsOnAfterNow() {
         ScheduleContext context = new ScheduleContext.Builder()
             .withStudyIdentifier("study-id").withTimeZone(DateTimeZone.UTC)
-            .withEndsOn(DateTime.now().minusHours(1)).withHealthCode("healthCode").build();
+            .withEndsOn(DateTime.now().minusDays(1)).withHealthCode("healthCode").build();
         try {
             Validate.nonEntityThrowingException(validator, context);
             fail("Should have thrown exception");
@@ -69,6 +69,21 @@ public class ScheduleContextValidatorTest {
         }
     }
     
-    
+    @Test
+    public void endsOnBeforeStartsOn() {
+        DateTime now = DateTime.now();
+        ScheduleContext context = new ScheduleContext.Builder()
+                .withStudyIdentifier("study-id")
+                .withTimeZone(DateTimeZone.UTC)
+                .withStartsOn(now.plusDays(3))
+                .withEndsOn(now.plusDays(1))
+                .withHealthCode("healthCode").build();
+        try {
+            Validate.nonEntityThrowingException(validator, context);
+            fail("Should have thrown exception");
+        } catch(BadRequestException e) {
+            assertTrue(e.getMessage().contains("endsOn must be after startsOn"));
+        }
+    }
     
 }
