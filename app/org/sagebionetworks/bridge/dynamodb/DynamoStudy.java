@@ -52,6 +52,9 @@ public final class DynamoStudy implements Study {
     private Map<String, Integer> minSupportedAppVersions;
 
     public DynamoStudy() {
+        emailVerificationEnabled = true;
+        strictUploadValidationEnabled = true;
+        active = true;
         profileAttributes = new HashSet<>();
         taskIdentifiers = new HashSet<>();
         dataGroups = new HashSet<>();

@@ -93,7 +93,6 @@ public class DynamoStudyTest {
         study.setStormpathHref("test");
         
         final String json = BridgeObjectMapper.get().writeValueAsString(study);
-        BridgeObjectMapper.get().readTree(json);
 
         // Deserialize back to a POJO and verify.
         final Study deserStudy = BridgeObjectMapper.get().readValue(json, Study.class);
@@ -108,6 +107,22 @@ public class DynamoStudyTest {
         
         study.setIdentifier(null);
         assertNull(study.getStudyIdentifier());
+    }
+    
+    @Test
+    public void trueByDefaultBooleansCannotBeChangedWithAbsentProperty() throws Exception {
+        // None of the true-by-default booleans are in this JSON, so we assume they are true. Must explicitly
+        // set to false in order to change them to false.
+        String json = makeJson("{ 'name':'Test Study [DynamoStudyTest]', 'sponsorName':'The Council on Test Studies', 'identifier':'test-dynamostudytest-ser', 'stormpathHref':'test', 'supportEmail':'bridge-testing+support@sagebase.org', 'technicalEmail':'bridge-testing+technical@sagebase.org', 'consentNotificationEmail':'bridge-testing+consent@sagebase.org', 'version':2, 'type':'Study' }");
+        
+        Study study = BridgeObjectMapper.get().readValue(json, Study.class);
+        assertTrue(study.isEmailVerificationEnabled());
+        assertTrue(study.isStrictUploadValidationEnabled());
+        assertTrue(study.isActive());
+    }
+
+    private String makeJson(String json) {
+        return json.replaceAll("'", "\"");
     }
     
     void assertEqualsAndNotNull(Object expected, Object actual) {
