@@ -1,27 +1,34 @@
 package org.sagebionetworks.bridge.play.controllers;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.sagebionetworks.bridge.Roles.ADMIN;
 import static org.sagebionetworks.bridge.Roles.DEVELOPER;
 import static org.sagebionetworks.bridge.Roles.RESEARCHER;
+import static org.sagebionetworks.bridge.TestUtils.makeJson;
 import static org.sagebionetworks.bridge.TestUtils.mockPlayContext;
+import static org.sagebionetworks.bridge.TestUtils.mockPlayContextWithJson;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import org.sagebionetworks.bridge.Roles;
 import org.sagebionetworks.bridge.TestConstants;
 import org.sagebionetworks.bridge.cache.CacheProvider;
+import org.sagebionetworks.bridge.dynamodb.DynamoStudy;
 import org.sagebionetworks.bridge.exceptions.UnauthorizedException;
 import org.sagebionetworks.bridge.json.BridgeObjectMapper;
 import org.sagebionetworks.bridge.models.accounts.User;
@@ -160,5 +167,52 @@ public class StudyControllerTest {
                 EmailVerificationStatusHolder.class);
         assertEquals(EmailVerificationStatus.VERIFIED, status.getStatus());
     }
+    
+    @Test
+    public void updateStudyIgnoresMissingProperties() throws Exception {
+        Study study = new DynamoStudy();
+        study.setEmailVerificationEnabled(true);
+        study.setHealthCodeExportEnabled(true);
+        study.setStrictUploadValidationEnabled(true);
+        
+        doReturn(mockSession).when(controller).getAuthenticatedSession(ADMIN);
+        when(mockStudyService.getStudy("new-study")).thenReturn(study);
+        when(mockStudyService.updateStudy(any(), eq(true))).thenReturn(study);
+        
+        mockPlayContextWithJson(makeJson("{}"));
+        
+        controller.updateStudy("new-study");
+        
+        ArgumentCaptor<Study> captor = ArgumentCaptor.forClass(Study.class);
+        verify(mockStudyService).updateStudy(captor.capture(), eq(true));
+        
+        Study updatedStudy = captor.getValue();
+        assertTrue(updatedStudy.isEmailVerificationEnabled());
+        assertTrue(updatedStudy.isHealthCodeExportEnabled());
+        assertTrue(updatedStudy.isStrictUploadValidationEnabled());
+    }
 
+    @Test
+    public void updateStudyCanUpdateFields() throws Exception {
+        Study study = new DynamoStudy();
+        study.setEmailVerificationEnabled(true);
+        study.setHealthCodeExportEnabled(true);
+        study.setStrictUploadValidationEnabled(true);
+        
+        doReturn(mockSession).when(controller).getAuthenticatedSession(ADMIN);
+        when(mockStudyService.getStudy("new-study")).thenReturn(study);
+        when(mockStudyService.updateStudy(any(), eq(true))).thenReturn(study);
+        
+        mockPlayContextWithJson(makeJson("{'emailVerificationEnabled': false, 'healthCodeExportEnabled': false, 'strictUploadValidationEnabled': false}"));
+        
+        controller.updateStudy("new-study");
+        
+        ArgumentCaptor<Study> captor = ArgumentCaptor.forClass(Study.class);
+        verify(mockStudyService).updateStudy(captor.capture(), eq(true));
+        
+        Study updatedStudy = captor.getValue();
+        assertFalse(updatedStudy.isEmailVerificationEnabled());
+        assertFalse(updatedStudy.isHealthCodeExportEnabled());
+        assertFalse(updatedStudy.isStrictUploadValidationEnabled());
+    }
 }

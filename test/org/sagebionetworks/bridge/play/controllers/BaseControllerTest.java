@@ -21,16 +21,20 @@ import org.junit.Test;
 import play.mvc.Http;
 
 import org.sagebionetworks.bridge.Roles;
+import org.sagebionetworks.bridge.TestUtils;
 import org.sagebionetworks.bridge.exceptions.InvalidEntityException;
 import org.sagebionetworks.bridge.exceptions.UnauthorizedException;
 import org.sagebionetworks.bridge.exceptions.UnsupportedVersionException;
 import org.sagebionetworks.bridge.json.BridgeObjectMapper;
 import org.sagebionetworks.bridge.models.ClientInfo;
+import org.sagebionetworks.bridge.models.accounts.Email;
 import org.sagebionetworks.bridge.models.accounts.User;
 import org.sagebionetworks.bridge.models.accounts.UserSession;
 import org.sagebionetworks.bridge.models.studies.Study;
+import org.sagebionetworks.bridge.models.studies.StudyIdentifierImpl;
 import org.sagebionetworks.bridge.play.controllers.BaseController;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
@@ -227,6 +231,18 @@ public class BaseControllerTest {
         mockHeader(ACCEPT_LANGUAGE, "FR,en-US");
         langs = controller.getLanguagesFromAcceptLanguageHeader();
         assertEquals(ImmutableSet.of("fr","en"), langs);
+    }
+    
+    @Test
+    public void testParseJsonTakesNode() throws Exception {
+        JsonNode jsonNode = BridgeObjectMapper.get().readTree(
+                TestUtils.makeJson("{'email':'test@test.com','study':'studyId'}"));
+        
+        BaseController controller = new SchedulePlanController();
+        
+        Email email = controller.parseJson(jsonNode, Email.class);
+        assertEquals("test@test.com", email.getEmail());
+        assertEquals(new StudyIdentifierImpl("studyId"), email.getStudyIdentifier());
     }
     
     private void mockHeader(String header, String value) throws Exception {

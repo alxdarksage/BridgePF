@@ -284,6 +284,10 @@ public abstract class BaseController extends Controller {
         throw new InvalidEntityException("Expected JSON in the request body is missing");
     }
     
+    @Nonnull <T> T parseJson(JsonNode jsonNode, Class<? extends T> clazz) {
+        return mapper.convertValue(jsonNode, clazz);
+    }
+    
     /**
      * Retrieves the metrics object from the cache. Can be null if the metrics is not in the cache.
      */

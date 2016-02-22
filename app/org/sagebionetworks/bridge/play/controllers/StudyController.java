@@ -1,5 +1,6 @@
 package org.sagebionetworks.bridge.play.controllers;
 
+import static org.sagebionetworks.bridge.json.JsonUtils.enforceExplicitSet;
 import static org.sagebionetworks.bridge.Roles.ADMIN;
 import static org.sagebionetworks.bridge.Roles.DEVELOPER;
 import static org.sagebionetworks.bridge.Roles.RESEARCHER;
@@ -22,6 +23,9 @@ import org.sagebionetworks.bridge.services.EmailVerificationService;
 import org.sagebionetworks.bridge.services.EmailVerificationStatus;
 import org.sagebionetworks.bridge.services.UploadCertificateService;
 import org.sagebionetworks.bridge.services.UserProfileService;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
@@ -96,10 +100,18 @@ public class StudyController extends BaseController {
 
     public Result updateStudy(String identifier) throws Exception {
         getAuthenticatedSession(ADMIN);
-
-        Study studyUpdate = parseJson(request(), Study.class);
+        Study study = studyService.getStudy(identifier);
+        
+        // If properties are missing from JSON, set them to the existing value so they are not changed by nullification.
+        JsonNode node = requestToJSON(request());
+        enforceExplicitSet(node, "emailVerificationEnabled", study.isEmailVerificationEnabled());
+        enforceExplicitSet(node, "healthCodeExportEnabled", study.isHealthCodeExportEnabled());
+        enforceExplicitSet(node, "strictUploadValidationEnabled", study.isStrictUploadValidationEnabled());
+        
+        Study studyUpdate = parseJson(node, Study.class);
         studyUpdate.setIdentifier(identifier);
         studyUpdate = studyService.updateStudy(studyUpdate, true);
+        
         return okResult(new VersionHolder(studyUpdate.getVersion()));
     }
 

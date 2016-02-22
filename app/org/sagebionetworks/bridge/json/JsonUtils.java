@@ -1,5 +1,7 @@
 package org.sagebionetworks.bridge.json;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -188,5 +190,17 @@ public class JsonUtils {
             }
         }
         return results;
+    }
+    
+    /**
+     * If the property does not exist, set the existing value as the property, so when deserialized, 
+     * we end up with the existing value.
+     */
+    public static void enforceExplicitSet(JsonNode node, String propertyName, boolean existingValue) {
+        checkArgument(node.isObject());
+        
+        if (!node.has(propertyName)) {
+            ((ObjectNode)node).put(propertyName, existingValue);
+        }
     }
 }

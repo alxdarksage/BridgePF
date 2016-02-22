@@ -312,4 +312,12 @@ public class TestUtils {
         }
         return set;
     }
+    
+    /**
+     * Create a JSON string with single quotes, which doesn't require escaping in Java. These are all converted
+     * to double quotes (a legal JSON string).
+     */
+    public static String makeJson(String json) {
+        return json.replaceAll("'", "\"");
+    }
  }
