@@ -44,6 +44,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.stormpath.sdk.account.AccountCriteria;
 import com.stormpath.sdk.account.AccountList;
+import com.stormpath.sdk.account.AccountOptions;
 import com.stormpath.sdk.account.Accounts;
 import com.stormpath.sdk.account.VerificationEmailRequest;
 import com.stormpath.sdk.account.VerificationEmailRequestBuilder;
@@ -190,13 +191,30 @@ public class StormpathAccountDao implements AccountDao {
             Directory directory = client.getResource(study.getStormpathHref(), Directory.class);
             List<SubpopulationGuid> subpopGuids = getSubpopulationGuids(study);
             
+            // Only returns the HREF of the account, does not load the object or sub-objects
             AuthenticationRequest<?,?> request = UsernamePasswordRequest.builder()
                     .setUsernameOrEmail(signIn.getEmail())
                     .setPassword(signIn.getPassword())
+                    //.withResponseOptions(UsernamePasswordRequest.options().withAccount())
                     .inAccountStore(directory).build();
             
             AuthenticationResult result = application.authenticateAccount(request);
             if (result.getAccount() != null) {
+                
+                // Eagerly load everything before proceeding. We're going here on instructions from Stormpath 
+                // on how to avoid the fact that many of the accessors in their SDK will lazily load objects 
+                // with further network calls, meaning that network errors can happen at times in our code 
+                // path that we don't anticipate. We'd rather fail here, if anywhere.
+                // My super unscientific testing indicates this does reduce time spent talking to Stormpath:
+                // tests with these changes 23m44.203s
+                // tests without these changes 23m58.274s
+                /*
+                AccountOptions<AccountOptions> opts = Accounts.options();
+                opts = opts.<AccountOptions>withCustomData();
+                opts = opts.<AccountOptions>withGroups();
+                opts = opts.<AccountOptions>withGroupMemberships();
+                com.stormpath.sdk.account.Account account = client.getResource(result.getAccount().getHref(), com.stormpath.sdk.account.Account.class, opts);
+                */
                 return new StormpathAccount(study.getStudyIdentifier(), subpopGuids, result.getAccount(), encryptors);
             }
         } catch (ResourceException e) {
