@@ -39,6 +39,7 @@ public class UserProfile {
     private String lastName;
     private String email;
     private Map<String,String> attributes;
+    private AccountStatus status;
 
     public UserProfile() {
         attributes = new HashMap<>();
@@ -48,6 +49,7 @@ public class UserProfile {
         UserProfile profile = new UserProfile();
         profile.setFirstName(JsonUtils.asText(node, FIRST_NAME_FIELD));
         profile.setLastName(JsonUtils.asText(node, LAST_NAME_FIELD));
+        profile.setStatus(JsonUtils.asEnum(node, STATUS_FIELD, AccountStatus.class));
         for (String attribute : attributes) {
             String value = JsonUtils.asText(node, attribute);
             if (value != null) {
@@ -81,6 +83,12 @@ public class UserProfile {
     }
     public void setEmail(String email) {
         this.email = email;
+    }
+    public AccountStatus getStatus() {
+        return status;
+    }
+    public void setStatus(AccountStatus status) {
+        this.status = status;
     }
     public void removeAttribute(String name) {
         if (isNotBlank(name)) {

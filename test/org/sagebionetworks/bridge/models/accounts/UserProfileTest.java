@@ -13,16 +13,30 @@ import com.google.common.collect.Sets;
 public class UserProfileTest {
 
     @Test
-    public void attributesSerializedCorrrectly() throws Exception {
+    public void canSerialize() {
         UserProfile profile = new UserProfile();
+        profile.setFirstName("firstName");
+        profile.setLastName("lastName");
+        profile.setEmail("email@email.com");
+        profile.setStatus(AccountStatus.UNVERIFIED);
         profile.setAttribute("foo", "bar");
         
-        String json = BridgeObjectMapper.get().writeValueAsString(profile);
-        assertEquals("{\"foo\":\"bar\",\"type\":\"UserProfile\"}", json);
+        JsonNode node = BridgeObjectMapper.get().valueToTree(profile);
+        // Attribute is included as part of profile object
+        assertEquals("bar", node.get("foo").asText());
+        assertEquals("firstName", node.get("firstName").asText());
+        assertEquals("lastName", node.get("lastName").asText());
+        assertEquals("email@email.com", node.get("email").asText());
+        assertEquals("unverified", node.get("status").asText());
+        assertEquals("UserProfile", node.get("type").asText());
         
-        JsonNode node = BridgeObjectMapper.get().readTree(json);
-        profile = UserProfile.fromJson(Sets.newHashSet("foo"), node);
-        assertEquals("bar", profile.getAttribute("foo"));
+        UserProfile deserProfile = UserProfile.fromJson(Sets.newHashSet("foo"), node);
+        assertEquals("bar", deserProfile.getAttribute("foo"));
+        assertEquals("firstName", deserProfile .getFirstName());
+        assertEquals("lastName", deserProfile.getLastName());
+        assertEquals(AccountStatus.UNVERIFIED, deserProfile.getStatus());
+        // Users are never allowed to submit JSON that changes their email:
+        assertNull(deserProfile.getEmail());
     }
 
     @Test
