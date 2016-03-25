@@ -12,6 +12,7 @@ import org.sagebionetworks.bridge.json.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Sets;
 
@@ -84,6 +85,9 @@ public class UserProfile {
     public void setEmail(String email) {
         this.email = email;
     }
+    // We use this object to capture status from a researcher update, but we never 
+    // show it to users, it is only exposed through the API through StudyParticipant.
+    @JsonIgnore
     public AccountStatus getStatus() {
         return status;
     }
