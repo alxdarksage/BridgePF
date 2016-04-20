@@ -41,7 +41,6 @@ import org.sagebionetworks.bridge.dao.ParticipantOption;
 import org.sagebionetworks.bridge.dao.ParticipantOption.SharingScope;
 import org.sagebionetworks.bridge.dynamodb.DynamoStudy;
 import org.sagebionetworks.bridge.exceptions.BadRequestException;
-import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
 import org.sagebionetworks.bridge.exceptions.EntityAlreadyExistsException;
 import org.sagebionetworks.bridge.exceptions.EntityNotFoundException;
 import org.sagebionetworks.bridge.exceptions.InvalidEntityException;
@@ -390,6 +389,9 @@ public class ParticipantServiceTest {
         when(accountDao.getAccount(STUDY, EMAIL)).thenReturn(account);
         when(healthId.getCode()).thenReturn(null);
         
+        when(healthCodeService.createMapping(STUDY.getStudyIdentifier())).thenReturn(healthId);
+        when(healthId.getId()).thenReturn("ABC");
+        
         StudyParticipant participant = participantService.getParticipant(STUDY, EMAIL);
         
         assertEquals("firstName", participant.getFirstName());
@@ -406,6 +408,8 @@ public class ParticipantServiceTest {
         assertNull(participant.getAttributes().get("attr1"));
         assertEquals("anAttribute2", participant.getAttributes().get("attr2"));
         assertTrue(participant.getConsentHistories().isEmpty());
+
+        verify(accountDao).updateAccount(STUDY, account);
     }
     
     private void mockGetAccount() {
@@ -584,14 +588,22 @@ public class ParticipantServiceTest {
         assertEquals("POWERS", options.get(EXTERNAL_IDENTIFIER));
     }
     
-    @Test(expected = BridgeServiceException.class)
+    @Test
     public void updateParticipantWithNoHealthCode() {
         STUDY.setExternalIdValidationEnabled(true);
         doReturn(null).when(healthCodeService).getMapping("healthId");
         doReturn(null).when(account).getHealthId();
         doReturn(account).when(accountDao).getAccount(STUDY, EMAIL);
         
+        doReturn(healthId).when(healthCodeService).createMapping(STUDY.getStudyIdentifier());
+        doReturn("healthId").when(healthId).getId();
+        doReturn("healthCode").when(healthId).getCode();
+        
+        doReturn(lookup).when(optionsService).getOptions("healthCode");
+        
         participantService.updateParticipant(STUDY, EMAIL, PARTICIPANT);
+        
+        verify(healthCodeService).createMapping(STUDY.getStudyIdentifier());
     }
     
     @Test

@@ -23,7 +23,6 @@ import org.sagebionetworks.bridge.dao.AccountDao;
 import org.sagebionetworks.bridge.dao.ParticipantOption;
 import org.sagebionetworks.bridge.dao.ParticipantOption.SharingScope;
 import org.sagebionetworks.bridge.exceptions.BadRequestException;
-import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
 import org.sagebionetworks.bridge.exceptions.EntityNotFoundException;
 import org.sagebionetworks.bridge.models.PagedResourceList;
 import org.sagebionetworks.bridge.models.accounts.Account;
@@ -97,24 +96,26 @@ public class ParticipantService {
         this.cacheProvider = cacheProvider;
     }
     
-    public StudyParticipant getParticipant(Study study, String email) {
+    public StudyParticipant getParticipant(Study study, String id) {
         checkNotNull(study);
-        checkArgument(isNotBlank(email));
+        checkArgument(isNotBlank(id));
         
         StudyParticipant.Builder participant = new StudyParticipant.Builder();
-        Account account = getAccountThrowingException(study, email);
-        String healthCode = getHealthCode(account);
+        Account account = getAccountThrowingException(study, id);
+        String healthCode = getHealthCode(study, account);
 
         List<Subpopulation> subpopulations = subpopService.getSubpopulations(study.getStudyIdentifier());
         for (Subpopulation subpop : subpopulations) {
+            List<UserConsentHistory> history = NO_HISTORY;
             if (healthCode != null) {
-                // always returns a list, even if empty
-                List<UserConsentHistory> history = consentService.getUserConsentHistory(study, subpop.getGuid(), healthCode, email);
-                participant.addConsentHistory(subpop.getGuid(), history);
-            } else {
-                // Create an empty history if there's no health Code.
-                participant.addConsentHistory(subpop.getGuid(), NO_HISTORY);
+                try { 
+                    history = consentService.getUserConsentHistory(study, subpop.getGuid(), healthCode, id);    
+                } catch(EntityNotFoundException e) {
+                    // A test account, probably created in Stormpath, had a history with a missing consent. If this happens,
+                    // the history should be treated as empty. Not sure why an account got into this state.
+                }
             }
+            participant.addConsentHistory(subpop.getGuid(), history);
         }
         // Accounts exist that have signatures but no health codes (when created but email is 
         // never verified, for example). Do not want roster generation to fail because of this,
@@ -197,11 +198,11 @@ public class ParticipantService {
             SignUp signUp = new SignUp(participant.getEmail(), participant.getPassword(), null, null);
             account = accountDao.signUp(study, signUp, study.isEmailVerificationEnabled());
             
-            healthCode = getHealthCodeThrowingException(account);
+            healthCode = getHealthCode(study, account);
         } else {
             account = getAccountThrowingException(study, id);
             
-            healthCode = getHealthCodeThrowingException(account);
+            healthCode = getHealthCode(study, account);
             
             // Verify now that the assignment is valid, or throw an exception before any other updates
             addValidatedExternalId(study, participant, healthCode);
@@ -267,22 +268,20 @@ public class ParticipantService {
         return account;
     }
     
-    private String getHealthCode(Account account) {
+    private String getHealthCode(Study study, Account account) {
+        HealthId healthId = null;
         if (account.getHealthId() != null) {
-            HealthId healthId = healthCodeService.getMapping(account.getHealthId());
-            if (healthId != null && healthId.getCode() != null) {
-                return healthId.getCode();
-            }
+            healthId = healthCodeService.getMapping(account.getHealthId());
+        }
+        if (healthId == null) {
+            healthId = healthCodeService.createMapping(study.getStudyIdentifier());
+            account.setHealthId(healthId.getId());
+            accountDao.updateAccount(study, account);
+        }
+        if (healthId != null && healthId.getCode() != null) {
+            return healthId.getCode();
         }
         return null;
-    }
-    
-    private String getHealthCodeThrowingException(Account account) {
-        String healthCode = getHealthCode(account);
-        if (healthCode == null) {
-            throw new BridgeServiceException("Participant cannot be updated (no health code exists for user).");    
-        }
-        return healthCode;
     }
     
 }
