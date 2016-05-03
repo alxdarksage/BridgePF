@@ -285,23 +285,34 @@ public class ConsentService {
      */
     public List<UserConsentHistory> getUserConsentHistory(Study study, SubpopulationGuid subpopGuid, String healthCode, String id) {
         Account account = accountDao.getAccount(study, id);
-        
+        boolean hasSignedActiveConsent = hasUserSignedActiveConsent(healthCode, subpopGuid);
+
         return account.getConsentSignatureHistory(subpopGuid).stream().map(signature -> {
-            UserConsent consent = userConsentDao.getUserConsent(
-                    healthCode, subpopGuid, signature.getSignedOn());
-            boolean hasSignedActiveConsent = hasUserSignedActiveConsent(healthCode, subpopGuid);
-            
             UserConsentHistory.Builder builder = new UserConsentHistory.Builder();
             builder.withName(signature.getName())
-                .withSubpopulationGuid(SubpopulationGuid.create(consent.getSubpopulationGuid()))
+                .withSubpopulationGuid(subpopGuid)
                 .withBirthdate(signature.getBirthdate())
                 .withImageData(signature.getImageData())
+                .withWithdrewOn(signature.getWithdrewOn())
                 .withImageMimeType(signature.getImageMimeType())
                 .withSignedOn(signature.getSignedOn())
                 .withHealthCode(healthCode)
-                .withWithdrewOn(consent.getWithdrewOn())
-                .withConsentCreatedOn(consent.getConsentCreatedOn())
                 .withHasSignedActiveConsent(hasSignedActiveConsent);
+            try {
+                UserConsent consent = userConsentDao.getUserConsent(healthCode, subpopGuid, signature.getSignedOn());
+                builder.withWithdrewOn(consent.getWithdrewOn());
+                builder.withConsentCreatedOn(consent.getConsentCreatedOn());
+            } catch(EntityNotFoundException e) {
+                // Rarely (100 records out of 18000 in mPower), The Stormpath JSON does not have a signedOn property,
+                // but there is a DDB record. This query doesn't find it because the ConsentSignature assigns a timestamp 
+                // that does not match a DDB record. Retrieve the full set of records because in every case examined, 
+                // there's one record in the history and that's the record we're looking for.
+                List<UserConsent> history = userConsentDao.getUserConsentHistory(healthCode, subpopGuid);
+                if (history.size() == 1) {
+                    builder.withWithdrewOn(history.get(0).getWithdrewOn());
+                    builder.withConsentCreatedOn(history.get(0).getConsentCreatedOn());
+                }
+            }
             return builder.build();
         }).collect(BridgeCollectors.toImmutableList());
     }

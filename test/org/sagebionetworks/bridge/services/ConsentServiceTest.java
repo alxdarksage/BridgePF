@@ -138,6 +138,33 @@ public class ConsentServiceTest {
         }
     }
     
+    // Testing what seems to be an obscure edge case here where some Stormpath Accounts have consent JSON like this:
+    // {"name":"Name","birthdate":"YYYY-MM-DD","imageData":"","imageMimeType":"image/png"}
+    // Which has no signedOn value. I find DDB records for this user, but those records cannot be retrieved without
+    // a signedOn date (though there is probably only one). Instead of throwing an error, for now, return what we do 
+    // have for this user.
+    @Test
+    public void databaseDoesNotHaveConsentForSignature() {
+        TestUser consentedTestUser = helper.getBuilder(ConsentServiceTest.class)
+                .withStudy(study).withConsent(true).build();        
+        try {
+            String healthCode = consentedTestUser.getUser().getHealthCode();
+            
+            userConsentDao.deleteAllConsents(healthCode, defaultSubpopulation.getGuid());
+            
+            List<UserConsentHistory> histories = consentService.getUserConsentHistory(consentedTestUser.getStudy(),
+                    defaultSubpopulation.getGuid(), healthCode, consentedTestUser.getId());
+            
+            assertEquals(1, histories.size());
+            
+            UserConsentHistory history = histories.get(0);
+            assertEquals(healthCode, history.getHealthCode());
+            assertEquals(defaultSubpopulation.getGuid().getGuid(), history.getSubpopulationGuid());
+        } finally {
+            helper.deleteUser(consentedTestUser);
+        }
+    }
+    
     @Test
     public void canGiveAndWithdrawConsent() {
         // Consent and verify, using signature image as well as other information. This combines information 
