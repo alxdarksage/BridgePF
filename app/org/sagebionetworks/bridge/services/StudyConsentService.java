@@ -180,7 +180,6 @@ public class StudyConsentService {
      */
     public StudyConsentView getConsent(SubpopulationGuid subpopGuid, long timestamp) {
         checkNotNull(subpopGuid);
-        checkArgument(timestamp > 0, "Timestamp is 0");
         
         StudyConsent consent = studyConsentDao.getConsent(subpopGuid, timestamp);
         if (consent == null) {
