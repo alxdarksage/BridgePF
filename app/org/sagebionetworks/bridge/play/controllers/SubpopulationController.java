@@ -36,13 +36,13 @@ public class SubpopulationController extends BaseController {
     }
 
     public Result getAllSubpopulations() {
-        UserSession session = getAuthenticatedSession(DEVELOPER);
+        UserSession session = getSessionInRole(DEVELOPER);
         
         List<Subpopulation> subpopulations = subpopService.getSubpopulations(session.getStudyIdentifier());
         return okResult(subpopulations);
     }
     public Result createSubpopulation() throws Exception {
-        UserSession session = getAuthenticatedSession(DEVELOPER);
+        UserSession session = getSessionInRole(DEVELOPER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         Subpopulation subpop = parseJson(request(), Subpopulation.class);
@@ -51,7 +51,7 @@ public class SubpopulationController extends BaseController {
         return createdResult(new GuidVersionHolder(subpop.getGuidString(), subpop.getVersion()));
     }
     public Result updateSubpopulation(String guid) {
-        UserSession session = getAuthenticatedSession(DEVELOPER);
+        UserSession session = getSessionInRole(DEVELOPER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         Subpopulation subpop = parseJson(request(), Subpopulation.class);
@@ -62,14 +62,14 @@ public class SubpopulationController extends BaseController {
         return okResult(new GuidVersionHolder(subpop.getGuidString(), subpop.getVersion()));
     }
     public Result getSubpopulation(String guid) {
-        UserSession session = getAuthenticatedSession(DEVELOPER, RESEARCHER);
+        UserSession session = getSessionInRole(DEVELOPER, RESEARCHER);
         SubpopulationGuid subpopGuid = SubpopulationGuid.create(guid);
 
         Subpopulation subpop = subpopService.getSubpopulation(session.getStudyIdentifier(), subpopGuid);
         return okResult(subpop);
     }
     public Result deleteSubpopulation(String guid, String physicalDeleteString) {
-        UserSession session = getAuthenticatedSession();
+        UserSession session = getSessionInRole();
         if (!session.isInRole(DELETE_ROLES)) {
             throw new UnauthorizedException();
         }

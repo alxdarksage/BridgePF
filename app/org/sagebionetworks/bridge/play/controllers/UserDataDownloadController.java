@@ -26,7 +26,7 @@ public class UserDataDownloadController extends BaseController {
      * any data to download to begin with.)
      */
     public Result requestUserData() throws JsonProcessingException {
-        UserSession session = getAuthenticatedAndConsentedSession();
+        UserSession session = getConsentedSession();
 
         StudyIdentifier studyIdentifier = session.getStudyIdentifier();
         DateRange dateRange = parseJson(request(), DateRange.class);

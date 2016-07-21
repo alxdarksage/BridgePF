@@ -61,14 +61,14 @@ public class StudyController extends BaseController {
     }
 
     public Result getCurrentStudy() throws Exception {
-        UserSession session = getAuthenticatedSession(DEVELOPER, RESEARCHER, ADMIN);
+        UserSession session = getSessionInRole(DEVELOPER, RESEARCHER, ADMIN);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         return ok(Study.STUDY_WRITER.writeValueAsString(study));
     }
 
     public Result updateStudyForDeveloper() throws Exception {
-        UserSession session = getAuthenticatedSession(DEVELOPER);
+        UserSession session = getSessionInRole(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
 
         Study studyUpdate = parseJson(request(), Study.class);
@@ -78,7 +78,7 @@ public class StudyController extends BaseController {
     }
 
     public Result updateStudy(String identifier) throws Exception {
-        getAuthenticatedSession(ADMIN);
+        getSessionInRole(ADMIN);
 
         Study studyUpdate = parseJson(request(), Study.class);
         studyUpdate.setIdentifier(identifier);
@@ -87,7 +87,7 @@ public class StudyController extends BaseController {
     }
 
     public Result getStudy(String identifier) throws Exception {
-        getAuthenticatedSession(ADMIN);
+        getSessionInRole(ADMIN);
 
         Study study = studyService.getStudy(identifier);
         return ok(Study.STUDY_WRITER.writeValueAsString(study));
@@ -99,13 +99,13 @@ public class StudyController extends BaseController {
             Collections.sort(studies, STUDY_COMPARATOR);
             return ok(Study.STUDY_LIST_WRITER.writeValueAsString(new ResourceList<Study>(studies)));
         }
-        getAuthenticatedSession(ADMIN);
+        getSessionInRole(ADMIN);
 
         return ok(Study.STUDY_WRITER.writeValueAsString(new ResourceList<Study>(studies)));
     }
 
     public Result createStudy() throws Exception {
-        getAuthenticatedSession(ADMIN);
+        getSessionInRole(ADMIN);
 
         Study study = parseJson(request(), Study.class);
         study = studyService.createStudy(study);
@@ -113,7 +113,7 @@ public class StudyController extends BaseController {
     }
 
     public Result deleteStudy(String identifier) throws Exception {
-        getAuthenticatedSession(ADMIN);
+        getSessionInRole(ADMIN);
         if (studyWhitelist.contains(identifier)) {
             return forbidden(Json.toJson(identifier + " is protected by whitelist."));
         }
@@ -122,7 +122,7 @@ public class StudyController extends BaseController {
     }
 
     public Result getStudyPublicKeyAsPem() throws Exception {
-        UserSession session = getAuthenticatedSession(DEVELOPER);
+        UserSession session = getSessionInRole(DEVELOPER);
 
         String pem = uploadCertificateService.getPublicKeyAsPem(session.getStudyIdentifier());
 
@@ -130,7 +130,7 @@ public class StudyController extends BaseController {
     }
     
     public Result getEmailStatus() throws Exception {
-        UserSession session = getAuthenticatedSession(DEVELOPER);
+        UserSession session = getSessionInRole(DEVELOPER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         EmailVerificationStatus status = emailVerificationService.getEmailStatus(study.getSupportEmail());
@@ -138,7 +138,7 @@ public class StudyController extends BaseController {
     }
     
     public Result verifyEmail() throws Exception {
-        UserSession session = getAuthenticatedSession(DEVELOPER);
+        UserSession session = getSessionInRole(DEVELOPER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         EmailVerificationStatus status = emailVerificationService.verifyEmailAddress(study.getSupportEmail());

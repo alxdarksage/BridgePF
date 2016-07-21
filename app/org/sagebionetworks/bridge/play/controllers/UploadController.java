@@ -39,12 +39,14 @@ public class UploadController extends BaseController {
 
     /** Gets validation status and messages for the given upload ID. */
     public Result getValidationStatus(String uploadId) throws JsonProcessingException {
-        UserSession session = getAuthenticatedAndConsentedSession();
+        UserSession session = getConsentedOrInRoleSession(Roles.RESEARCHER);
         
-        // Validate that this user owns the upload
-        Upload upload = uploadService.getUpload(uploadId);
-        if (!session.getHealthCode().equals(upload.getHealthCode())) {
-            throw new UnauthorizedException();
+        // Validate that this user owns the upload, *if* not a researcher
+        if (!session.isInRole(Roles.RESEARCHER)) {
+            Upload upload = uploadService.getUpload(uploadId);
+            if (!session.getHealthCode().equals(upload.getHealthCode())) {
+                throw new UnauthorizedException();
+            }
         }
         
         UploadValidationStatus validationStatus = uploadService.getUploadValidationStatus(uploadId);
@@ -54,7 +56,7 @@ public class UploadController extends BaseController {
     }
 
     public Result upload() throws Exception {
-        UserSession session = getAuthenticatedAndConsentedSession();
+        UserSession session = getConsentedSession();
         UploadRequest uploadRequest = UploadRequest.fromJson(requestToJSON(request()));
         UploadSession uploadSession = uploadService.createUpload(session.getStudyIdentifier(), session.getParticipant(),
                 uploadRequest);
@@ -78,7 +80,7 @@ public class UploadController extends BaseController {
         }
 
         // User can be a worker account (get study and health code from the upload itself)...
-        UserSession session = getAuthenticatedSession();
+        UserSession session = getSessionInRole();
         if (session.isInRole(Roles.WORKER)) {
             
             Upload upload = uploadService.getUpload(uploadId);
@@ -90,7 +92,7 @@ public class UploadController extends BaseController {
         
         // Or, the consented user that originally made the upload request. Check that health codes match.
         // Do not need to look up the study.
-        session = getAuthenticatedAndConsentedSession();
+        session = getConsentedSession();
         
         Upload upload = uploadService.getUpload(uploadId);
         if (!session.getHealthCode().equals(upload.getHealthCode())) {

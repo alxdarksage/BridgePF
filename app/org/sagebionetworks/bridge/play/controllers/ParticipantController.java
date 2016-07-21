@@ -47,7 +47,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result getSelfParticipant() throws Exception {
-        UserSession session = getAuthenticatedSession();
+        UserSession session = getSessionInRole();
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         StudyParticipant participant = participantService.getParticipant(study, session.getId(), false);
@@ -58,7 +58,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result updateSelfParticipant() throws Exception {
-        UserSession session = getAuthenticatedSession();
+        UserSession session = getSessionInRole();
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         // By copying only values that were included in the JSON onto the existing StudyParticipant,
@@ -83,7 +83,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result getParticipants(String offsetByString, String pageSizeString, String emailFilter) {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         
         Study study = studyService.getStudy(session.getStudyIdentifier());
         int offsetBy = getIntOrDefault(offsetByString, 0);
@@ -94,7 +94,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result createParticipant() throws Exception {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         StudyParticipant participant = parseJson(request(), StudyParticipant.class);
@@ -105,7 +105,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result getParticipant(String userId) throws Exception {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         StudyParticipant participant = participantService.getParticipant(study, userId, true);
@@ -119,7 +119,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result updateParticipant(String userId) {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         StudyParticipant participant = parseJson(request(), StudyParticipant.class);
@@ -133,7 +133,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result signOut(String userId) throws Exception {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         participantService.signUserOut(study, userId);
@@ -142,7 +142,7 @@ public class ParticipantController extends BaseController {
     }
 
     public Result requestResetPassword(String userId) throws Exception {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         participantService.requestResetPassword(study, userId);
@@ -151,7 +151,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result getActivityHistory(String userId, String offsetKey, String pageSizeString) throws Exception {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         Integer pageSize = (pageSizeString != null) ? Integer.parseInt(pageSizeString,10) : null;
@@ -162,7 +162,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result deleteActivities(String userId) throws Exception {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         participantService.deleteActivities(study, userId);
@@ -171,7 +171,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result resendEmailVerification(String userId) {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         participantService.resendEmailVerification(study, userId);
@@ -180,7 +180,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result resendConsentAgreement(String userId, String guid) {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         SubpopulationGuid subpopGuid = SubpopulationGuid.create(guid);
@@ -190,7 +190,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result withdrawFromAllConsents(String userId) {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         Withdrawal withdrawal = parseJson(request(), Withdrawal.class);
@@ -202,7 +202,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result getUploads(String userId, String startTimeString, String endTimeString) {
-        UserSession session = getAuthenticatedSession(RESEARCHER);
+        UserSession session = getSessionInRole(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         DateTime startTime = getDateTimeOrDefault(startTimeString, null);

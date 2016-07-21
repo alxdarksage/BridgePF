@@ -80,7 +80,7 @@ public class ExternalIdControllerTest {
         when(session.getParticipant()).thenReturn(participant);
         when(session.getStudyIdentifier()).thenReturn(TestConstants.TEST_STUDY);
         
-        doReturn(session).when(controller).getAuthenticatedSession(Roles.DEVELOPER);
+        doReturn(session).when(controller).getSessionInRole(Roles.DEVELOPER);
 
         study = new DynamoStudy();
         when(studyService.getStudy(TestConstants.TEST_STUDY)).thenReturn(study);

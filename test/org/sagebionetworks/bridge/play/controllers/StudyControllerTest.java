@@ -106,7 +106,7 @@ public class StudyControllerTest {
     
     @Test
     public void canGetCmsPublicKeyPemFile() throws Exception {
-        doReturn(mockSession).when(controller).getAuthenticatedSession(DEVELOPER);
+        doReturn(mockSession).when(controller).getSessionInRole(DEVELOPER);
         
         StudyParticipant participant = new StudyParticipant.Builder()
                 .withHealthCode("healthCode")
@@ -123,7 +123,7 @@ public class StudyControllerTest {
     
     @Test
     public void getEmailStatus() throws Exception {
-        doReturn(mockSession).when(controller).getAuthenticatedSession(DEVELOPER);
+        doReturn(mockSession).when(controller).getSessionInRole(DEVELOPER);
         
         Result result = controller.getEmailStatus();
         
@@ -135,7 +135,7 @@ public class StudyControllerTest {
     
     @Test
     public void verifyEmail() throws Exception {
-        doReturn(mockSession).when(controller).getAuthenticatedSession(DEVELOPER);
+        doReturn(mockSession).when(controller).getSessionInRole(DEVELOPER);
         
         when(mockVerificationService.verifyEmailAddress(EMAIL_ADDRESS)).thenReturn(EmailVerificationStatus.VERIFIED);
         

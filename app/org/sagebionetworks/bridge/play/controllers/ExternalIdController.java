@@ -32,7 +32,7 @@ public class ExternalIdController extends BaseController {
     }
     
     public Result getExternalIds(String offsetKey, String pageSizeString, String idFilter, String assignmentFilterString) {
-        UserSession session = getAuthenticatedSession(DEVELOPER);
+        UserSession session = getSessionInRole(DEVELOPER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         // Play will not convert these to null if they are not included in the query string, so we must do the conversion.
@@ -45,7 +45,7 @@ public class ExternalIdController extends BaseController {
     }
     
     public Result addExternalIds() throws Exception {
-        UserSession session = getAuthenticatedSession(DEVELOPER);
+        UserSession session = getSessionInRole(DEVELOPER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         List<String> externalIdentifiers = MAPPER.convertValue(requestToJSON(request()), EXTERNAL_ID_TYPE_REF);
@@ -55,7 +55,7 @@ public class ExternalIdController extends BaseController {
     }
     
     public Result deleteExternalIds() throws Exception {
-        UserSession session = getAuthenticatedSession(DEVELOPER);
+        UserSession session = getSessionInRole(DEVELOPER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         String[] externalIds = request().queryString().get("externalId");

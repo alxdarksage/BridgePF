@@ -120,7 +120,7 @@ public class ScheduledActivityControllerTest {
         controller.setStudyService(studyService);
         controller.setCacheProvider(cacheProvider);
         controller.setAccountDao(accountDao);
-        doReturn(session).when(controller).getAuthenticatedAndConsentedSession();
+        doReturn(session).when(controller).getConsentedSession();
         
         clientInfo = ClientInfo.fromUserAgentCache("App Name/4 SDK/2");
         doReturn(clientInfo).when(controller).getClientInfoFromUserAgentHeader();

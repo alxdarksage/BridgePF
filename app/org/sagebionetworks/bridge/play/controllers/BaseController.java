@@ -53,7 +53,6 @@ import com.amazonaws.util.Throwables;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
 
 public abstract class BaseController extends Controller {
 
@@ -114,8 +113,8 @@ public abstract class BaseController extends Controller {
      * Retrieve user's session using the Bridge-Session header or cookie, throwing an exception if the session doesn't
      * exist (user not authorized), consent has not been given or the client app version is not supported.
      */
-    UserSession getAuthenticatedAndConsentedSession() throws NotAuthenticatedException, ConsentRequiredException, UnsupportedVersionException {
-        UserSession session = getAuthenticatedSession();
+    UserSession getConsentedSession() throws NotAuthenticatedException, ConsentRequiredException, UnsupportedVersionException {
+        UserSession session = getSessionInRole();
         Study study = studyService.getStudy(session.getStudyIdentifier());        
         verifySupportedVersionOrThrowException(study);
         if (!session.doesConsent()) {
@@ -125,16 +124,37 @@ public abstract class BaseController extends Controller {
     }
 
     /**
+     * Retrieve user's session and validate that they are either 1) a participant who has consented to research, 
+     * OR 2) a user in a specific role.
+     */
+    UserSession getConsentedOrInRoleSession(Roles... roles) {
+        UserSession session = getSessionInRole();
+        Study study = studyService.getStudy(session.getStudyIdentifier());        
+        verifySupportedVersionOrThrowException(study);
+        if (roles != null) {
+            for (Roles role : roles) {
+                if (session.isInRole(role)) {
+                    return session;
+                }
+            }
+        }
+        if (!session.doesConsent()) {
+            throw new ConsentRequiredException(session);
+        }
+        return session;
+    }
+    
+    /**
      * Retrieve a user's session or throw an exception if the user is not authenticated. 
      * User does not have to give consent. If roles are provided, user must have one of 
      * the specified roles or an authorization exception will be thrown.
      */
-    UserSession getAuthenticatedSession(Roles... roles) {
+    UserSession getSessionInRole(Roles... roles) {
         final UserSession session = getSessionIfItExists();
         if (session == null || !session.isAuthenticated()) {
             throw new NotAuthenticatedException();
         }
-        if (roles == null || roles.length == 0 || session.isInRole(Sets.newHashSet(roles))) {
+        if (roles == null || roles.length == 0 || session.isInRole(roles)) {
             return session;
         }
         throw new UnauthorizedException();

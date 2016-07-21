@@ -28,7 +28,7 @@ public class UserManagementController extends BaseController {
     }
 
     public Result createUser() throws Exception {
-        UserSession session = getAuthenticatedSession(ADMIN);
+        UserSession session = getSessionInRole(ADMIN);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         JsonNode node = requestToJSON(request());
@@ -42,7 +42,7 @@ public class UserManagementController extends BaseController {
     }
 
     public Result deleteUser(String userId) throws Exception {
-        UserSession session = getAuthenticatedSession(ADMIN);
+        UserSession session = getSessionInRole(ADMIN);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         userAdminService.deleteUser(study, userId);

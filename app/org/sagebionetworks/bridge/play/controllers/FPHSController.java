@@ -54,7 +54,7 @@ public class FPHSController extends BaseController {
         return okResult(FPHSExternalIdentifier.create(externalId.getIdentifier()));
     }
     public Result registerExternalIdentifier() throws Exception {
-        UserSession session = getAuthenticatedSession();
+        UserSession session = getSessionInRole();
         
         ExternalIdentifier externalId = parseJson(request(), ExternalIdentifier.class);
         fphsService.registerExternalIdentifier(session.getStudyIdentifier(), session.getHealthCode(), externalId);
@@ -78,14 +78,14 @@ public class FPHSController extends BaseController {
         return okResult("External identifier added to user profile.");
     }
     public Result getExternalIdentifiers() throws Exception {
-        getAuthenticatedSession(ADMIN);
+        getSessionInRole(ADMIN);
         
         List<FPHSExternalIdentifier> identifiers = fphsService.getExternalIdentifiers();
         
         return okResult(identifiers);
     }
     public Result addExternalIdentifiers() throws Exception {
-        getAuthenticatedSession(ADMIN);
+        getSessionInRole(ADMIN);
         
         List<FPHSExternalIdentifier> externalIds = MAPPER.convertValue(requestToJSON(request()), EXTERNAL_ID_TYPE_REF);
         fphsService.addExternalIdentifiers(externalIds);

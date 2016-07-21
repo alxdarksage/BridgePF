@@ -21,14 +21,14 @@ public class CacheAdminController extends BaseController {
     }
     
     public Result listItems() throws Exception {
-        getAuthenticatedSession(ADMIN);
+        getSessionInRole(ADMIN);
         
         Set<String> keys = cacheAdminService.listItems();
         return okResult(keys);
     }
     
     public Result removeItem(String cacheKey) {
-        getAuthenticatedSession(ADMIN);
+        getSessionInRole(ADMIN);
         
         cacheAdminService.removeItem(cacheKey);
         return okResult("Item removed from cache.");

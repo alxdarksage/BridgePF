@@ -128,19 +128,19 @@ public class AuthenticationControllerMockTest {
     @Test(expected = NotAuthenticatedException.class)
     public void getAuthenticatedSessionNullToken() {
         doReturn(null).when(controller).getSessionToken();
-        controller.getAuthenticatedSession();
+        controller.getSessionInRole();
     }
 
     @Test(expected = NotAuthenticatedException.class)
     public void getAuthenticatedSessionEmptyToken() {
         doReturn("").when(controller).getSessionToken();
-        controller.getAuthenticatedSession();
+        controller.getSessionInRole();
     }
 
     @Test(expected = NotAuthenticatedException.class)
     public void getAuthenticatedSessionBlankToken() {
         doReturn("   ").when(controller).getSessionToken();
-        controller.getAuthenticatedSession();
+        controller.getSessionInRole();
     }
 
     @Test(expected = NotAuthenticatedException.class)
@@ -155,7 +155,7 @@ public class AuthenticationControllerMockTest {
         when(authenticationService.getSession(TEST_SESSION_TOKEN)).thenReturn(null);
 
         // execute
-        controller.getAuthenticatedSession();
+        controller.getSessionInRole();
     }
 
     @Test(expected = NotAuthenticatedException.class)
@@ -172,7 +172,7 @@ public class AuthenticationControllerMockTest {
         when(authenticationService.getSession(TEST_SESSION_TOKEN)).thenReturn(session);
 
         // execute
-        controller.getAuthenticatedSession();
+        controller.getSessionInRole();
     }
 
     @Test
@@ -188,7 +188,7 @@ public class AuthenticationControllerMockTest {
         when(authenticationService.getSession(TEST_SESSION_TOKEN)).thenReturn(session);
 
         // execute and validate
-        UserSession retVal = controller.getAuthenticatedSession();
+        UserSession retVal = controller.getSessionInRole();
         assertSame(session, retVal);
         assertSessionInfoInMetrics(metrics);
     }
