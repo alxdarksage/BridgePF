@@ -113,7 +113,7 @@ public abstract class BaseController extends Controller {
      * Retrieve user's session using the Bridge-Session header or cookie, throwing an exception if the session doesn't
      * exist (user not authorized), consent has not been given or the client app version is not supported.
      */
-    UserSession getConsentedSession() throws NotAuthenticatedException, ConsentRequiredException, UnsupportedVersionException {
+    UserSession getAuthenticatedAndConsentedSession() throws NotAuthenticatedException, ConsentRequiredException, UnsupportedVersionException {
         return getConsentedOrInRoleSession();
     }
 

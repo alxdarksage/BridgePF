@@ -56,7 +56,7 @@ public class UploadController extends BaseController {
     }
 
     public Result upload() throws Exception {
-        UserSession session = getConsentedSession();
+        UserSession session = getAuthenticatedAndConsentedSession();
         UploadRequest uploadRequest = UploadRequest.fromJson(requestToJSON(request()));
         UploadSession uploadSession = uploadService.createUpload(session.getStudyIdentifier(), session.getParticipant(),
                 uploadRequest);
@@ -92,7 +92,7 @@ public class UploadController extends BaseController {
         
         // Or, the consented user that originally made the upload request. Check that health codes match.
         // Do not need to look up the study.
-        session = getConsentedSession();
+        session = getAuthenticatedAndConsentedSession();
         
         Upload upload = uploadService.getUpload(uploadId);
         if (!session.getHealthCode().equals(upload.getHealthCode())) {

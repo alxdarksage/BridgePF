@@ -39,7 +39,7 @@ public class ScheduleController extends BaseController {
     
     @Deprecated
     public Result getSchedulesV1() throws Exception {
-        getConsentedSession();
+        getAuthenticatedAndConsentedSession();
         return okResult(Collections.emptyList());
     }
     
@@ -65,7 +65,7 @@ public class ScheduleController extends BaseController {
     }
     
     private List<Schedule> getSchedulesInternal() {
-        UserSession session = getConsentedSession();
+        UserSession session = getAuthenticatedAndConsentedSession();
         StudyIdentifier studyId = session.getStudyIdentifier();
         ClientInfo clientInfo = getClientInfoFromUserAgentHeader();
 

@@ -44,7 +44,7 @@ public class UserDataDownloadControllerTest {
         // spy controller
         UserDataDownloadController controller = spy(new UserDataDownloadController());
         controller.setUserDataDownloadService(mockService);
-        doReturn(mockSession).when(controller).getConsentedSession();
+        doReturn(mockSession).when(controller).getAuthenticatedAndConsentedSession();
 
         // execute and validate
         Result result = controller.requestUserData();

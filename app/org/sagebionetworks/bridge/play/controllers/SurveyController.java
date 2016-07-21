@@ -85,7 +85,7 @@ public class SurveyController extends BaseController {
     }
 
     public Result getSurveyMostRecentlyPublishedVersionForUser(String surveyGuid) throws Exception {
-        UserSession session = getConsentedSession();
+        UserSession session = getAuthenticatedAndConsentedSession();
         
         return getCachedSurveyMostRecentlyPublishedInternal(surveyGuid, session);
     }
@@ -125,7 +125,7 @@ public class SurveyController extends BaseController {
     }
 
     public Result getSurveyForUser(String surveyGuid, String createdOnString) throws Exception {
-        UserSession session = getConsentedSession();
+        UserSession session = getAuthenticatedAndConsentedSession();
         
         return getCachedSurveyInternal(surveyGuid, createdOnString, session);
     }

@@ -68,7 +68,7 @@ public class ScheduledActivityController extends BaseController {
     }
 
     public Result updateScheduledActivities() throws Exception {
-        UserSession session = getConsentedSession();
+        UserSession session = getAuthenticatedAndConsentedSession();
 
         List<ScheduledActivity> scheduledActivities = MAPPER.convertValue(requestToJSON(request()),
                 scheduledActivityTypeRef);
@@ -91,7 +91,7 @@ public class ScheduledActivityController extends BaseController {
     
     private List<ScheduledActivity> getScheduledActivitiesInternal(String untilString, String offset, String daysAhead)
             throws Exception {
-        UserSession session = getConsentedSession();
+        UserSession session = getAuthenticatedAndConsentedSession();
 
         DateTime endsOn = null;
         DateTimeZone zone = null;

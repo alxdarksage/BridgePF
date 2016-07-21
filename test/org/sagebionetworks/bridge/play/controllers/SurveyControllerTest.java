@@ -134,7 +134,7 @@ public class SurveyControllerTest {
         session = new UserSession(participant);
         session.setStudyIdentifier(new StudyIdentifierImpl(studyIdentifier));
         doReturn(session).when(controller).getSessionInRole();
-        doReturn(session).when(controller).getConsentedSession();
+        doReturn(session).when(controller).getAuthenticatedAndConsentedSession();
         doReturn(session).when(controller).getSessionInRole(any(Roles.class));
     }
     

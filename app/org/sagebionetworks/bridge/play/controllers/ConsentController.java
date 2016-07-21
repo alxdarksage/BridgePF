@@ -40,7 +40,7 @@ public class ConsentController extends BaseController {
 
     @Deprecated
     public Result getConsentSignature() throws Exception {
-        final UserSession session = getConsentedSession();
+        final UserSession session = getAuthenticatedAndConsentedSession();
         return getConsentSignatureV2(session.getStudyIdentifier().getIdentifier());
     }
 
@@ -58,7 +58,7 @@ public class ConsentController extends BaseController {
 
     @Deprecated
     public Result emailCopy() throws Exception {
-        final UserSession session = getConsentedSession();
+        final UserSession session = getAuthenticatedAndConsentedSession();
         
         return emailCopyV2(session.getStudyIdentifier().getIdentifier());
     }
@@ -82,7 +82,7 @@ public class ConsentController extends BaseController {
     
     @Deprecated
     public Result withdrawConsent() throws Exception {
-        final UserSession session = getConsentedSession();
+        final UserSession session = getAuthenticatedAndConsentedSession();
         final Study study = studyService.getStudy(session.getStudyIdentifier());
         
         return withdrawConsentV2(study.getIdentifier());
@@ -91,7 +91,7 @@ public class ConsentController extends BaseController {
     // V2: consent to a specific subpopulation
     
     public Result getConsentSignatureV2(String guid) throws Exception {
-        final UserSession session = getConsentedSession();
+        final UserSession session = getAuthenticatedAndConsentedSession();
         final Study study = studyService.getStudy(session.getStudyIdentifier());
 
         ConsentSignature sig = consentService.getConsentSignature(study, SubpopulationGuid.create(guid), session.getId());
@@ -103,7 +103,7 @@ public class ConsentController extends BaseController {
     }
     
     public Result withdrawConsentV2(String guid) throws Exception {
-        final UserSession session = getConsentedSession();
+        final UserSession session = getAuthenticatedAndConsentedSession();
         final Withdrawal withdrawal = parseJson(request(), Withdrawal.class);
         final Study study = studyService.getStudy(session.getStudyIdentifier());
         final long withdrewOn = DateTime.now().getMillis();
@@ -121,7 +121,7 @@ public class ConsentController extends BaseController {
     }
     
     public Result withdrawFromAllConsents() {
-        final UserSession session = getConsentedSession();
+        final UserSession session = getAuthenticatedAndConsentedSession();
         final Withdrawal withdrawal = parseJson(request(), Withdrawal.class);
         final Study study = studyService.getStudy(session.getStudyIdentifier());
         final long withdrewOn = DateTime.now().getMillis();
@@ -132,7 +132,7 @@ public class ConsentController extends BaseController {
     }
     
     public Result emailCopyV2(String guid) {
-        final UserSession session = getConsentedSession();
+        final UserSession session = getAuthenticatedAndConsentedSession();
         final Study study = studyService.getStudy(session.getStudyIdentifier());
 
         consentService.emailConsentAgreement(study, SubpopulationGuid.create(guid), session.getParticipant());
@@ -140,7 +140,7 @@ public class ConsentController extends BaseController {
     }
     
     Result changeSharingScope(SharingScope sharingScope, String message) {
-        final UserSession session = getConsentedSession();
+        final UserSession session = getAuthenticatedAndConsentedSession();
         final Study study = studyService.getStudy(session.getStudyIdentifier());
         
         updateSharingStatusAndSession(study, session, sharingScope);

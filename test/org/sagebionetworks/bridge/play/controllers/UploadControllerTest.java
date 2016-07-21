@@ -118,7 +118,7 @@ public class UploadControllerTest {
     @Test
     public void uploadCompleteAcceptsConsentedUser() throws Exception {
         doReturn(consentedUserSession).when(controller).getSessionInRole();
-        doReturn(consentedUserSession).when(controller).getConsentedSession();
+        doReturn(consentedUserSession).when(controller).getAuthenticatedAndConsentedSession();
         TestUtils.mockPlayContext();
         
         Result result = controller.uploadComplete(UPLOAD_ID);
@@ -137,7 +137,7 @@ public class UploadControllerTest {
         doReturn(false).when(otherUserSession).isInRole(Roles.WORKER);
         
         doReturn(otherUserSession).when(controller).getSessionInRole();
-        doReturn(otherUserSession).when(controller).getConsentedSession();
+        doReturn(otherUserSession).when(controller).getAuthenticatedAndConsentedSession();
         TestUtils.mockPlayContext();
         
         try {

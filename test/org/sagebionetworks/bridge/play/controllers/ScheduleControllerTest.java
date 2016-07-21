@@ -85,7 +85,7 @@ public class ScheduleControllerTest {
         UserSession session = new UserSession();
         session.setStudyIdentifier(studyId);
         
-        doReturn(session).when(controller).getConsentedSession();
+        doReturn(session).when(controller).getAuthenticatedAndConsentedSession();
         doReturn(clientInfo).when(controller).getClientInfoFromUserAgentHeader();
         
         TestUtils.mockPlayContext();
