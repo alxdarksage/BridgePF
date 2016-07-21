@@ -71,7 +71,7 @@ public class UserProfileController extends BaseController {
     }
 
     public Result getUserProfile() throws Exception {
-        final UserSession session = getSessionInRole();
+        final UserSession session = getAuthenticatedSession();
         final Study study = studyService.getStudy(session.getStudyIdentifier());
         final String userId = session.getId();
         
@@ -99,7 +99,7 @@ public class UserProfileController extends BaseController {
     }
 
     public Result updateUserProfile() throws Exception {
-        UserSession session = getSessionInRole();
+        UserSession session = getAuthenticatedSession();
         Study study = studyService.getStudy(session.getStudyIdentifier());
         String userId = session.getId();
         
@@ -130,7 +130,7 @@ public class UserProfileController extends BaseController {
     }
     
     public Result createExternalIdentifier() throws Exception {
-        UserSession session = getSessionInRole();
+        UserSession session = getAuthenticatedSession();
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         ExternalIdentifier externalId = parseJson(request(), ExternalIdentifier.class);
@@ -141,7 +141,7 @@ public class UserProfileController extends BaseController {
     }
     
     public Result getDataGroups() throws Exception {
-        UserSession session = getSessionInRole();
+        UserSession session = getAuthenticatedSession();
         
         Set<String> dataGroups = optionsService.getOptions(
                 session.getHealthCode()).getStringSet(DATA_GROUPS);
@@ -157,7 +157,7 @@ public class UserProfileController extends BaseController {
     }
     
     public Result updateDataGroups() throws Exception {
-        UserSession session = getSessionInRole();
+        UserSession session = getAuthenticatedSession();
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         StudyParticipant participant = participantService.getParticipant(study, session.getId(), false);

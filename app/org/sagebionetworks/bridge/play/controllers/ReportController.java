@@ -65,7 +65,7 @@ public class ReportController extends BaseController {
      * defaults to list of study identifiers.
      */
     public Result getReportIndices(String type) throws Exception {
-        UserSession session = getSessionInRole();
+        UserSession session = getAuthenticatedSession();
         ReportType reportType = ("participant".equals(type)) ? ReportType.PARTICIPANT : ReportType.STUDY;
         
         ReportTypeResourceList<? extends ReportIndex> indices = reportService.getReportIndices(session.getStudyIdentifier(), reportType);
@@ -78,7 +78,7 @@ public class ReportController extends BaseController {
      * components that haven't sent the correct headers in the past).
      */
     public Result getParticipantReport(String identifier, String startDateString, String endDateString) {
-        UserSession session = getSessionInRole();
+        UserSession session = getAuthenticatedSession();
 
         LocalDate startDate = parseDateHelper(startDateString);
         LocalDate endDate = parseDateHelper(endDateString);
@@ -190,7 +190,7 @@ public class ReportController extends BaseController {
      * be intended for end users, and these do not expose user-specific information.
      */
     public Result getStudyReport(String identifier, String startDateString, String endDateString) {
-        UserSession session = getSessionInRole();
+        UserSession session = getAuthenticatedSession();
         
         LocalDate startDate = parseDateHelper(startDateString);
         LocalDate endDate = parseDateHelper(endDateString);

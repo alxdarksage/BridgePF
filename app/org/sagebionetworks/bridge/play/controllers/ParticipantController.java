@@ -47,7 +47,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result getSelfParticipant() throws Exception {
-        UserSession session = getSessionInRole();
+        UserSession session = getAuthenticatedSession();
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         StudyParticipant participant = participantService.getParticipant(study, session.getId(), false);
@@ -58,7 +58,7 @@ public class ParticipantController extends BaseController {
     }
     
     public Result updateSelfParticipant() throws Exception {
-        UserSession session = getSessionInRole();
+        UserSession session = getAuthenticatedSession();
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         // By copying only values that were included in the JSON onto the existing StudyParticipant,

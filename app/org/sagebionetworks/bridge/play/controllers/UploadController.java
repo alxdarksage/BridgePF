@@ -80,7 +80,7 @@ public class UploadController extends BaseController {
         }
 
         // User can be a worker account (get study and health code from the upload itself)...
-        UserSession session = getSessionInRole();
+        UserSession session = getConsentedOrInRoleSession(Roles.WORKER);
         if (session.isInRole(Roles.WORKER)) {
             
             Upload upload = uploadService.getUpload(uploadId);

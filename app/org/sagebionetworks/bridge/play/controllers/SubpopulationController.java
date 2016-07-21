@@ -25,8 +25,6 @@ import play.mvc.Result;
 
 @Controller
 public class SubpopulationController extends BaseController {
-
-    private static final Set<Roles> DELETE_ROLES = Sets.newHashSet(ADMIN, DEVELOPER);
     
     private SubpopulationService subpopService;
     
@@ -69,10 +67,8 @@ public class SubpopulationController extends BaseController {
         return okResult(subpop);
     }
     public Result deleteSubpopulation(String guid, String physicalDeleteString) {
-        UserSession session = getSessionInRole();
-        if (!session.isInRole(DELETE_ROLES)) {
-            throw new UnauthorizedException();
-        }
+        UserSession session = getSessionInRole(ADMIN, DEVELOPER);
+
         // Only admins can request a physical delete.
         boolean physicalDelete = ("true".equals(physicalDeleteString));
         if (physicalDelete && !session.isInRole(ADMIN)) {

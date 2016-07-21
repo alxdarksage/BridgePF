@@ -91,14 +91,12 @@ public class SurveyController extends BaseController {
     }
     
     public Result getSurvey(String surveyGuid, String createdOnString) throws Exception {
-        UserSession session = getSessionInRole();
+        UserSession session = getConsentedOrInRoleSession(Roles.WORKER, Roles.DEVELOPER);
+
         if (session.isInRole(Roles.WORKER)) {
             // Worker accounts can access surveys across studies. We branch off and call getSurveyForWorker().
             return getSurveyForWorker(surveyGuid, createdOnString);
         } else {
-            // Otherwise, to get a survey you must either be a developer, or a consented participant in the study.
-            // This is an unusual combination so we use canAccessSurvey() to verify it.
-            canAccessSurvey(session);
             return getCachedSurveyInternal(surveyGuid, createdOnString, session);
         }
     }
@@ -146,10 +144,7 @@ public class SurveyController extends BaseController {
     }
     
     public Result getSurveyMostRecentlyPublishedVersion(String surveyGuid) throws Exception {
-        // To get a survey you must either be a developer, or a consented participant in the study.
-        // This is an unusual combination so we use canAccessSurvey() to verify it.
-        UserSession session = getSessionInRole();
-        canAccessSurvey(session);
+        UserSession session = getConsentedOrInRoleSession(DEVELOPER);
         
         return getCachedSurveyMostRecentlyPublishedInternal(surveyGuid, session);
     }
@@ -165,13 +160,8 @@ public class SurveyController extends BaseController {
      * @throws Exception
      */
     public Result deleteSurvey(String surveyGuid, String createdOnString, String physical) throws Exception {
-        UserSession session = getSessionInRole();
+        UserSession session = getSessionInRole(ADMIN, DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
-        
-        // If not in either of these roles, don't do the work of getting the survey
-        if (!session.isInRole(DEVELOPER) && !session.isInRole(ADMIN)) {
-            throw new UnauthorizedException();
-        }
         
         Survey survey = getSurveyWithoutCacheInternal(surveyGuid, createdOnString, session);
         
@@ -291,24 +281,6 @@ public class SurveyController extends BaseController {
             verifySurveyIsInStudy(session, survey);
             return survey;
         });
-    }
-    
-    private void canAccessSurvey(UserSession session) {
-        boolean isDeveloper = session.isInRole(DEVELOPER);
-        boolean isConsentedUser = session.doesConsent();
-
-        if (isDeveloper || isConsentedUser) {
-            return;
-        }
-        // An imperfect test, but normal users have no other roles, so for them, access 
-        // is restricted because they have not consented.
-        Set<Roles> roles = new HashSet<>(session.getParticipant().getRoles());
-        roles.remove(TEST_USERS);
-        if (session.getParticipant().getRoles().isEmpty()) {
-            throw new ConsentRequiredException(session);
-        }
-        // Otherwise, for researchers and administrators, the issue is one of authorization.
-        throw new UnauthorizedException();
     }
     
     private void verifySurveyIsInStudy(UserSession session,List<Survey> surveys) {

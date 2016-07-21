@@ -46,13 +46,13 @@ public class ConsentController extends BaseController {
 
     @Deprecated
     public Result giveV1() throws Exception {
-        final UserSession session = getSessionInRole();
+        final UserSession session = getAuthenticatedSession();
         return giveConsentForVersion(1, SubpopulationGuid.create(session.getStudyIdentifier().getIdentifier()));
     }
 
     @Deprecated
     public Result giveV2() throws Exception {
-        final UserSession session = getSessionInRole();
+        final UserSession session = getAuthenticatedSession();
         return giveConsentForVersion(2, SubpopulationGuid.create(session.getStudyIdentifier().getIdentifier()));
     }
 
@@ -157,7 +157,7 @@ public class ConsentController extends BaseController {
     }
     
     private Result giveConsentForVersion(int version, SubpopulationGuid subpopGuid) throws Exception {
-        final UserSession session = getSessionInRole();
+        final UserSession session = getAuthenticatedSession();
         final Study study = studyService.getStudy(session.getStudyIdentifier());
 
         final ConsentSignature consentSignature = parseJson(request(), ConsentSignature.class);

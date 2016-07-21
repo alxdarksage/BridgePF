@@ -114,13 +114,7 @@ public abstract class BaseController extends Controller {
      * exist (user not authorized), consent has not been given or the client app version is not supported.
      */
     UserSession getConsentedSession() throws NotAuthenticatedException, ConsentRequiredException, UnsupportedVersionException {
-        UserSession session = getSessionInRole();
-        Study study = studyService.getStudy(session.getStudyIdentifier());        
-        verifySupportedVersionOrThrowException(study);
-        if (!session.doesConsent()) {
-            throw new ConsentRequiredException(session);
-        }
-        return session;
+        return getConsentedOrInRoleSession();
     }
 
     /**
@@ -128,7 +122,7 @@ public abstract class BaseController extends Controller {
      * OR 2) a user in a specific role.
      */
     UserSession getConsentedOrInRoleSession(Roles... roles) {
-        UserSession session = getSessionInRole();
+        UserSession session = getAuthenticatedSession();
         Study study = studyService.getStudy(session.getStudyIdentifier());        
         verifySupportedVersionOrThrowException(study);
         if (roles != null) {
@@ -142,6 +136,13 @@ public abstract class BaseController extends Controller {
             throw new ConsentRequiredException(session);
         }
         return session;
+    }
+    
+    /**
+     * Get an authenticated (but not consented) session.
+     */
+    UserSession getAuthenticatedSession() {
+        return getSessionInRole();
     }
     
     /**

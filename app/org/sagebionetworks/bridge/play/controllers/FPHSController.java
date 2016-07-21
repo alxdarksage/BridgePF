@@ -54,7 +54,7 @@ public class FPHSController extends BaseController {
         return okResult(FPHSExternalIdentifier.create(externalId.getIdentifier()));
     }
     public Result registerExternalIdentifier() throws Exception {
-        UserSession session = getSessionInRole();
+        UserSession session = getAuthenticatedSession();
         
         ExternalIdentifier externalId = parseJson(request(), ExternalIdentifier.class);
         fphsService.registerExternalIdentifier(session.getStudyIdentifier(), session.getHealthCode(), externalId);
