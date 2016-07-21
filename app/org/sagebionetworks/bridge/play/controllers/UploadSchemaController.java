@@ -36,7 +36,7 @@ public class UploadSchemaController extends BaseController {
      * @return Play result, with the created schema
      */
     public Result createSchemaRevisionV4() throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
 
         UploadSchema uploadSchema = parseJson(request(), UploadSchema.class);
@@ -52,7 +52,7 @@ public class UploadSchemaController extends BaseController {
      * @return Play result, with the created or updated schema in JSON format
      */
     public Result createOrUpdateUploadSchema() throws JsonProcessingException {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
         
         UploadSchema uploadSchema = parseJson(request(), UploadSchema.class);
@@ -71,7 +71,7 @@ public class UploadSchemaController extends BaseController {
      * @return Play result with the OK message
      */
     public Result deleteUploadSchemaByIdAndRev(String schemaId, int rev) {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyIdentifier = session.getStudyIdentifier();
 
         uploadSchemaService.deleteUploadSchemaByIdAndRev(studyIdentifier, schemaId, rev);
@@ -88,7 +88,7 @@ public class UploadSchemaController extends BaseController {
      * @return Play result with the OK message
      */
     public Result deleteUploadSchemaById(String schemaId) {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyIdentifier = session.getStudyIdentifier();
 
         uploadSchemaService.deleteUploadSchemaById(studyIdentifier, schemaId);
@@ -105,7 +105,7 @@ public class UploadSchemaController extends BaseController {
      * @return Play result with the fetched schema in JSON format
      */
     public Result getUploadSchema(String schemaId) throws JsonProcessingException {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
         
         UploadSchema uploadSchema = uploadSchemaService.getUploadSchema(studyId, schemaId);
@@ -120,7 +120,7 @@ public class UploadSchemaController extends BaseController {
      * @return Play result with an array of all revisions of the fetched schema in JSON format
      */
     public Result getUploadSchemaAllRevisions(String schemaId) throws JsonProcessingException {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
         
         List<UploadSchema> uploadSchemas = uploadSchemaService.getUploadSchemaAllRevisions(studyId, schemaId);
@@ -139,7 +139,7 @@ public class UploadSchemaController extends BaseController {
      * @return Play result with the fetched schema in JSON format
      */
     public Result getUploadSchemaByIdAndRev(String schemaId, int rev) throws JsonProcessingException {
-        UserSession session = getSessionInRole(DEVELOPER, WORKER);
+        UserSession session = getAuthenticatedSession(DEVELOPER, WORKER);
         StudyIdentifier studyId = session.getStudyIdentifier();
 
         UploadSchema uploadSchema = uploadSchemaService.getUploadSchemaByIdAndRev(studyId, schemaId, rev);
@@ -158,7 +158,7 @@ public class UploadSchemaController extends BaseController {
      * @return the requested schema revision
      */
     public Result getUploadSchemaByStudyAndSchemaAndRev(String studyId, String schemaId, int revision) {
-        getSessionInRole(WORKER);
+        getAuthenticatedSession(WORKER);
         UploadSchema uploadSchema = uploadSchemaService.getUploadSchemaByIdAndRev(new StudyIdentifierImpl(studyId),
                 schemaId, revision);
         return okResult(uploadSchema);
@@ -171,7 +171,7 @@ public class UploadSchemaController extends BaseController {
      * @return Play result with list of schemas for this study
      */
     public Result getUploadSchemasForStudy() throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
 
         List<UploadSchema> schemaList = uploadSchemaService.getUploadSchemasForStudy(studyId);
@@ -190,7 +190,7 @@ public class UploadSchemaController extends BaseController {
      * @return Play result, with the updated schema
      */
     public Result updateSchemaRevisionV4(String schemaId, int revision) throws JsonProcessingException {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
 
         UploadSchema uploadSchema = parseJson(request(), UploadSchema.class);

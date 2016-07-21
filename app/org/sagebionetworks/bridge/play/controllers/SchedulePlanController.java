@@ -29,7 +29,7 @@ public class SchedulePlanController extends BaseController {
     }
     
     public Result getSchedulePlans() throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
 
         // We don't filter plans when we return a list of all of them for developers.
@@ -38,7 +38,7 @@ public class SchedulePlanController extends BaseController {
     }
 
     public Result createSchedulePlan() throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         DynamoSchedulePlan planForm = DynamoSchedulePlan.fromJson(requestToJSON(request()));
@@ -47,7 +47,7 @@ public class SchedulePlanController extends BaseController {
     }
 
     public Result getSchedulePlan(String guid) throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
         
         SchedulePlan plan = schedulePlanService.getSchedulePlan(studyId, guid);
@@ -55,7 +55,7 @@ public class SchedulePlanController extends BaseController {
     }
 
     public Result updateSchedulePlan(String guid) throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         DynamoSchedulePlan planForm = DynamoSchedulePlan.fromJson(requestToJSON(request()));
@@ -66,7 +66,7 @@ public class SchedulePlanController extends BaseController {
     }
 
     public Result deleteSchedulePlan(String guid) {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
 
         schedulePlanService.deleteSchedulePlan(studyId, guid);

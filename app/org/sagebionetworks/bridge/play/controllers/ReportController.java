@@ -91,7 +91,7 @@ public class ReportController extends BaseController {
     
     public Result getParticipantReportForResearcher(String userId, String identifier, String startDateString,
             String endDateString) {
-        UserSession session = getSessionInRole(RESEARCHER);
+        UserSession session = getAuthenticatedSession(RESEARCHER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         LocalDate startDate = parseDateHelper(startDateString);
@@ -110,7 +110,7 @@ public class ReportController extends BaseController {
      * include a healthCode field. This is validated when constructing the DataReportKey.
      */
     public Result saveParticipantReport(String userId, String identifier) throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         Account account = accountDao.getAccount(study, userId);
@@ -129,7 +129,7 @@ public class ReportController extends BaseController {
      * special method is needed.
      */
     public Result saveParticipantReportForWorker(String identifier) throws Exception {
-        UserSession session = getSessionInRole(WORKER);
+        UserSession session = getAuthenticatedSession(WORKER);
         
         JsonNode node = requestToJSON(request());
         if (!node.has("healthCode")) {
@@ -152,7 +152,7 @@ public class ReportController extends BaseController {
      * performant for large data sets and should only be done during testing. 
      */
     public Result deleteParticipantReport(String userId, String identifier) {
-        UserSession session = getSessionInRole(DEVELOPER, WORKER);
+        UserSession session = getAuthenticatedSession(DEVELOPER, WORKER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         
         Account account = accountDao.getAccount(study, userId);
@@ -166,7 +166,7 @@ public class ReportController extends BaseController {
      * Delete an individual participant report record
      */
     public Result deleteParticipantReportRecord(String userId, String identifier, String dateString) {
-        UserSession session = getSessionInRole(DEVELOPER, WORKER);
+        UserSession session = getAuthenticatedSession(DEVELOPER, WORKER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
         LocalDate date = parseDateHelper(dateString);
         
@@ -178,7 +178,7 @@ public class ReportController extends BaseController {
     }
     
     public Result deleteParticipantReportIndex(String identifier) {
-        UserSession session = getSessionInRole(ADMIN);
+        UserSession session = getAuthenticatedSession(ADMIN);
         
         reportService.deleteParticipantReportIndex(session.getStudyIdentifier(), identifier);
         
@@ -205,7 +205,7 @@ public class ReportController extends BaseController {
      * Report study data can be saved by developers or by worker processes.
      */
     public Result saveStudyReport(String identifier) throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER, WORKER);
+        UserSession session = getAuthenticatedSession(DEVELOPER, WORKER);
      
         ReportData reportData = parseJson(request(), ReportData.class);
         reportData.setKey(null); // set in service, but just so no future use depends on it
@@ -220,7 +220,7 @@ public class ReportController extends BaseController {
      * should only be done during testing.
      */
     public Result deleteStudyReport(String identifier) {
-        UserSession session = getSessionInRole(DEVELOPER, WORKER);
+        UserSession session = getAuthenticatedSession(DEVELOPER, WORKER);
         
         reportService.deleteStudyReport(session.getStudyIdentifier(), identifier);
         
@@ -231,7 +231,7 @@ public class ReportController extends BaseController {
      * Delete an individual study report record. 
      */
     public Result deleteStudyReportRecord(String identifier, String dateString) {
-        UserSession session = getSessionInRole(DEVELOPER, WORKER);
+        UserSession session = getAuthenticatedSession(DEVELOPER, WORKER);
         LocalDate date = parseDateHelper(dateString);
         
         reportService.deleteStudyReportRecord(session.getStudyIdentifier(), identifier, date);

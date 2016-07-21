@@ -132,7 +132,7 @@ public class UserProfileControllerTest {
                 .build());
         session.setStudyIdentifier(TEST_STUDY);
         
-        doReturn(session).when(controller).getSessionInRole();
+        doReturn(session).when(controller).getAuthenticatedSession();
     }
     
     @Test

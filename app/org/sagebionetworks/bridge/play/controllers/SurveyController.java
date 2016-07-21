@@ -3,16 +3,12 @@ package org.sagebionetworks.bridge.play.controllers;
 import static org.sagebionetworks.bridge.BridgeConstants.JSON_MIME_TYPE;
 import static org.sagebionetworks.bridge.Roles.ADMIN;
 import static org.sagebionetworks.bridge.Roles.DEVELOPER;
-import static org.sagebionetworks.bridge.Roles.TEST_USERS;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.sagebionetworks.bridge.Roles;
 import org.sagebionetworks.bridge.cache.ViewCache;
 import org.sagebionetworks.bridge.cache.ViewCache.ViewCacheKey;
-import org.sagebionetworks.bridge.exceptions.ConsentRequiredException;
 import org.sagebionetworks.bridge.exceptions.UnauthorizedException;
 import org.sagebionetworks.bridge.json.DateUtils;
 import org.sagebionetworks.bridge.models.GuidCreatedOnVersionHolder;
@@ -50,7 +46,7 @@ public class SurveyController extends BaseController {
     }
     
     public Result getAllSurveysMostRecentVersion() throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
 
         List<Survey> surveys = surveyService.getAllSurveysMostRecentVersion(studyId);
@@ -59,7 +55,7 @@ public class SurveyController extends BaseController {
     }
     
     public Result getAllSurveysMostRecentlyPublishedVersion() throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
 
         List<Survey> surveys = surveyService.getAllSurveysMostRecentlyPublishedVersion(studyId);
@@ -78,7 +74,7 @@ public class SurveyController extends BaseController {
      * @return list of the most recently published version of every survey in the study
      */
     public Result getAllSurveysMostRecentlyPublishedVersionForStudy(String studyId) {
-        getSessionInRole(Roles.WORKER);
+        getAuthenticatedSession(Roles.WORKER);
         List<Survey> surveyList = surveyService.getAllSurveysMostRecentlyPublishedVersion(new StudyIdentifierImpl(
                 studyId));
         return okResult(surveyList);
@@ -131,7 +127,7 @@ public class SurveyController extends BaseController {
     }
     
     public Result getSurveyMostRecentVersion(String surveyGuid) throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
         
         ViewCacheKey<Survey> cacheKey = viewCache.getCacheKey(Survey.class, surveyGuid, MOSTRECENT_KEY, studyId.getIdentifier());
@@ -160,7 +156,7 @@ public class SurveyController extends BaseController {
      * @throws Exception
      */
     public Result deleteSurvey(String surveyGuid, String createdOnString, String physical) throws Exception {
-        UserSession session = getSessionInRole(ADMIN, DEVELOPER);
+        UserSession session = getAuthenticatedSession(ADMIN, DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
         
         Survey survey = getSurveyWithoutCacheInternal(surveyGuid, createdOnString, session);
@@ -178,7 +174,7 @@ public class SurveyController extends BaseController {
     }
     
     public Result getSurveyAllVersions(String surveyGuid) throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
         
         List<Survey> surveys = surveyService.getSurveyAllVersions(studyId, surveyGuid);
@@ -187,7 +183,7 @@ public class SurveyController extends BaseController {
     }
     
     public Result createSurvey() throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
         
         Survey survey = parseJson(request(), Survey.class);
@@ -198,7 +194,7 @@ public class SurveyController extends BaseController {
     }
     
     public Result versionSurvey(String surveyGuid, String createdOnString) throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
         
         Survey survey = getSurveyWithoutCacheInternal(surveyGuid, createdOnString, session);
@@ -210,7 +206,7 @@ public class SurveyController extends BaseController {
     }
     
     public Result updateSurvey(String surveyGuid, String createdOnString) throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
         
         // Just checking permission to access
@@ -230,7 +226,7 @@ public class SurveyController extends BaseController {
     }
     
     public Result publishSurvey(String surveyGuid, String createdOnString) throws Exception {
-        UserSession session = getSessionInRole(DEVELOPER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
          
         Survey survey = getSurveyWithoutCacheInternal(surveyGuid, createdOnString, session);

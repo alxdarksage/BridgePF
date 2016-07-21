@@ -139,18 +139,11 @@ public abstract class BaseController extends Controller {
     }
     
     /**
-     * Get an authenticated (but not consented) session.
-     */
-    UserSession getAuthenticatedSession() {
-        return getSessionInRole();
-    }
-    
-    /**
      * Retrieve a user's session or throw an exception if the user is not authenticated. 
      * User does not have to give consent. If roles are provided, user must have one of 
      * the specified roles or an authorization exception will be thrown.
      */
-    UserSession getSessionInRole(Roles... roles) {
+    UserSession getAuthenticatedSession(Roles... roles) {
         final UserSession session = getSessionIfItExists();
         if (session == null || !session.isAuthenticated()) {
             throw new NotAuthenticatedException();

@@ -106,7 +106,7 @@ public class ConsentControllerMockedTest {
         controller.setAuthenticationService(authenticationService);
         
         doReturn(session).when(controller).getAuthenticatedAndConsentedSession();
-        doReturn(session).when(controller).getSessionInRole();
+        doReturn(session).when(controller).getAuthenticatedSession();
         
         doReturn(session).when(authenticationService).getSession(eq(study), any(CriteriaContext.class));
     }

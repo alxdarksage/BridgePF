@@ -47,7 +47,7 @@ public class SchedulePlanControllerMockTest {
         
         UserSession session = mock(UserSession.class);
         when(session.getStudyIdentifier()).thenReturn(new StudyIdentifierImpl("test-study"));
-        doReturn(session).when(controller).getSessionInRole(any(Roles.class));
+        doReturn(session).when(controller).getAuthenticatedSession(any(Roles.class));
     }
 
     private void assertMessage(InvalidEntityException e, String key, String error) {

@@ -133,9 +133,9 @@ public class SurveyControllerTest {
         // The mock user is initially
         session = new UserSession(participant);
         session.setStudyIdentifier(new StudyIdentifierImpl(studyIdentifier));
-        doReturn(session).when(controller).getSessionInRole();
+        doReturn(session).when(controller).getAuthenticatedSession();
         doReturn(session).when(controller).getAuthenticatedAndConsentedSession();
-        doReturn(session).when(controller).getSessionInRole(any(Roles.class));
+        doReturn(session).when(controller).getAuthenticatedSession(any(Roles.class));
     }
     
     @Test

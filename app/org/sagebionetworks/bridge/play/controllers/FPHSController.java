@@ -78,14 +78,14 @@ public class FPHSController extends BaseController {
         return okResult("External identifier added to user profile.");
     }
     public Result getExternalIdentifiers() throws Exception {
-        getSessionInRole(ADMIN);
+        getAuthenticatedSession(ADMIN);
         
         List<FPHSExternalIdentifier> identifiers = fphsService.getExternalIdentifiers();
         
         return okResult(identifiers);
     }
     public Result addExternalIdentifiers() throws Exception {
-        getSessionInRole(ADMIN);
+        getAuthenticatedSession(ADMIN);
         
         List<FPHSExternalIdentifier> externalIds = MAPPER.convertValue(requestToJSON(request()), EXTERNAL_ID_TYPE_REF);
         fphsService.addExternalIdentifiers(externalIds);

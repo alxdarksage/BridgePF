@@ -252,7 +252,7 @@ public class UploadSchemaControllerTest {
         UploadSchemaController controller = spy(new UploadSchemaController());
         // We need the real service because it throws the InvalidEntityException we're testing here.
         controller.setUploadSchemaService(new UploadSchemaService());
-        doReturn(mockSession).when(controller).getSessionInRole(any(Roles.class));
+        doReturn(mockSession).when(controller).getAuthenticatedSession(any(Roles.class));
 
         // execute and validate
         try {
@@ -276,7 +276,7 @@ public class UploadSchemaControllerTest {
         // spy controller
         UploadSchemaController controller = spy(new UploadSchemaController());
         controller.setUploadSchemaService(svc);
-        doReturn(mockSession).when(controller).getSessionInRole(anyVararg());
+        doReturn(mockSession).when(controller).getAuthenticatedSession(anyVararg());
         return controller;
     }
 

@@ -200,25 +200,25 @@ public class BaseControllerTest {
         doReturn(session).when(controller).getSessionIfItExists();
 
         // Single arg success.
-        assertNotNull(controller.getSessionInRole(Roles.RESEARCHER));
+        assertNotNull(controller.getAuthenticatedSession(Roles.RESEARCHER));
 
         // This method, upon confronting the fact that the user does not have this role, 
         // throws an UnauthorizedException.
         try {
-            controller.getSessionInRole(Roles.ADMIN);
+            controller.getAuthenticatedSession(Roles.ADMIN);
             fail("expected exception");
         } catch (UnauthorizedException ex) {
             // expected exception
         }
 
         // Success with sets.
-        assertNotNull(controller.getSessionInRole(Roles.RESEARCHER));
-        assertNotNull(controller.getSessionInRole(Roles.DEVELOPER, Roles.RESEARCHER));
-        assertNotNull(controller.getSessionInRole(Roles.DEVELOPER, Roles.RESEARCHER, Roles.WORKER));
+        assertNotNull(controller.getAuthenticatedSession(Roles.RESEARCHER));
+        assertNotNull(controller.getAuthenticatedSession(Roles.DEVELOPER, Roles.RESEARCHER));
+        assertNotNull(controller.getAuthenticatedSession(Roles.DEVELOPER, Roles.RESEARCHER, Roles.WORKER));
 
         // Unauthorized with sets
         try {
-            controller.getSessionInRole(Roles.ADMIN, Roles.DEVELOPER, Roles.WORKER);
+            controller.getAuthenticatedSession(Roles.ADMIN, Roles.DEVELOPER, Roles.WORKER);
             fail("expected exception");
         } catch (UnauthorizedException ex) {
             // expected exception

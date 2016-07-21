@@ -123,8 +123,8 @@ public class ReportControllerTest {
         doReturn(HEALTH_CODE).when(mockAccount).getHealthCode();
         doReturn(session).when(controller).getSessionIfItExists();
         doReturn(session).when(controller).getAuthenticatedAndConsentedSession();
-        doReturn(session).when(controller).getSessionInRole();
-        doReturn(session).when(controller).getSessionInRole(Roles.WORKER);
+        doReturn(session).when(controller).getAuthenticatedSession();
+        doReturn(session).when(controller).getAuthenticatedSession(Roles.WORKER);
         
         ReportIndex index = new DynamoReportIndex();
         index.setIdentifier("fofo");
