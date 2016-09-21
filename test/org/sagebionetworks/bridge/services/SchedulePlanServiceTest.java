@@ -69,5 +69,4 @@ public class SchedulePlanServiceTest {
         Activity activity = group.getSchedule().getActivities().get(0);
         assertEquals("Do AAA task", activity.getLabel());
     }
-    
 }

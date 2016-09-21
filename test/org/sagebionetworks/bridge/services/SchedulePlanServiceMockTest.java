@@ -4,9 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.sagebionetworks.bridge.TestConstants.TEST_STUDY;
@@ -16,9 +17,16 @@ import java.util.List;
 import java.util.Set;
 
 import org.joda.time.DateTime;
+import org.joda.time.LocalTime;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import org.sagebionetworks.bridge.TestConstants;
 import org.sagebionetworks.bridge.TestUtils;
 import org.sagebionetworks.bridge.dao.SchedulePlanDao;
 import org.sagebionetworks.bridge.dynamodb.DynamoSchedulePlan;
@@ -38,6 +46,7 @@ import org.sagebionetworks.bridge.models.surveys.TestSurvey;
 
 import com.google.common.collect.Sets;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SchedulePlanServiceMockTest {
 
     private Study study;
@@ -45,8 +54,14 @@ public class SchedulePlanServiceMockTest {
     private String surveyGuid2;
     private SchedulePlanService service;
     
+    @Mock
     private SchedulePlanDao mockSchedulePlanDao;
+    
+    @Mock
     private SurveyService mockSurveyService;
+    
+    @Captor
+    private ArgumentCaptor<SchedulePlan> schedulePlanCaptor;
     
     @Before
     public void before() {
@@ -54,9 +69,6 @@ public class SchedulePlanServiceMockTest {
         study.setIdentifier(TEST_STUDY_IDENTIFIER);
         study.setTaskIdentifiers(Sets.newHashSet("tapTest", "taskGuid", "CCC"));
         study.setDataGroups(Sets.newHashSet("AAA"));
-        
-        mockSchedulePlanDao = mock(SchedulePlanDao.class);
-        mockSurveyService = mock(SurveyService.class);
         
         service = new SchedulePlanService();
         service.setSchedulePlanDao(mockSchedulePlanDao);
@@ -76,14 +88,12 @@ public class SchedulePlanServiceMockTest {
     public void surveyReferenceIdentifierFilledOutOnCreate() {
         SchedulePlan plan = createSchedulePlan();
         
-        ArgumentCaptor<SchedulePlan> spCaptor = ArgumentCaptor.forClass(SchedulePlan.class);
-        
         service.createSchedulePlan(study, plan);
         verify(mockSurveyService).getSurveyMostRecentlyPublishedVersion(any(), any());
         verify(mockSurveyService).getSurvey(any());
-        verify(mockSchedulePlanDao).createSchedulePlan(any(), spCaptor.capture());
+        verify(mockSchedulePlanDao).createSchedulePlan(any(), schedulePlanCaptor.capture());
         
-        List<Activity> activities = spCaptor.getValue().getStrategy().getAllPossibleSchedules().get(0).getActivities();
+        List<Activity> activities = schedulePlanCaptor.getValue().getStrategy().getAllPossibleSchedules().get(0).getActivities();
         assertEquals("identifier1", activities.get(0).getSurvey().getIdentifier());
         assertNotNull(activities.get(1).getTask());
         assertEquals("identifier2", activities.get(2).getSurvey().getIdentifier());
@@ -93,15 +103,14 @@ public class SchedulePlanServiceMockTest {
     public void surveyReferenceIdentifierFilledOutOnUpdate() {
         SchedulePlan plan = createSchedulePlan();
         
-        ArgumentCaptor<SchedulePlan> spCaptor = ArgumentCaptor.forClass(SchedulePlan.class);
         when(mockSchedulePlanDao.updateSchedulePlan(any(), any())).thenReturn(plan);
         
         service.updateSchedulePlan(study, plan);
         verify(mockSurveyService).getSurveyMostRecentlyPublishedVersion(any(), any());
         verify(mockSurveyService).getSurvey(any());
-        verify(mockSchedulePlanDao).updateSchedulePlan(any(), spCaptor.capture());
+        verify(mockSchedulePlanDao).updateSchedulePlan(any(), schedulePlanCaptor.capture());
         
-        List<Activity> activities = spCaptor.getValue().getStrategy().getAllPossibleSchedules().get(0).getActivities();
+        List<Activity> activities = schedulePlanCaptor.getValue().getStrategy().getAllPossibleSchedules().get(0).getActivities();
         assertEquals("identifier1", activities.get(0).getSurvey().getIdentifier());
         assertNotNull(activities.get(1).getTask());
         assertEquals("identifier2", activities.get(2).getSurvey().getIdentifier());
@@ -109,8 +118,6 @@ public class SchedulePlanServiceMockTest {
 
     @Test
     public void doNotUseIdentifierFromClient() {
-        
-        
         // The survey GUID/createdOn identify a survey, but the identifier from the client can just be 
         // mismatched by the client, so ignore it and look it up from the DB using the primary keys.
         Activity activity = new Activity.Builder().withLabel("A survey activity")
@@ -123,16 +130,15 @@ public class SchedulePlanServiceMockTest {
                 .getSurvey().getIdentifier();
         assertEquals("junkIdentifier", identifier);
         
-        ArgumentCaptor<SchedulePlan> spCaptor = ArgumentCaptor.forClass(SchedulePlan.class);
         when(mockSchedulePlanDao.updateSchedulePlan(any(), any())).thenReturn(plan);
         
         service.updateSchedulePlan(study, plan);
         verify(mockSurveyService).getSurveyMostRecentlyPublishedVersion(any(), any());
         verify(mockSurveyService).getSurvey(any());
-        verify(mockSchedulePlanDao).updateSchedulePlan(any(), spCaptor.capture());
+        verify(mockSchedulePlanDao).updateSchedulePlan(any(), schedulePlanCaptor.capture());
         
         // It was not used.
-        identifier = spCaptor.getValue().getStrategy().getAllPossibleSchedules().get(0).getActivities().get(0)
+        identifier = schedulePlanCaptor.getValue().getStrategy().getAllPossibleSchedules().get(0).getActivities().get(0)
                 .getSurvey().getIdentifier();
         assertNotEquals("junkIdentifier", identifier);
         
@@ -150,12 +156,11 @@ public class SchedulePlanServiceMockTest {
             }
         }
         
-        ArgumentCaptor<SchedulePlan> spCaptor = ArgumentCaptor.forClass(SchedulePlan.class);
         service.createSchedulePlan(study, plan);
         
-        verify(mockSchedulePlanDao).createSchedulePlan(any(), spCaptor.capture());
+        verify(mockSchedulePlanDao).createSchedulePlan(any(), schedulePlanCaptor.capture());
         
-        SchedulePlan updatedPlan = spCaptor.getValue();
+        SchedulePlan updatedPlan = schedulePlanCaptor.getValue();
         assertNotEquals("AAA", updatedPlan.getGuid());
         assertNotEquals(new Long(2L), updatedPlan.getVersion());
         for (Schedule schedule : plan.getStrategy().getAllPossibleSchedules()) {
@@ -211,6 +216,68 @@ public class SchedulePlanServiceMockTest {
             assertEquals("strategy.scheduleCriteria[0].schedule.activities[0].task.identifier 'DDD' is not in enumeration: taskGuid, CCC, tapTest.", e.getErrors().get("strategy.scheduleCriteria[0].schedule.activities[0].task.identifier").get(0));
             assertEquals("strategy.scheduleCriteria[0].criteria.allOfGroups 'FFF' is not in enumeration: AAA", e.getErrors().get("strategy.scheduleCriteria[0].criteria.allOfGroups").get(0));
         }
+    }
+    
+    @Test
+    public void savingNewSchedulePlanOverwritesExistingGuidsAndAddsMissingGuids() {
+        SchedulePlan plan = createScheduleForGuidReplacementTests();
+        
+        service.createSchedulePlan(study, plan);
+        
+        verify(mockSchedulePlanDao).createSchedulePlan(eq(study.getStudyIdentifier()), schedulePlanCaptor.capture());
+        
+        SchedulePlan captured = schedulePlanCaptor.getValue();
+        assertNotEquals("AAA", captured.getGuid());
+        assertNull(captured.getVersion());
+        assertEquals(study.getIdentifier(), captured.getStudyKey());
+        
+        SimpleScheduleStrategy capturedStrategy = (SimpleScheduleStrategy)captured.getStrategy();
+        assertNotEquals("AAA", capturedStrategy.getSchedule().getActivities().get(0).getGuid());
+        assertNotNull(capturedStrategy.getSchedule().getActivities().get(1));
+    }
+    
+    @Test
+    public void updatingSchedulePlansAddsMissingGuids() {
+        SchedulePlan plan = createScheduleForGuidReplacementTests();
+        
+        service.updateSchedulePlan(study, plan);
+        
+        // The only GUID that should have been changed is that the missing guid should have been assigned.
+        verify(mockSchedulePlanDao).updateSchedulePlan(eq(study.getStudyIdentifier()), schedulePlanCaptor.capture());
+        
+        SchedulePlan captured = schedulePlanCaptor.getValue();
+        assertEquals("AAA", captured.getGuid());
+        assertEquals((Long)2L, captured.getVersion());
+        assertEquals(study.getIdentifier(), captured.getStudyKey());
+        
+        SimpleScheduleStrategy capturedStrategy = (SimpleScheduleStrategy)captured.getStrategy();
+        assertEquals("AAA", capturedStrategy.getSchedule().getActivities().get(0).getGuid());
+        assertNotNull(capturedStrategy.getSchedule().getActivities().get(1));
+    }
+
+    private SchedulePlan createScheduleForGuidReplacementTests() {
+        Schedule schedule = new Schedule();
+        schedule.setScheduleType(ScheduleType.RECURRING);
+        schedule.setLabel("Label");
+        schedule.setInterval("P1D");
+        schedule.setExpires("P1D");
+        schedule.addTimes(LocalTime.parse("10:00"));
+        // Add two activities: one with GUID, one without, both should be changed
+        Activity act1 = new Activity.Builder().withActivity(TestConstants.TEST_3_ACTIVITY).withGuid("AAA").build();
+        Activity act2 = new Activity.Builder().withActivity(TestConstants.TEST_3_ACTIVITY).withGuid(null).build();
+        schedule.addActivity(act1);
+        schedule.addActivity(act2);
+        
+        SimpleScheduleStrategy strategy = new SimpleScheduleStrategy();
+        strategy.setSchedule(schedule);
+        
+        SchedulePlan plan = new DynamoSchedulePlan();
+        plan.setGuid("AAA");
+        plan.setVersion(2L);
+        plan.setLabel("Label");
+        plan.setStudyKey("wrong-study-key");
+        plan.setStrategy(strategy);
+        return plan;
     }
     
     private SchedulePlan createInvalidSchedulePlan() {

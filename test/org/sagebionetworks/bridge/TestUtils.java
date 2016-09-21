@@ -216,21 +216,28 @@ public class TestUtils {
     public static List<SchedulePlan> getSchedulePlans(StudyIdentifier studyId) {
         List<SchedulePlan> plans = Lists.newArrayListWithCapacity(3);
         
+        Activity act1 = new Activity.Builder().withActivity(TestConstants.TEST_1_ACTIVITY)
+                .withGuid(BridgeUtils.generateGuid()).build();
+        Activity act2 = new Activity.Builder().withActivity(TestConstants.TEST_2_ACTIVITY)
+                .withGuid(BridgeUtils.generateGuid()).build();
+        Activity act3 = new Activity.Builder().withActivity(TestConstants.TEST_3_ACTIVITY)
+                .withGuid(BridgeUtils.generateGuid()).build();
+        
         SchedulePlan plan = new DynamoSchedulePlan();
         plan.setGuid("DDD");
-        plan.setStrategy(getStrategy("P3D", TestConstants.TEST_1_ACTIVITY));
+        plan.setStrategy(getStrategy("P3D", act1));
         plan.setStudyKey(studyId.getIdentifier());
         plans.add(plan);
         
         plan = new DynamoSchedulePlan();
         plan.setGuid("BBB");
-        plan.setStrategy(getStrategy("P1D", TestConstants.TEST_2_ACTIVITY));
+        plan.setStrategy(getStrategy("P1D", act2));
         plan.setStudyKey(studyId.getIdentifier());
         plans.add(plan);
         
         plan = new DynamoSchedulePlan();
         plan.setGuid("CCC");
-        plan.setStrategy(getStrategy("P2D", TestConstants.TEST_3_ACTIVITY));
+        plan.setStrategy(getStrategy("P2D", act3));
         plan.setStudyKey(studyId.getIdentifier());
         plans.add(plan);
 
@@ -257,6 +264,8 @@ public class TestUtils {
     }
     
     public static ScheduleStrategy getStrategy(String interval, Activity activity) {
+        activity = new Activity.Builder().withActivity(activity).withGuid(BridgeUtils.generateGuid()).build();
+        
         Schedule schedule = new Schedule();
         schedule.setLabel("Schedule " + activity.getLabel());
         schedule.setInterval(interval);

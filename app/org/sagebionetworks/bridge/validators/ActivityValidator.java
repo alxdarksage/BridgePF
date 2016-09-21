@@ -41,6 +41,9 @@ public class ActivityValidator implements Validator {
         } else {
             errors.rejectValue("", "must have a task or survey reference");
         }
+        if (isBlank(activity.getGuid())) {
+            errors.rejectValue("guid", "cannot be missing, null, or blank");
+        }
     }
     
     private void validate(Errors errors, TaskReference ref) {

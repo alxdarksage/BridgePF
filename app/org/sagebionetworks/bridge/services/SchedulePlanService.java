@@ -16,10 +16,11 @@ import org.sagebionetworks.bridge.models.schedules.SchedulePlan;
 import org.sagebionetworks.bridge.models.schedules.SurveyReference;
 import org.sagebionetworks.bridge.models.studies.Study;
 import org.sagebionetworks.bridge.models.studies.StudyIdentifier;
-import org.sagebionetworks.bridge.models.studies.StudyIdentifierImpl;
 import org.sagebionetworks.bridge.models.surveys.Survey;
 import org.sagebionetworks.bridge.validators.SchedulePlanValidator;
 import org.sagebionetworks.bridge.validators.Validate;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -51,14 +52,14 @@ public class SchedulePlanService {
         checkNotNull(study);
         checkNotNull(plan);
 
-        // Plan must always be in user's study
+        // Plan must always be in user's study, replace all the GUIDs if they exist.
         plan.setStudyKey(study.getIdentifier());
+        updateGuids(plan, true);
+        
+        SchedulePlanValidator validator = new SchedulePlanValidator(study.getDataGroups(), study.getTaskIdentifiers());
+        Validate.entityThrowingException(validator, plan);
 
-        // Delete existing GUIDs so this is a new object (or recreate them)
-        Validate.entityThrowingException(new SchedulePlanValidator(study.getDataGroups(), study.getTaskIdentifiers()), plan);
-        updateGuids(plan);
-
-        StudyIdentifier studyId = new StudyIdentifierImpl(plan.getStudyKey());
+        StudyIdentifier studyId = study.getStudyIdentifier();
         lookupSurveyReferenceIdentifiers(studyId, plan);
         return schedulePlanDao.createSchedulePlan(studyId, plan);
     }
@@ -67,12 +68,14 @@ public class SchedulePlanService {
         checkNotNull(study);
         checkNotNull(plan);
         
-        // Plan must always be in user's study
+        // Plan must always be in user's study, any missing GUIDs need to be added.
         plan.setStudyKey(study.getIdentifier());
+        updateGuids(plan, false);
         
-        Validate.entityThrowingException(new SchedulePlanValidator(study.getDataGroups(), study.getTaskIdentifiers()), plan);
+        SchedulePlanValidator validator = new SchedulePlanValidator(study.getDataGroups(), study.getTaskIdentifiers());
+        Validate.entityThrowingException(validator, plan);
         
-        StudyIdentifier studyId = new StudyIdentifierImpl(plan.getStudyKey());
+        StudyIdentifier studyId = study.getStudyIdentifier();
         lookupSurveyReferenceIdentifiers(studyId, plan);
         return schedulePlanDao.updateSchedulePlan(studyId, plan);
     }
@@ -85,22 +88,26 @@ public class SchedulePlanService {
     }
     
     /**
-     * Saving a new plan that has GUIDs and is an existing plan? Clear them out so that we create a 
-     * new copy of the plan.
-     * @param plan
+     * Ensure that elements have assigned GUIDs. If forced, everything is given a new GUID (and it's 
+     * effectively cloned). If not forced, only elements missing a GUID are assigned new GUIDs.
      */
-    private void updateGuids(SchedulePlan plan) {
-        plan.setVersion(null);
-        plan.setGuid(BridgeUtils.generateGuid());
+    private void updateGuids(SchedulePlan plan, boolean forceNew) {
+        if (forceNew) {
+            plan.setVersion(null);
+            plan.setGuid(BridgeUtils.generateGuid());
+        }
         for (Schedule schedule : plan.getStrategy().getAllPossibleSchedules()) {
             for (int i=0; i < schedule.getActivities().size(); i++) {
                 Activity activity = schedule.getActivities().get(i);
-                schedule.getActivities().set(i, new Activity.Builder()
-                    .withActivity(activity).withGuid(BridgeUtils.generateGuid()).build());
+                if (forceNew || StringUtils.isBlank(activity.getGuid())) {
+                    Activity newActivity = new Activity.Builder().withActivity(activity)
+                            .withGuid(BridgeUtils.generateGuid()).build();
+                    schedule.getActivities().set(i, newActivity);
+                }
             }
         }
-    }
-
+    }    
+    
     /**
      * If the activity has a survey reference, look up the survey's identifier. Don't trust the client to 
      * supply the correct one for the survey's primary keys. We're adding this when writing schedules because 

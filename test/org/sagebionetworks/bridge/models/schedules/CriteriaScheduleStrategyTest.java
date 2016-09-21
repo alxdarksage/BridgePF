@@ -13,6 +13,7 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.TestConstants;
 import org.sagebionetworks.bridge.TestUtils;
 import org.sagebionetworks.bridge.dynamodb.DynamoSchedulePlan;
@@ -303,7 +304,8 @@ public class CriteriaScheduleStrategyTest {
     @Test
     public void validScheduleCriteriaPassesValidation() {
         Activity activity = new Activity.Builder().withLabel("Label").withTask(TestConstants.TEST_3_ACTIVITY.getTask())
-                .build();
+                .withGuid(BridgeUtils.generateGuid()).build();
+        
         Schedule schedule = new Schedule();
         schedule.setScheduleType(ScheduleType.ONCE);
         schedule.addActivity(activity);

@@ -22,6 +22,8 @@ import org.joda.time.Period;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.TestConstants;
 import org.sagebionetworks.bridge.dynamodb.DynamoSchedulePlan;
 import org.sagebionetworks.bridge.dynamodb.DynamoScheduledActivity;
@@ -44,7 +46,7 @@ public class ActivitySchedulerTest {
     private List<ScheduledActivity> scheduledActivities;
     private Map<String,DateTime> events;
     private DynamoSchedulePlan plan = new DynamoSchedulePlan();
-    
+    private Activity activity3;
     
     @Before
     public void before() {
@@ -57,6 +59,8 @@ public class ActivitySchedulerTest {
         // Enrolled on March 23, 2015 @ 10am GST
         events.put("enrollment", ENROLLMENT);
         events.put("survey:event", ENROLLMENT.plusDays(2));
+        
+        activity3 = new Activity.Builder().withActivity(TestConstants.TEST_3_ACTIVITY).withGuid(BridgeUtils.generateGuid()).build();
     }
     
     @After
@@ -70,7 +74,7 @@ public class ActivitySchedulerTest {
         Schedule schedule = new Schedule();
         schedule.setScheduleType(ONCE);
         schedule.setDelay("P1D");
-        schedule.addActivity(TestConstants.TEST_3_ACTIVITY);
+        schedule.addActivity(activity3);
         
         Map<String,DateTime> empty = Maps.newHashMap();
         
@@ -95,7 +99,7 @@ public class ActivitySchedulerTest {
         Schedule schedule = new Schedule();
         schedule.setScheduleType(ScheduleType.ONCE);
         schedule.setLabel("This is a label");
-        schedule.addActivity(TestConstants.TEST_3_ACTIVITY);
+        schedule.addActivity(activity3);
         schedule.setExpires("P3Y");
 
         scheduledActivities = schedule.getScheduler().getScheduledActivities(plan, getContext(NOW.plusWeeks(1)));
@@ -118,12 +122,12 @@ public class ActivitySchedulerTest {
     @Test
     public void activitiesCanBeChainedTogether() throws Exception {
         Schedule schedule = new Schedule();
-        schedule.getActivities().add(TestConstants.TEST_3_ACTIVITY);
+        schedule.getActivities().add(activity3);
         schedule.setScheduleType(ONCE);
         schedule.setDelay("P1M");
         
         Schedule schedule2 = new Schedule();
-        schedule2.getActivities().add(TestConstants.TEST_3_ACTIVITY);
+        schedule2.getActivities().add(activity3);
         schedule2.setScheduleType(ONCE);
         schedule2.setEventId("task:task1");
 
@@ -145,7 +149,7 @@ public class ActivitySchedulerTest {
     @Test
     public void activitySchedulerWorksInDifferentTimezone() {
         Schedule schedule = new Schedule();
-        schedule.addActivity(TestConstants.TEST_3_ACTIVITY);
+        schedule.addActivity(activity3);
         schedule.setEventId("foo");
         schedule.setScheduleType(ScheduleType.ONCE);
         schedule.setDelay("P2D");
@@ -168,7 +172,7 @@ public class ActivitySchedulerTest {
         events.put("anEvent", asDT("2015-04-12 08:31"));
         
         Schedule schedule = new Schedule();
-        schedule.addActivity(TestConstants.TEST_3_ACTIVITY);
+        schedule.addActivity(activity3);
         schedule.setScheduleType(ScheduleType.RECURRING);
         schedule.setEventId("anEvent");
         schedule.setInterval("P1D");
@@ -187,7 +191,7 @@ public class ActivitySchedulerTest {
         events.put("anEvent", asDT("2015-04-12 08:31"));
         
         Schedule schedule = new Schedule();
-        schedule.addActivity(TestConstants.TEST_3_ACTIVITY);
+        schedule.addActivity(activity3);
         schedule.setScheduleType(ScheduleType.RECURRING);
         schedule.setEventId("anEvent");
         schedule.setCronTrigger("0 0 10 ? * MON,TUE,WED,THU,FRI,SAT,SUN *");
@@ -222,7 +226,7 @@ public class ActivitySchedulerTest {
         // Just fire this each time it is itself completed, and it never expires.
         Schedule schedule = new Schedule();
         schedule.setEventId("scheduledOn:task:foo");
-        schedule.addActivity(TestConstants.TEST_3_ACTIVITY);
+        schedule.addActivity(activity3);
         schedule.setScheduleType(ONCE);
         
         events.put("scheduledOn:task:foo", NOW.minusHours(3));
@@ -238,7 +242,7 @@ public class ActivitySchedulerTest {
     public void willSelectFirstEventIdWithARecord() throws Exception {
         Schedule schedule = new Schedule();
         schedule.setEventId("survey:event, enrollment");
-        schedule.addActivity(TestConstants.TEST_3_ACTIVITY);
+        schedule.addActivity(activity3);
         schedule.setScheduleType(ONCE);
         
         scheduledActivities = schedule.getScheduler().getScheduledActivities(plan, getContext(NOW.plusDays(1)));
@@ -259,8 +263,8 @@ public class ActivitySchedulerTest {
         Schedule schedule = new Schedule();
         schedule.setScheduleType(ScheduleType.ONCE);
         schedule.setEventId("task:foo:finished,enrollment");
-        schedule.addActivity(new Activity.Builder().withLabel("Foo").withTask("foo").build());
-        schedule.addActivity(new Activity.Builder().withLabel("Bar").withTask("bar").build());
+        schedule.addActivity(new Activity.Builder().withGuid("AAA").withLabel("Foo").withTask("foo").build());
+        schedule.addActivity(new Activity.Builder().withGuid("BBB").withLabel("Bar").withTask("bar").build());
         
         scheduledActivities = schedule.getScheduler().getScheduledActivities(plan, getContext(NOW.plusDays(1)));
         ScheduledActivity activity1 = scheduledActivities.get(0);
@@ -275,15 +279,15 @@ public class ActivitySchedulerTest {
         
         schedule = new Schedule();
         schedule.setScheduleType(ScheduleType.ONCE);
-        schedule.setEventId("activity:AAA:finished,enrollment");
+        schedule.setEventId("activity:"+activity3.getGuid()+":finished,enrollment");
         schedule.setLabel("Test");
-        schedule.addActivity(new Activity.Builder().withGuid("BBB").withLabel("Bar").withTask("bar").build());
-        schedule.addActivity(TestConstants.TEST_3_ACTIVITY);
+        schedule.addActivity(new Activity.Builder().withGuid("CCC").withLabel("Bar").withTask("bar").build());
+        schedule.addActivity(activity3);
         scheduledActivities = schedule.getScheduler().getScheduledActivities(plan, getContext(NOW.plusDays(1)));
+        
         assertFalse(scheduledActivities.get(0).getPersistent());
         assertTrue(scheduledActivities.get(1).getPersistent());
     }
-    
     
     @Test
     public void scheduleIsTranslatedToTimeZoneWhenCreatedAndPersisted() {
@@ -293,7 +297,7 @@ public class ActivitySchedulerTest {
         schedule.setInterval("P1D");
         schedule.setExpires("P1D");
         schedule.addTimes("10:00");
-        schedule.addActivity(new Activity.Builder().withLabel("Foo").withTask("foo").build());
+        schedule.addActivity(new Activity.Builder().withGuid("AAA").withLabel("Foo").withTask("foo").build());
         Validate.entityThrowingException(new ScheduleValidator(Sets.newHashSet("foo")), schedule);
         
         // User is in Moscow, however.
@@ -316,7 +320,7 @@ public class ActivitySchedulerTest {
         schedule.setInterval("P1D");
         schedule.setExpires("P1D");
         schedule.addTimes("10:00");
-        schedule.addActivity(new Activity.Builder().withLabel("Foo").withTask("foo").build());
+        schedule.addActivity(new Activity.Builder().withGuid("AAA").withLabel("Foo").withTask("foo").build());
         Validate.entityThrowingException(new ScheduleValidator(Sets.newHashSet("foo")), schedule);
         
         List<ScheduledActivity> activities = schedule.getScheduler().getScheduledActivities(plan, getContext(DateTimeZone.UTC, DateTime.now().plusDays(4)));

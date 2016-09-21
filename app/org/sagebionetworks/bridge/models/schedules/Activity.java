@@ -6,20 +6,20 @@ import static org.sagebionetworks.bridge.models.schedules.ActivityType.TASK;
 import java.util.Objects;
 
 import org.joda.time.DateTime;
-import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.models.BridgeEntity;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
- * An activity we wish a study participant to do. The two main types of activities are 
- * tasks in the application (such as taking a tapping test), and surveys to be filled 
- * out and returned to the sever.
+ * An activity are assigning to a study participant to do. The two main types of activities are 
+ * tasks in the application (such as taking a tapping test), and surveys to be filled out and 
+ * returned to the sever.
  * 
- * In schedules, activities are set with surveys. In tasks, these are "resolved" to point 
- * to a specific survey, and a survey response object is also added to the activity. This includes 
- * an endpoint where answers to the survey can be submitted.
+ * In schedules, activities can be created that point to a survey GUID, but not a specific revision. 
+ * When a specific scheduled activity is created for a user, it will include a link through the REST 
+ * API to the most recently published version of the survey. (It is possible to specify a version 
+ * in the schedule, if desired.)
  */
 @JsonDeserialize(builder=Activity.Builder.class)
 public final class Activity implements BridgeEntity {
@@ -122,24 +122,13 @@ public final class Activity implements BridgeEntity {
             return this;
         }
         public Activity build() {
-            if (guid == null) {
-                guid = BridgeUtils.generateGuid();
-            }
             return new Activity(label, labelDetail, guid, task, survey);
         }
     }
     
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + Objects.hashCode(activityType);
-        result = prime * result + Objects.hashCode(label);
-        result = prime * result + Objects.hashCode(labelDetail);
-        result = prime * result + Objects.hashCode(guid);
-        result = prime * result + Objects.hashCode(survey);
-        result = prime * result + Objects.hashCode(task);
-        return result;
+        return Objects.hash(activityType, label, labelDetail, guid, survey, task);
     }
 
     @Override

@@ -233,7 +233,8 @@ public class DynamoScheduledActivityTest {
         act.setHealthCode("healthCode");
         act.setGuid("activityGuid");
         act.setSchedulePlanGuid("schedulePlanGuid");
-        act.setActivity(TestConstants.TEST_1_ACTIVITY);
+        Activity activity = new Activity.Builder().withActivity(TestConstants.TEST_1_ACTIVITY).withGuid("guid").build();
+        act.setActivity(activity);
         act.setStartedOn(DateTime.parse("2015-10-10T08:08:08.000Z").getMillis());
         act.setFinishedOn(DateTime.parse("2015-12-05T08:08:08.000Z").getMillis());
         act.setPersistent(true);
@@ -254,7 +255,7 @@ public class DynamoScheduledActivityTest {
 
         JsonNode activityNode = node.get("activity");
         assertEquals("Activity1", activityNode.get("label").asText());
-        assertNotNull(activityNode.get("guid").asText());
+        assertEquals("guid", activityNode.get("guid").asText());
         assertEquals("survey", activityNode.get("activityType").asText());
         assertEquals("Activity", activityNode.get("type").asText());
         // all the above, plus survey, and nothing else

@@ -40,9 +40,12 @@ public class TestConstants {
     
     public static final DateTime ENROLLMENT = DateTime.parse("2015-04-10T10:40:34.000-07:00");
     
-    public static final Activity TEST_1_ACTIVITY = new Activity.Builder().withLabel("Activity1").withPublishedSurvey("identifier1","AAA").build();
-    public static final Activity TEST_2_ACTIVITY = new Activity.Builder().withLabel("Activity2").withPublishedSurvey("identifier2","BBB").build();
-    public static final Activity TEST_3_ACTIVITY = new Activity.Builder().withLabel("Activity3").withGuid("AAA").withTask("tapTest").build();
+    public static final Activity TEST_1_ACTIVITY = new Activity.Builder().withLabel("Activity1")
+            .withPublishedSurvey("identifier1", "AAA").build();
+    public static final Activity TEST_2_ACTIVITY = new Activity.Builder().withLabel("Activity2")
+            .withPublishedSurvey("identifier2", "BBB").build();
+    public static final Activity TEST_3_ACTIVITY = new Activity.Builder().withLabel("Activity3").withTask("tapTest")
+            .build();
     
     /**
      * During tests, must sometimes pause because the underlying query uses a DynamoDB global 
