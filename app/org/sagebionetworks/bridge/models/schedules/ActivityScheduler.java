@@ -57,7 +57,7 @@ public abstract class ActivityScheduler {
     protected boolean addScheduledActivityAtTime(List<ScheduledActivity> scheduledActivities, SchedulePlan plan,
             ScheduleContext context, LocalDate localDate, LocalTime localTime) {
         
-        if (isValidForScheduling(scheduledActivities, plan, context, localDate, localTime)) {
+        if (isValidForScheduling(context, scheduledActivities.size(), localDate, localTime)) {
             LocalDateTime expiresOn = getExpiresOn(localDate, localTime);
             for (Activity activity : schedule.getActivities()) {
                 ScheduledActivity schActivity = ScheduledActivity.create();
@@ -86,11 +86,11 @@ public abstract class ActivityScheduler {
         return beforeEndsOn && (beforeContextEndsOn || hasNotMetMinimumCount(context, activityCount));
     }
     
-    protected boolean isValidForScheduling(List<ScheduledActivity> scheduledActivities, SchedulePlan plan,
-            ScheduleContext context, LocalDate localDate, LocalTime localTime) {
+    protected boolean isValidForScheduling(ScheduleContext context, int activityCount, LocalDate localDate,
+            LocalTime localTime) {
 
         DateTime localDateTime = localDate.toDateTime(localTime, context.getZone());
-        boolean beforeContextEndsOn = shouldContinueScheduling(context, localDateTime, scheduledActivities.size());
+        boolean beforeContextEndsOn = shouldContinueScheduling(context, localDateTime, activityCount);
 
         boolean inTimeWindow = isEqualOrAfter(schedule.getStartsOn(), localDateTime)
                 && isEqualOrBefore(schedule.getEndsOn(), localDateTime);
