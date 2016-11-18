@@ -8,7 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
-import org.joda.time.LocalTime;
 import org.joda.time.Period;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
@@ -213,14 +212,5 @@ public final class DateUtils {
         } catch(Exception e) {
             throw new BadRequestException(value + " is not an ISO timestamp");
         }
-    }
-    
-    /**
-     * Convert DateTime instance to midnight UTC.
-     * @param dateTime
-     * @return dateTime at midnight in UTC
-     */
-    public static DateTime dateTimeToMidnightUTC(DateTime dateTime) {
-        return new DateTime(dateTime, DateTimeZone.UTC).withTime(LocalTime.MIDNIGHT);
     }
 }
