@@ -24,13 +24,13 @@ class IntervalActivityScheduler extends ActivityScheduler {
         DateTime datetime = getScheduledTimeBasedOnEvent(context);
 
         if (datetime != null) {
-            while(shouldContinueScheduling(context, datetime, scheduledActivities)) {
+            while(shouldContinueScheduling(context, datetime, scheduledActivities.size())) {
                 LocalTime localTime = addScheduledActivityForAllTimes(scheduledActivities, plan, context, datetime.toLocalDate());
                 // A one-time activity with no interval (for example); don't loop
                 if (schedule.getInterval() == null) {
                     return trimScheduledActivities(scheduledActivities);
                 }
-                // We reset the time portion of the timestamp to the last time that was used to schedule.
+                // We reset the time portion of the timestamp to the first time that was used to schedule.
                 // Otherwise to-the-minute resolution of the start/end time boundaries won't be correct.
                 datetime = datetime.withTime(localTime).plus(schedule.getInterval());
             }
