@@ -101,6 +101,8 @@ public interface ScheduledActivity extends BridgeEntity {
     DateTime getScheduledOn();
 
     void setLocalScheduledOn(LocalDateTime localScheduledOn);
+    
+    LocalDateTime getLocalScheduledOn();
 
     DateTime getExpiresOn();
 

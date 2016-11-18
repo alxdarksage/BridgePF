@@ -19,8 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import org.sagebionetworks.bridge.dao.ScheduledActivityDao;
+import org.sagebionetworks.bridge.dynamodb.DynamoScheduledActivity;
 import org.sagebionetworks.bridge.exceptions.BadRequestException;
-import org.sagebionetworks.bridge.json.DateUtils;
 import org.sagebionetworks.bridge.models.schedules.Activity;
 import org.sagebionetworks.bridge.models.schedules.ActivityType;
 import org.sagebionetworks.bridge.models.schedules.Schedule;
@@ -120,9 +120,9 @@ public class ScheduledActivityService {
         for (int i=0; i < dbActivities.size(); i++) {
             ScheduledActivity activity = dbActivities.get(i);
             if (oneTimeSchedulePlans.contains(activity.getSchedulePlanGuid())) {
-                LocalDateTime localDateTime = DateUtils.dateTimeToMidnightUTC(activity.getScheduledOn()).toLocalDateTime();
-                String guid = activity.getActivity().getGuid() + ":" + localDateTime;
+                LocalDateTime localDateTime = activity.getLocalScheduledOn().withTime(0,0,0,0);
                 activity.setLocalScheduledOn(localDateTime);
+                String guid = activity.getActivity().getGuid() + ":" + localDateTime;
                 activity.setGuid(guid);
             }
         }

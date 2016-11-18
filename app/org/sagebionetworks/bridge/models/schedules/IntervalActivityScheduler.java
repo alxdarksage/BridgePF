@@ -3,6 +3,7 @@ package org.sagebionetworks.bridge.models.schedules;
 import java.util.List;
 
 import org.joda.time.DateTime;
+import org.joda.time.LocalTime;
 
 import com.google.common.collect.Lists;
 
@@ -24,12 +25,13 @@ class IntervalActivityScheduler extends ActivityScheduler {
 
         if (datetime != null) {
             while(shouldContinueScheduling(context, datetime, scheduledActivities)) {
-                addScheduledActivityForAllTimes(scheduledActivities, plan, context, datetime.toLocalDate());
+                LocalTime localTime = addScheduledActivityForAllTimes(scheduledActivities, plan, context, datetime.toLocalDate());
                 // A one-time activity with no interval (for example); don't loop
                 if (schedule.getInterval() == null) {
                     return trimScheduledActivities(scheduledActivities);
                 }
-                datetime = datetime.plus(schedule.getInterval());
+                // We do need to reset the time portion to the last time portion of the day that was added to the time.
+                datetime = datetime.withTime(localTime).plus(schedule.getInterval());
             }
         }
         return trimScheduledActivities(scheduledActivities);

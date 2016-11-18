@@ -45,13 +45,14 @@ public abstract class ActivityScheduler {
         return eventTime;
     }
     
-    protected void addScheduledActivityForAllTimes(List<ScheduledActivity> scheduledActivities, SchedulePlan plan,
+    protected LocalTime addScheduledActivityForAllTimes(List<ScheduledActivity> scheduledActivities, SchedulePlan plan,
             ScheduleContext context, LocalDate localDate) {
         
         List<LocalTime> localTimes = (schedule.getTimes().isEmpty()) ? MIDNIGHT_IN_LIST : schedule.getTimes();
         for (LocalTime localTime : localTimes) {
             addScheduledActivityAtTime(scheduledActivities, plan, context, localDate, localTime);
         }
+        return localTimes.get(localTimes.size()-1);
     }
     
     protected void addScheduledActivityAtTime(List<ScheduledActivity> scheduledActivities, SchedulePlan plan,
@@ -94,8 +95,9 @@ public abstract class ActivityScheduler {
         DateTime startsOn = schedule.getStartsOn();
         DateTime endsOn = schedule.getEndsOn();
 
-        return (startsOn == null || scheduledTime.isEqual(startsOn) || scheduledTime.isAfter(startsOn)) && 
+        boolean b = (startsOn == null || scheduledTime.isEqual(startsOn) || scheduledTime.isAfter(startsOn)) && 
                (endsOn == null || scheduledTime.isEqual(endsOn) || scheduledTime.isBefore(endsOn));
+        return b;
     }
     
     private boolean isBeforeWindowEnd(DateTime scheduledTime) {
@@ -134,6 +136,7 @@ public abstract class ActivityScheduler {
 
         boolean boundaryNotMet = scheduledTime.isBefore(context.getEndsOn()) || 
                 hasNotMetMinimumCount(context, scheduledActivities.size());
+        
         return isBeforeWindowEnd(scheduledTime) && boundaryNotMet;
     }
     
