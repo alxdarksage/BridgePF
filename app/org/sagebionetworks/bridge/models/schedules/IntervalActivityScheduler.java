@@ -30,7 +30,8 @@ class IntervalActivityScheduler extends ActivityScheduler {
                 if (schedule.getInterval() == null) {
                     return trimScheduledActivities(scheduledActivities);
                 }
-                // We do need to reset the time portion to the last time portion of the day that was added to the time.
+                // We reset the time portion of the timestamp to the last time that was used to schedule.
+                // Otherwise to-the-minute resolution of the start/end time boundaries won't be correct.
                 datetime = datetime.withTime(localTime).plus(schedule.getInterval());
             }
         }
