@@ -25,9 +25,6 @@ public class ViewCache {
         public ViewCacheKey(Class<?> clazz, StudyIdentifier studyId, String key1, String key2) {
             this.key = String.format("%s:%s:%s:%s", key1, key2, studyId.getIdentifier(), clazz.getSimpleName());
         }
-        public ViewCacheKey(Class<?> clazz, StudyIdentifier studyId, String key1, String key2, String key3) {
-            this.key = String.format("%s:%s:%s:%s:%s", key1, key2, key3, studyId.getIdentifier(), clazz.getSimpleName());
-        }
         String getKey() {
             return key;
         }
