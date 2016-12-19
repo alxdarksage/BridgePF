@@ -2,13 +2,13 @@ package org.sagebionetworks.bridge.play.controllers;
 
 import static org.sagebionetworks.bridge.dao.ParticipantOption.DATA_GROUPS;
 import static org.sagebionetworks.bridge.BridgeConstants.NO_CALLER_ROLES;
+import static org.sagebionetworks.bridge.cache.ViewCache.ViewCacheKey;
 
 import java.util.Map;
 import java.util.Set;
 
 import org.sagebionetworks.bridge.BridgeConstants;
 import org.sagebionetworks.bridge.cache.ViewCache;
-import org.sagebionetworks.bridge.cache.ViewCache.ViewCacheKey;
 import org.sagebionetworks.bridge.json.JsonUtils;
 import org.sagebionetworks.bridge.models.CriteriaContext;
 import org.sagebionetworks.bridge.models.accounts.ConsentStatus;
@@ -75,7 +75,7 @@ public class UserProfileController extends BaseController {
         final Study study = studyService.getStudy(session.getStudyIdentifier());
         final String userId = session.getId();
         
-        ViewCacheKey<ObjectNode> cacheKey = viewCache.getCacheKey(ObjectNode.class, userId, study.getIdentifier());
+        ViewCacheKey cacheKey = new ViewCacheKey(ObjectNode.class, session.getStudyIdentifier(), userId);
         String json = viewCache.getView(cacheKey, new Supplier<ObjectNode>() {
             @Override public ObjectNode get() {
                 StudyParticipant participant = participantService.getParticipant(study, userId, false);
@@ -123,7 +123,7 @@ public class UserProfileController extends BaseController {
         session.setParticipant(updated);
         updateSession(session);
         
-        ViewCacheKey<ObjectNode> cacheKey = viewCache.getCacheKey(ObjectNode.class, userId, study.getIdentifier());
+        ViewCacheKey cacheKey = new ViewCacheKey(ObjectNode.class, session.getStudyIdentifier(), userId);
         viewCache.removeView(cacheKey);
         
         return okResult("Profile updated.");
