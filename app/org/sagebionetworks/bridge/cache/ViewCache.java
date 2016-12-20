@@ -4,12 +4,18 @@ import org.sagebionetworks.bridge.BridgeConstants;
 import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
 import org.sagebionetworks.bridge.json.BridgeObjectMapper;
 import org.sagebionetworks.bridge.models.studies.StudyIdentifier;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 
 @Component
@@ -17,13 +23,20 @@ public class ViewCache {
     
     private static final Logger logger = LoggerFactory.getLogger(ViewCache.class);
     
+    private static final Joiner COLON_JOINER = Joiner.on(":");
+    
     public final static class ViewCacheKey {
+
         private final String key;
-        public ViewCacheKey(Class<?> clazz, StudyIdentifier studyId, String key) {
-            this.key = String.format("%s:%s:%s", key, studyId.getIdentifier(), clazz.getSimpleName());
-        }
-        public ViewCacheKey(Class<?> clazz, StudyIdentifier studyId, String key1, String key2) {
-            this.key = String.format("%s:%s:%s:%s", key1, key2, studyId.getIdentifier(), clazz.getSimpleName());
+
+        public ViewCacheKey(Class<?> clazz, StudyIdentifier studyId, String... keys) {
+            List<String> list = new ArrayList<>();
+            if (keys != null && keys.length > 0) {
+                list.addAll(Arrays.asList(keys));    
+            }
+            list.add(studyId.getIdentifier());
+            list.add(clazz.getSimpleName());
+            this.key = COLON_JOINER.join(list);
         }
         String getKey() {
             return key;
