@@ -1,5 +1,7 @@
 package org.sagebionetworks.bridge.util;
 
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collector;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -15,7 +17,7 @@ import com.google.common.collect.ImmutableSet;
  */
 public class BridgeCollectors {
     
-    public static <T> Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> toImmutableList() {
+    public static <T> Collector<T, ImmutableList.Builder<T>, List<T>> toImmutableList() {
         return Collector.of(
                 ImmutableList.Builder<T>::new, 
                 ImmutableList.Builder<T>::add, 
@@ -23,7 +25,7 @@ public class BridgeCollectors {
                 ImmutableList.Builder<T>::build);
     }
 
-    public static <T> Collector<T, ImmutableSet.Builder<T>, ImmutableSet<T>> toImmutableSet() {
+    public static <T> Collector<T, ImmutableSet.Builder<T>, Set<T>> toImmutableSet() {
         return Collector.of(
                 ImmutableSet.Builder<T>::new, 
                 ImmutableSet.Builder<T>::add, 

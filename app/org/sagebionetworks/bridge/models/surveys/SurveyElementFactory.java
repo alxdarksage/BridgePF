@@ -6,7 +6,6 @@ import static org.sagebionetworks.bridge.models.surveys.SurveyElementConstants.S
 import org.sagebionetworks.bridge.dynamodb.DynamoSurveyInfoScreen;
 import org.sagebionetworks.bridge.dynamodb.DynamoSurveyQuestion;
 import org.sagebionetworks.bridge.exceptions.InvalidEntityException;
-import org.sagebionetworks.bridge.json.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -17,14 +16,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class SurveyElementFactory {
     
     public static SurveyElement fromJson(JsonNode node) {
-        String type = JsonUtils.asText(node, "type");
-        if (SURVEY_QUESTION_TYPE.equals(type)) {
+        if (node.has("constraints")) {
             return DynamoSurveyQuestion.fromJson(node);
-        } else if (SURVEY_INFO_SCREEN_TYPE.equals(type)) {
-            return DynamoSurveyInfoScreen.fromJson(node);
-        } else {
-            throw new InvalidEntityException("Survey element type '"+type+"' not recognized.");
         }
+        return DynamoSurveyInfoScreen.fromJson(node);    
     }
 
     public static SurveyElement fromDynamoEntity(SurveyElement element) {

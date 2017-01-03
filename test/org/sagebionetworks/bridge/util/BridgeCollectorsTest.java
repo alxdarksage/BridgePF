@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -23,7 +24,7 @@ public class BridgeCollectorsTest {
     @Test
     public void toImmutableList() {
         List<String> list = Arrays.asList("a", "ab", "b", "bb", "c", "a");
-        ImmutableList<String> test = list.stream().filter(s -> s.length() == 1)
+        List<String> test = list.stream().filter(s -> s.length() == 1)
                 .collect(BridgeCollectors.toImmutableList());
         assertEquals(test, ImmutableList.of("a", "b", "c", "a"));
         assertTrue(test instanceof ImmutableList);
@@ -32,7 +33,7 @@ public class BridgeCollectorsTest {
     @Test
     public void toImmutableSet() {
         List<String> list = Arrays.asList("a", "ab", "b", "bb", "c", "a");
-        ImmutableSet<String> test = list.stream().filter(s -> s.length() == 1)
+        Set<String> test = list.stream().filter(s -> s.length() == 1)
                 .collect(BridgeCollectors.toImmutableSet());
         assertEquals(test, ImmutableSet.of("a", "b", "c"));
         assertTrue(test instanceof ImmutableSet);

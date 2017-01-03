@@ -8,9 +8,9 @@ import org.sagebionetworks.bridge.json.DateTimeToLongSerializer;
 import org.sagebionetworks.bridge.models.GuidCreatedOnVersionHolder;
 import org.sagebionetworks.bridge.models.surveys.Survey;
 import org.sagebionetworks.bridge.models.surveys.SurveyElement;
-import org.sagebionetworks.bridge.models.surveys.SurveyElementConstants;
 import org.sagebionetworks.bridge.models.surveys.SurveyElementFactory;
 import org.sagebionetworks.bridge.models.surveys.SurveyQuestion;
+import org.sagebionetworks.bridge.util.BridgeCollectors;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
@@ -24,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 @DynamoDBTable(tableName = "Survey")
@@ -200,13 +199,10 @@ public class DynamoSurvey implements Survey {
     @DynamoDBIgnore
     @JsonIgnore
     public List<SurveyQuestion> getUnmodifiableQuestionList() {
-        ImmutableList.Builder<SurveyQuestion> builder = new ImmutableList.Builder<>();
-        for (SurveyElement element : elements) {
-            if (SurveyElementConstants.SURVEY_QUESTION_TYPE.equals(element.getType())) {
-                builder.add((SurveyQuestion)element);
-            }
-        }
-        return builder.build();
+        return elements.stream()
+                .filter(el -> el instanceof SurveyQuestion)
+                .map(el -> (SurveyQuestion)el)
+                .collect(BridgeCollectors.toImmutableList());
     }
 
     @Override

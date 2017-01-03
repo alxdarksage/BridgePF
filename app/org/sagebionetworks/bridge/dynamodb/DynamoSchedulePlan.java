@@ -50,8 +50,23 @@ public final class DynamoSchedulePlan implements SchedulePlan {
         plan.setGuid(JsonUtils.asText(node, GUID_PROPERTY));
         plan.setLabel(JsonUtils.asText(node, LABEL_PROPERTY));
         plan.setModifiedOn(JsonUtils.asMillisSinceEpoch(node, MODIFIED_ON_PROPERTY));
-        plan.setData(JsonUtils.asObjectNode(node, STRATEGY_PROPERTY));
         plan.setVersion(JsonUtils.asLong(node, VERSION_PROPERTY));
+        ObjectNode strategy = JsonUtils.asObjectNode(node, STRATEGY_PROPERTY);
+        // Our documentation states that the type attribute is not necessary when 
+        // submitting objects to the server. Unfortunately, subtyping in Jackson needs 
+        // something like the type property. So don't use subtypes going forward, but 
+        // there are some existing cases that do (SchedulePlan, Survey) where we can 
+        // fudge by deducing the type if it's missing.
+        if (strategy != null && !strategy.has("type")) {
+            if (strategy.has("scheduleCriteria")) {
+                strategy.put("type", "CriteriaScheduleStrategy");
+            } else if (strategy.has("scheduleGroups")) {
+                strategy.put("type", "ABTestScheduleStrategy");
+            } else {
+                strategy.put("type", "SimpleScheduleStrategy");
+            }
+        }
+        plan.setData(JsonUtils.asObjectNode(node, STRATEGY_PROPERTY));
         return plan;
     }
 

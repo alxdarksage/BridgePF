@@ -36,8 +36,10 @@ import org.sagebionetworks.bridge.models.accounts.ConsentStatus;
 import org.sagebionetworks.bridge.models.accounts.StudyParticipant;
 import org.sagebionetworks.bridge.models.schedules.ABTestScheduleStrategy;
 import org.sagebionetworks.bridge.models.schedules.Activity;
+import org.sagebionetworks.bridge.models.schedules.CriteriaScheduleStrategy;
 import org.sagebionetworks.bridge.models.schedules.Schedule;
 import org.sagebionetworks.bridge.models.schedules.ScheduleContext;
+import org.sagebionetworks.bridge.models.schedules.ScheduleCriteria;
 import org.sagebionetworks.bridge.models.schedules.SchedulePlan;
 import org.sagebionetworks.bridge.models.schedules.ScheduleStrategy;
 import org.sagebionetworks.bridge.models.schedules.ScheduleType;
@@ -60,6 +62,8 @@ import play.test.Helpers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -269,6 +273,18 @@ public class TestUtils {
         return strategy;
     }
     
+    public static ScheduleStrategy getScheduleCriteriaStrategy() {
+        Schedule schedule1 = getSchedule("Test 1");
+        Criteria criteria1 = createCriteria(0, 10, Sets.newHashSet(), Sets.newHashSet());
+        Schedule schedule2 = getSchedule("Test 2");
+        Criteria criteria2 = createCriteria(20, 40, Sets.newHashSet(), Sets.newHashSet());
+        
+        CriteriaScheduleStrategy strategy = new CriteriaScheduleStrategy();
+        strategy.addCriteria(new ScheduleCriteria(schedule1, criteria1));
+        strategy.addCriteria(new ScheduleCriteria(schedule2, criteria2));
+        return strategy;
+    }
+    
     public static DynamoStudy getValidStudy(Class<?> clazz) {
         // This study will save without further modification.
         DynamoStudy study = new DynamoStudy();
@@ -401,4 +417,19 @@ public class TestUtils {
         String rndPart = TestUtils.randomName(cls);
         return String.format("bridge-testing+%s-%s@sagebase.org", devPart, rndPart);
     }
+
+    public static void removeType(JsonNode node) {
+        if (node.isObject()) {
+            ((ObjectNode)node).remove("type");
+            for (Iterator<String> i = node.fieldNames(); i.hasNext();) {
+                removeType(node.get(i.next()));
+            }
+        } else if (node.isArray()) {
+            ArrayNode array = (ArrayNode)node;
+            for (int i=0; i < array.size(); i++) {
+                removeType(array.get(i));
+            }
+        }
+    }
+    
  }

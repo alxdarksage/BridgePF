@@ -3,14 +3,15 @@ package org.sagebionetworks.bridge.dynamodb;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Test;
 
-import org.sagebionetworks.bridge.TestConstants;
 import org.sagebionetworks.bridge.TestUtils;
 import org.sagebionetworks.bridge.json.BridgeObjectMapper;
+import org.sagebionetworks.bridge.models.schedules.CriteriaScheduleStrategy;
 import org.sagebionetworks.bridge.models.schedules.SchedulePlan;
 import org.sagebionetworks.bridge.models.schedules.ScheduleStrategy;
 
@@ -30,7 +31,8 @@ public class DynamoSchedulePlanTest {
     public void canSerializeDynamoSchedulePlan() throws Exception {
         DateTime datetime = DateTime.now().withZone(DateTimeZone.UTC);
         
-        ScheduleStrategy strategy = TestUtils.getStrategy("P1D", TestConstants.TEST_1_ACTIVITY);
+        //ScheduleStrategy strategy = TestUtils.getStrategy("P1D", TestConstants.TEST_1_ACTIVITY);
+        ScheduleStrategy strategy = TestUtils.getScheduleCriteriaStrategy();
         
         DynamoSchedulePlan plan = new DynamoSchedulePlan();
         plan.setLabel("Label");
@@ -43,7 +45,12 @@ public class DynamoSchedulePlanTest {
         String json = BridgeObjectMapper.get().writeValueAsString(plan);
         JsonNode node = BridgeObjectMapper.get().readTree(json);
         
+        // Verify this is correct before we delete it
         assertEquals("SchedulePlan", node.get("type").asText());
+        
+        // Delete type information to verify that deserialization still works.
+        TestUtils.removeType(node);
+        
         assertEquals(2, node.get("version").asInt());
         assertEquals("guid", node.get("guid").asText());
         assertEquals("Label", node.get("label").asText());
@@ -58,6 +65,7 @@ public class DynamoSchedulePlanTest {
         assertEquals(plan.getModifiedOn(), plan2.getModifiedOn());
         
         ScheduleStrategy retrievedStrategy = plan.getStrategy();
+        assertTrue(retrievedStrategy instanceof CriteriaScheduleStrategy);
         assertEquals(retrievedStrategy, strategy);
     }
     
