@@ -78,7 +78,14 @@ public class DynamoSurveyTest {
         ArrayNode elements = (ArrayNode) node.get("elements");
         assertEquals(10, elements.size());
         
-        // Delete type information to verify that deserialization still works.
+        // Verify that all the type information was correctly serialized
+        for (int i = 0; i < 9; i++) {
+            assertEquals("SurveyQuestion", elements.get(i).get("type").asText());
+            assertNotNull(elements.get(i).get("constraints").get("type").asText());
+        }
+        assertEquals("SurveyInfoScreen", elements.get(9).get("type").asText());
+        
+        // (Delete type information to verify that deserialization will still work.)
         TestUtils.removeType(node);
         
         // Convert back to POJO and validate. Note that study ID is still missing, since it was removed from the JSON.

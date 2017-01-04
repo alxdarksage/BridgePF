@@ -31,7 +31,6 @@ public class DynamoSchedulePlanTest {
     public void canSerializeDynamoSchedulePlan() throws Exception {
         DateTime datetime = DateTime.now().withZone(DateTimeZone.UTC);
         
-        //ScheduleStrategy strategy = TestUtils.getStrategy("P1D", TestConstants.TEST_1_ACTIVITY);
         ScheduleStrategy strategy = TestUtils.getScheduleCriteriaStrategy();
         
         DynamoSchedulePlan plan = new DynamoSchedulePlan();

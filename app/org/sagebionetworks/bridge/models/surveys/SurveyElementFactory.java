@@ -6,6 +6,7 @@ import static org.sagebionetworks.bridge.models.surveys.SurveyElementConstants.S
 import org.sagebionetworks.bridge.dynamodb.DynamoSurveyInfoScreen;
 import org.sagebionetworks.bridge.dynamodb.DynamoSurveyQuestion;
 import org.sagebionetworks.bridge.exceptions.InvalidEntityException;
+import org.sagebionetworks.bridge.json.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -15,11 +16,20 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class SurveyElementFactory {
     
+    /**
+     * This method will try to infer the sub-type of SurveyElement from distinctive fields
+     * in the sub-types, or from the type attribute, if present. This fulfills the contract 
+     * with consumers that they don't have to supply type properties when sending JSON to 
+     * the server.
+     */
     public static SurveyElement fromJson(JsonNode node) {
-        if (node.has("constraints")) {
+        String type = JsonUtils.asText(node, "type");
+        if (node.has("constraints") || SURVEY_QUESTION_TYPE.equals(type)) {
             return DynamoSurveyQuestion.fromJson(node);
+        } else if (node.has("title") || SURVEY_INFO_SCREEN_TYPE.equals(type)) {
+            return DynamoSurveyInfoScreen.fromJson(node);
         }
-        return DynamoSurveyInfoScreen.fromJson(node);    
+        throw new InvalidEntityException("Survey element type '"+type+"' not recognized.");
     }
 
     public static SurveyElement fromDynamoEntity(SurveyElement element) {
