@@ -12,7 +12,7 @@ public class StringConstraints extends Constraints {
 
     public StringConstraints() {
         setDataType(DataType.STRING);
-        setSupportedHints(EnumSet.of(UIHint.MULTILINETEXT, UIHint.TEXTFIELD));
+        setSupportedHints(EnumSet.of(UIHint.MULTILINETEXT, UIHint.TEXTFIELD, UIHint.BLOODPRESSURE));
     }
     public Integer getMinLength() {
         return minLength;

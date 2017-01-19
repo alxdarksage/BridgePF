@@ -35,6 +35,7 @@ import org.sagebionetworks.bridge.models.surveys.SurveyRule;
 import org.sagebionetworks.bridge.models.surveys.SurveyRule.Operator;
 import org.sagebionetworks.bridge.models.surveys.TestSurvey;
 import org.sagebionetworks.bridge.models.surveys.UIHint;
+import org.sagebionetworks.bridge.models.surveys.Unit;
 import org.sagebionetworks.bridge.upload.UploadUtil;
 
 import com.google.common.collect.Lists;
@@ -657,6 +658,54 @@ public class SurveyValidatorTest {
         } catch (InvalidEntityException e) {
             assertEquals("step is larger than the range of allowable values", errorFor(e, "elements[3].constraints.step"));
         }
+    }
+    
+    @Test
+    public void willValidateUnitMatchesHeightUIHint() {
+        survey = new TestSurvey(SurveyValidatorTest.class, false);
+        SurveyQuestion question = ((TestSurvey) survey).getDecimalQuestion();
+        question.setUiHint(UIHint.HEIGHT);
+        DecimalConstraints constraints = (DecimalConstraints)question.getConstraints();
+        constraints.setUnit(Unit.CUBIC_CENTIMETERS);
+        try {
+            Validate.entityThrowingException(validator, survey);
+            fail("Should have thrown exception");
+        } catch (InvalidEntityException e) {
+            assertEquals("unit must be meters or feet for height UI hint", errorFor(e, "elements[3].constraints.unit"));
+        }
+        constraints.setUnit(null);
+        try {
+            Validate.entityThrowingException(validator, survey);
+            fail("Should have thrown exception");
+        } catch (InvalidEntityException e) {
+            assertEquals("unit must be meters or feet for height UI hint", errorFor(e, "elements[3].constraints.unit"));
+        }
+        constraints.setUnit(Unit.METERS);
+        Validate.entityThrowingException(validator, survey);
+    }
+    
+    @Test
+    public void willValidateUnitMatchesWeightUIHint() {
+        survey = new TestSurvey(SurveyValidatorTest.class, false);
+        SurveyQuestion question = ((TestSurvey) survey).getDecimalQuestion();
+        question.setUiHint(UIHint.WEIGHT);
+        DecimalConstraints constraints = (DecimalConstraints)question.getConstraints();
+        constraints.setUnit(Unit.MILLILITERS);
+        try {
+            Validate.entityThrowingException(validator, survey);
+            fail("Should have thrown exception");
+        } catch (InvalidEntityException e) {
+            assertEquals("unit must be pounds or kilograms for weight UI hint", errorFor(e, "elements[3].constraints.unit"));
+        }
+        constraints.setUnit(null);
+        try {
+            Validate.entityThrowingException(validator, survey);
+            fail("Should have thrown exception");
+        } catch (InvalidEntityException e) {
+            assertEquals("unit must be pounds or kilograms for weight UI hint", errorFor(e, "elements[3].constraints.unit"));
+        }
+        constraints.setUnit(Unit.KILOGRAMS);
+        Validate.entityThrowingException(validator, survey);
     }
     
     @Test
