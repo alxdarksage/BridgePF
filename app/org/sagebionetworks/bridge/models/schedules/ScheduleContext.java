@@ -228,6 +228,10 @@ public final class ScheduleContext {
         }
         
         public ScheduleContext build() {
+            // ScheduleContext is validated to have the correct values:
+            // - requestTimeZone is required
+            // - now is advisable, but still not required
+            // - endsOn OR daysAhead needs to be supplied to calculate endsOn from now
             if (initialTimeZone == null) {
                 initialTimeZone = requestTimeZone;
             }
