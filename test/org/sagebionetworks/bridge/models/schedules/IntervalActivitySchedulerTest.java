@@ -75,7 +75,7 @@ public class IntervalActivitySchedulerTest {
         ScheduleContext context= new ScheduleContext.Builder()
                 .withStudyIdentifier(TEST_STUDY)
                 .withRequestTimeZone(zone)
-                .withEndsOn(ENROLLMENT.plusDays(2).withZone(zone))
+                .withDaysAhead(2)
                 .withHealthCode("AAA")
                 .withEvents(events).build();
         

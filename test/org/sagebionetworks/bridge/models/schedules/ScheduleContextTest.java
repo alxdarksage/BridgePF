@@ -107,4 +107,16 @@ public class ScheduleContextTest {
         assertEquals("2010-10-10T07:10:10.010Z", context2.getAccountCreatedOn().toString());
     }
     
+    @Test
+    public void daysAheadConvertedToEndsOn() {
+        DateTime now = DateTime.parse("2010-10-10T10:10:10.010+03:00");
+
+        ScheduleContext context = new ScheduleContext.Builder()
+                .withStudyIdentifier(TestConstants.TEST_STUDY)
+                .withDaysAhead(3)
+                .withNow(now).build();
+        
+        assertEquals("2010-10-13T23:59:59.999+03:00", context.getEndsOn().toString());
+    }
+    
 }
