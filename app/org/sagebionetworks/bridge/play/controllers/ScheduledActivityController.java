@@ -10,7 +10,6 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import org.sagebionetworks.bridge.dao.ParticipantOption;
-import org.sagebionetworks.bridge.exceptions.BadRequestException;
 import org.sagebionetworks.bridge.json.DateUtils;
 import org.sagebionetworks.bridge.models.RequestInfo;
 import org.sagebionetworks.bridge.models.ResourceList;
@@ -32,8 +31,7 @@ import play.mvc.Result;
 @Controller
 public class ScheduledActivityController extends BaseController {
     
-    private static final TypeReference<ArrayList<ScheduledActivity>> scheduledActivityTypeRef = new TypeReference<ArrayList<ScheduledActivity>>() {};
-    private static final String BAD_GET_ACTIVITIES_PARAMS = "Supply either 'until' parameter, or 'daysAhead' and 'offset' parameter.";
+    private static final TypeReference<ArrayList<ScheduledActivity>> SCHEDULED_ACTIVITY_TYPE_REF = new TypeReference<ArrayList<ScheduledActivity>>() {};
 
     private ScheduledActivityService scheduledActivityService;
 
@@ -62,7 +60,7 @@ public class ScheduledActivityController extends BaseController {
         UserSession session = getAuthenticatedAndConsentedSession();
 
         List<ScheduledActivity> scheduledActivities = MAPPER.convertValue(requestToJSON(request()),
-                scheduledActivityTypeRef);
+                SCHEDULED_ACTIVITY_TYPE_REF);
         scheduledActivityService.updateScheduledActivities(session.getHealthCode(), scheduledActivities);
 
         return okResult("Activities updated.");
@@ -87,11 +85,17 @@ public class ScheduledActivityController extends BaseController {
         DateTime until = (isNotBlank(untilString)) ? DateTime.parse(untilString) : null;
         
         ScheduleContext.Builder builder = new ScheduleContext.Builder();
+        DateTimeZone requestTimeZone = getRequestTimeZone(builder, until, offset, daysAhead);
+        // The initial time zone is the time zone of the user upon first contacting the server for activities; events
+        // are scheduled in this time zone. This ensures that a user will receive activities on the day they contact 
+        // the server. If it has not yet been captured, this is the first request, so capture and persist the value.
         DateTimeZone initialTimeZone = session.getParticipant().getTimeZone();
-        
-        addRequestTimeZone(builder, until, offset, daysAhead);
+        if (initialTimeZone == null) {
+            initialTimeZone = persistTimeZone(session, requestTimeZone);
+        }
         addEndsOn(builder, until, offset, daysAhead);
         builder.withInitialTimeZone(initialTimeZone);
+        builder.withRequestTimeZone(requestTimeZone);
         builder.withUserDataGroups(session.getParticipant().getDataGroups());
         builder.withHealthCode(session.getHealthCode());
         builder.withUserId(session.getId());
@@ -101,13 +105,6 @@ public class ScheduledActivityController extends BaseController {
         builder.withClientInfo(getClientInfoFromUserAgentHeader());
         builder.withMinimumPerSchedule(getIntOrDefault(minimumPerScheduleString, 0));
         ScheduleContext context = builder.build();
-        
-        // The initial time zone is the time zone of the user upon first contacting the server for activities; events
-        // are scheduled in this time zone. This ensures that a user will receive activities on the day they contact 
-        // the server. If it has not yet been captured, this is the first request, so capture and persist the value.
-        if (initialTimeZone == null) {
-            initialTimeZone = persistTimeZone(session, context.getRequestTimeZone());
-        }
         
         RequestInfo requestInfo = new RequestInfo.Builder()
                 .withUserId(context.getCriteriaContext().getUserId())
@@ -136,17 +133,14 @@ public class ScheduledActivityController extends BaseController {
         return timeZone;
     }
 
-    private void addRequestTimeZone(ScheduleContext.Builder builder, DateTime until, String offset, String daysAhead) {
+    private DateTimeZone getRequestTimeZone(ScheduleContext.Builder builder, DateTime until, String offset, String daysAhead) {
         DateTimeZone requestTimeZone = null;
-        if (until != null) {
-            requestTimeZone = until.getZone();
-        } else if (isNotBlank(offset)) {
+        if (isNotBlank(offset)) {
             requestTimeZone = DateUtils.parseZoneFromOffsetString(offset);
+        } else if (until != null) {
+            requestTimeZone = until.getZone();
         }
-        if (requestTimeZone == null) {
-            throw new BadRequestException(BAD_GET_ACTIVITIES_PARAMS);    
-        }
-        builder.withRequestTimeZone(requestTimeZone);
+        return requestTimeZone;
     }
     
     private void addEndsOn(ScheduleContext.Builder builder, DateTime until, String offset, String daysAhead) {
