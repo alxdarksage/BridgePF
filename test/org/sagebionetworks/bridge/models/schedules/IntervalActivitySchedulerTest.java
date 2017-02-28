@@ -70,18 +70,19 @@ public class IntervalActivitySchedulerTest {
         schedule.addActivity(TestConstants.TEST_3_ACTIVITY);
         schedule.setScheduleType(ScheduleType.ONCE);
         schedule.setExpires("P2M");
+        DateTimeZone zone = DateTimeZone.forOffsetHours(-7);
         
         ScheduleContext context= new ScheduleContext.Builder()
                 .withStudyIdentifier(TEST_STUDY)
-                .withInitialTimeZone(DateTimeZone.forOffsetHours(-7))
-                .withEndsOn(ENROLLMENT.plusDays(2)) // in UTC
+                .withRequestTimeZone(zone)
+                .withEndsOn(ENROLLMENT.plusDays(2).withZone(zone))
                 .withHealthCode("AAA")
                 .withEvents(events).build();
         
         scheduledActivities = schedule.getScheduler().getScheduledActivities(plan, context);
         
-        // Date is expressed in local time UTC, because that's the endsOn time zone.
-        assertDates(scheduledActivities, DateTimeZone.UTC, "2015-03-23T03:00");
+        // Date is expressed in local time PST, because that's the endsOn time zone.
+        assertDates(scheduledActivities, zone, "2015-03-23T03:00");
     }
     
     @Test
@@ -616,7 +617,7 @@ public class IntervalActivitySchedulerTest {
     private ScheduleContext getContext(DateTimeZone timeZone, DateTime endsOn) {
         return new ScheduleContext.Builder()
             .withStudyIdentifier(TEST_STUDY)
-            .withInitialTimeZone(timeZone)
+            .withRequestTimeZone(timeZone)
             .withEndsOn(endsOn)
             .withHealthCode("AAA")
             .withEvents(events).build();

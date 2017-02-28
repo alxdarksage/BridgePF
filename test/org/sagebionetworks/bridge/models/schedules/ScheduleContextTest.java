@@ -28,11 +28,14 @@ public class ScheduleContextTest {
     
     @Test
     public void quietlyReturnsFalseForEvents() {
-        ScheduleContext context = new ScheduleContext.Builder().withStudyIdentifier(TestConstants.TEST_STUDY).build();
+        ScheduleContext context = new ScheduleContext.Builder().withRequestTimeZone(DateTimeZone.UTC)
+                .withStudyIdentifier(TestConstants.TEST_STUDY).build();
         assertNull(context.getEvent("enrollment"));
         assertFalse(context.hasEvents());
         
-        context = new ScheduleContext.Builder().withStudyIdentifier(TestConstants.TEST_STUDY).withEvents(new HashMap<String, DateTime>()).build();
+        context = new ScheduleContext.Builder().withRequestTimeZone(DateTimeZone.UTC)
+                .withStudyIdentifier(TestConstants.TEST_STUDY)
+                .withEvents(new HashMap<String, DateTime>()).build();
         assertNull(context.getEvent("enrollment"));
         assertFalse(context.hasEvents());
     }
@@ -44,7 +47,9 @@ public class ScheduleContextTest {
     
     @Test
     public void defaultsTimeZoneMinimumAndClientInfo() {
-        ScheduleContext context = new ScheduleContext.Builder().withStudyIdentifier(TestConstants.TEST_STUDY).build();
+        ScheduleContext context = new ScheduleContext.Builder()
+                .withRequestTimeZone(DateTimeZone.UTC)
+                .withStudyIdentifier(TestConstants.TEST_STUDY).build();
         
         assertEquals(ClientInfo.UNKNOWN_CLIENT, context.getCriteriaContext().getClientInfo());
         assertNotNull(context.getNow());
@@ -67,6 +72,7 @@ public class ScheduleContextTest {
                 .withClientInfo(clientInfo)
                 .withStudyIdentifier(studyId)
                 .withInitialTimeZone(PST)
+                .withRequestTimeZone(PST)
                 .withEndsOn(endsOn)
                 .withMinimumPerSchedule(3)
                 .withEvents(events)
@@ -84,7 +90,7 @@ public class ScheduleContextTest {
         assertEquals(now, context.getNow());
 
         // and the other studyId setter
-        context = new ScheduleContext.Builder().withStudyIdentifier("study-key").build();
+        context = new ScheduleContext.Builder().withRequestTimeZone(PST).withStudyIdentifier("study-key").build();
         assertEquals(studyId, context.getCriteriaContext().getStudyIdentifier());
     }
     
@@ -92,6 +98,7 @@ public class ScheduleContextTest {
     public void eventTimesAreForcedToUTC() {
         ScheduleContext context = new ScheduleContext.Builder()
                 .withAccountCreatedOn(DateTime.parse("2010-10-10T10:10:10.010+03:00"))
+                .withRequestTimeZone(DateTimeZone.forOffsetHours(3))
                 .withStudyIdentifier("study-Id")
                 .build();
         assertEquals("2010-10-10T07:10:10.010Z", context.getAccountCreatedOn().toString());
