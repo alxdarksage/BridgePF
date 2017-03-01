@@ -144,8 +144,9 @@ public class ScheduledActivityController extends BaseController {
     }
     
     private void addEndsOn(ScheduleContext.Builder builder, DateTime until, String offset, String daysAhead) {
-        // We've validated the parameters in addRequestTimeZone, we need not verify they exist again. daysAhead
-        // is optional, if it isn't supplied, we use a default value.
+        // We've validated the parameters in addRequestTimeZone, we need not verify they exist again. 
+        // ScheduleContext validation will fail if we cannot produce an endsOn value (originally provided 
+        // through an "until" parameter, but now indicated with a "daysAhead" parameter).
         if (until != null) {
             builder.withEndsOn(until);
         } else {
