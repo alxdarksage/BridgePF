@@ -288,12 +288,13 @@ public class ScheduledActivityControllerTest {
     }
     
     @Test
-    public void useInitialTimeZone() throws Exception {
+    public void correctly() throws Exception {
+        DateTimeZone ZONE = DateTimeZone.forOffsetHours(2);
         StudyParticipant participant = new StudyParticipant.Builder()
                 .withHealthCode("BBB")
                 .withDataGroups(Sets.newHashSet("group1"))
                 .withLanguages(TestUtils.newLinkedHashSet("en","fr"))
-                .withTimeZone(DateTimeZone.forOffsetHours(2))
+                .withTimeZone(ZONE)
                 .withCreatedOn(ACCOUNT_CREATED_ON)
                 .withId(ID).build();
         session = new UserSession(participant);
@@ -304,7 +305,7 @@ public class ScheduledActivityControllerTest {
         
         verify(scheduledActivityService).getScheduledActivities(contextCaptor.capture());
         ScheduleContext context = contextCaptor.getValue();
-        assertEquals(DateTimeZone.forOffsetHours(2), context.getInitialTimeZone());
+        assertEquals(ZONE, context.getInitialTimeZone());
         assertEquals(DateTimeZone.forOffsetHours(-7), context.getRequestTimeZone());
     }
     
