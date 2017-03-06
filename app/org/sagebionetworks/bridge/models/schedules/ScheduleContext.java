@@ -229,18 +229,24 @@ public final class ScheduleContext {
         
         public ScheduleContext build() {
             // ScheduleContext is validated to have the correct values:
-            // - requestTimeZone is required
+            // - requestTimeZone is required (when validated)
             // - now is advisable, but still not required
             // - endsOn OR daysAhead needs to be supplied to calculate endsOn from now
             if (initialTimeZone == null) {
                 initialTimeZone = requestTimeZone;
             }
-            if (now == null && requestTimeZone != null) {
-                now = DateTime.now(requestTimeZone);
-            }
-            if (endsOn == null && now != null) {
-                endsOn = now.plusDays(daysAhead).withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59)
-                        .withMillisOfSecond(999);
+            if (requestTimeZone != null) {
+                if (now == null) {
+                    now = DateTime.now(requestTimeZone);
+                } else {
+                    now = now.withZone(requestTimeZone);    
+                }
+                if (endsOn == null) {
+                    endsOn = now.plusDays(daysAhead).withHourOfDay(23).withMinuteOfHour(59).withSecondOfMinute(59)
+                            .withMillisOfSecond(999);
+                } else {
+                    endsOn = endsOn.withZone(requestTimeZone);
+                }
             }
             return new ScheduleContext(initialTimeZone, requestTimeZone, endsOn, events, now, minimumPerSchedule,
                     accountCreatedOn, contextBuilder.build());

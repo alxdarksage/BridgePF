@@ -47,7 +47,9 @@ public class ScheduleContextTest {
     
     @Test
     public void defaultsTimeZoneMinimumAndClientInfo() {
+        DateTimeZone PST = DateTimeZone.forOffsetHours(-7);
         ScheduleContext context = new ScheduleContext.Builder()
+                .withInitialTimeZone(PST)
                 .withRequestTimeZone(DateTimeZone.UTC)
                 .withStudyIdentifier(TestConstants.TEST_STUDY).build();
         
@@ -61,8 +63,9 @@ public class ScheduleContextTest {
         ClientInfo clientInfo = ClientInfo.fromUserAgentCache("app/5");
         StudyIdentifier studyId = new StudyIdentifierImpl("study-key");
         DateTimeZone PST = DateTimeZone.forOffsetHours(-7);
-        DateTime endsOn = DateTime.now();
-        DateTime now = DateTime.now();
+        DateTimeZone EST = DateTimeZone.forOffsetHours(-3);
+        DateTime endsOn = DateTime.now(EST);
+        DateTime now = DateTime.now(EST);
         
         Map<String,DateTime> events = new HashMap<>();
         events.put("enrollment", DateTime.now());
@@ -72,7 +75,7 @@ public class ScheduleContextTest {
                 .withClientInfo(clientInfo)
                 .withStudyIdentifier(studyId)
                 .withInitialTimeZone(PST)
-                .withRequestTimeZone(PST)
+                .withRequestTimeZone(EST)
                 .withEndsOn(endsOn)
                 .withMinimumPerSchedule(3)
                 .withEvents(events)
@@ -82,6 +85,7 @@ public class ScheduleContextTest {
         assertEquals(studyId, context.getCriteriaContext().getStudyIdentifier());
         assertEquals(clientInfo, context.getCriteriaContext().getClientInfo());
         assertEquals(PST, context.getInitialTimeZone());
+        assertEquals(EST, context.getRequestTimeZone());
         assertEquals(endsOn, context.getEndsOn());
         assertEquals(events.get("enrollment"), context.getEvent("enrollment"));
         assertEquals(3, context.getMinimumPerSchedule());
@@ -109,9 +113,11 @@ public class ScheduleContextTest {
     
     @Test
     public void daysAheadConvertedToEndsOn() {
+        DateTimeZone MSK = DateTimeZone.forOffsetHours(3);
         DateTime now = DateTime.parse("2010-10-10T10:10:10.010+03:00");
 
         ScheduleContext context = new ScheduleContext.Builder()
+                .withRequestTimeZone(MSK)
                 .withStudyIdentifier(TestConstants.TEST_STUDY)
                 .withDaysAhead(3)
                 .withNow(now).build();
@@ -119,4 +125,19 @@ public class ScheduleContextTest {
         assertEquals("2010-10-13T23:59:59.999+03:00", context.getEndsOn().toString());
     }
     
+    @Test
+    public void requestTimeZoneNull() {
+        ScheduleContext context = new ScheduleContext.Builder().withStudyIdentifier(TestConstants.TEST_STUDY).build();
+        assertNull(context.getRequestTimeZone());
+    }
+    
+    @Test
+    public void initialTimeZoneFromRequestZone() {
+        DateTimeZone PST = DateTimeZone.forOffsetHours(-7);
+        
+        ScheduleContext context = new ScheduleContext.Builder().withStudyIdentifier(TestConstants.TEST_STUDY)
+                .withRequestTimeZone(PST).build();
+        assertEquals(PST, context.getRequestTimeZone());
+        assertEquals(PST, context.getInitialTimeZone());
+    }
 }
