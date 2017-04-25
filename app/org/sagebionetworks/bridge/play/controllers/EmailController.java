@@ -4,6 +4,8 @@ import static org.sagebionetworks.bridge.dao.ParticipantOption.EMAIL_NOTIFICATIO
 
 import java.util.Map;
 
+import javax.annotation.Resource;
+
 import org.sagebionetworks.bridge.dao.AccountDao;
 import org.sagebionetworks.bridge.exceptions.BadRequestException;
 import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
@@ -25,7 +27,7 @@ public class EmailController extends BaseController {
     
     private AccountDao accountDao;
 
-    @Autowired
+    @Resource(name = "oktaAccountDao")
     public void setAccountDao(AccountDao accountDao) {
         this.accountDao = accountDao;
     }

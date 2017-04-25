@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Resource;
+
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.joda.time.DateTime;
@@ -84,7 +86,7 @@ public class ParticipantService {
 
     private ScheduledActivityService scheduledActivityService;
 
-    @Autowired
+    @Resource(name = "oktaAccountDao")
     final void setAccountDao(AccountDao accountDao) {
         this.accountDao = accountDao;
     }

@@ -4,6 +4,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.sagebionetworks.bridge.BridgeConstants.NO_CALLER_ROLES;
 import static org.sagebionetworks.bridge.dao.ParticipantOption.LANGUAGES;
 
+import javax.annotation.Resource;
+
 import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.Roles;
 import org.sagebionetworks.bridge.cache.CacheProvider;
@@ -76,7 +78,7 @@ public class AuthenticationService {
     final void setOptionsService(ParticipantOptionsService optionsService) {
         this.optionsService = optionsService;
     }
-    @Autowired
+    @Resource(name = "oktaAccountDao")
     final void setAccountDao(AccountDao accountDao) {
         this.accountDao = accountDao;
     }
