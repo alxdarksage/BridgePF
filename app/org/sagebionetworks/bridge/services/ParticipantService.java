@@ -194,12 +194,9 @@ public class ParticipantService {
         return builder.build();
     }
 
-    public PagedResourceList<AccountSummary> getPagedAccountSummaries(Study study, int offsetBy, int pageSize,
+    public PagedResourceList<AccountSummary> getPagedAccountSummaries(Study study, String offsetBy, int pageSize,
             String emailFilter, DateTime startDate, DateTime endDate) {
         checkNotNull(study);
-        if (offsetBy < 0) {
-            throw new BadRequestException("offsetBy cannot be less than 0");
-        }
         // Just set a sane upper limit on this.
         if (pageSize < API_MINIMUM_PAGE_SIZE || pageSize > API_MAXIMUM_PAGE_SIZE) {
             throw new BadRequestException(PAGE_SIZE_ERROR);

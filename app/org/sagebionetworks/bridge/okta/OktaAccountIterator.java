@@ -1,28 +1,45 @@
 package org.sagebionetworks.bridge.okta;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import java.io.IOException;
 import java.util.Iterator;
 
+import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
 import org.sagebionetworks.bridge.models.accounts.AccountSummary;
 import org.sagebionetworks.bridge.models.studies.StudyIdentifier;
 
+import com.okta.sdk.clients.UserApiClient;
+import com.okta.sdk.framework.PagedResults;
 import com.okta.sdk.models.users.User;
 
 public class OktaAccountIterator implements Iterator<AccountSummary> {
     
+    private static final int LIMIT = 100;
+    private final UserApiClient userApiClient;
     private final StudyIdentifier studyId;
-    private final Iterator<User> iterator;
+    private PagedResults<User> page;
+    private Iterator<User> iterator;
     
-    public OktaAccountIterator(StudyIdentifier studyId, Iterator<User> iterator) {
-        checkNotNull(iterator);
-        
+    public OktaAccountIterator(StudyIdentifier studyId, UserApiClient userApiClient) {
         this.studyId = studyId;
-        this.iterator = iterator;
+        this.userApiClient = userApiClient;
+        try {
+            page = userApiClient.getUsersPagedResultsWithLimit(100);
+            iterator = page.getResult().iterator();
+        } catch(IOException e) {
+            throw new BridgeServiceException(e);
+        }
     }
     
     @Override
     public boolean hasNext() {
+        try {
+            if (!iterator.hasNext() && !page.isLastPage()) {
+                page = userApiClient.getUsersPagedResultsAfterCursorWithLimit(page.getNextUrl(), LIMIT);
+                iterator = page.getResult().iterator();
+            }
+        } catch(IOException e) {
+            throw new BridgeServiceException(e);
+        }
         return iterator.hasNext();
     }
 
@@ -37,8 +54,6 @@ public class OktaAccountIterator implements Iterator<AccountSummary> {
 
     @Override
     public void remove() {
-        iterator.remove();
+        throw new UnsupportedOperationException();
     }
-
-
 }

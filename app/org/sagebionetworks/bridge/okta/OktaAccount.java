@@ -41,21 +41,6 @@ import com.okta.sdk.models.users.UserProfile;
 @BridgeTypeName("Account")
 public class OktaAccount implements Account {
     
-    public static final AccountStatus getAccountStatusFromOktaStatus(String oktaStatus) {
-        // Odd, but STAGED, PROVISIONED, ACTIVE are the options. I do not see how to
-        // disable an account yet.
-        switch (oktaStatus) {
-        case "STAGED":
-        case "PROVISIONED":
-            return AccountStatus.UNVERIFIED;
-        case "ACTIVE":
-            return AccountStatus.ENABLED;
-        case "DEPROVISIONED":
-            return AccountStatus.DISABLED;
-        }
-        throw new RuntimeException("Unrecognized user status: " + oktaStatus);
-    }
-    
     private static final TypeReference<List<ConsentSignature>> CONSENT_SIGNATURES_TYPE = new TypeReference<List<ConsentSignature>>() {};
     private static final ObjectMapper MAPPER = BridgeObjectMapper.get();
     private final Map<SubpopulationGuid, List<ConsentSignature>> allSignatures;
@@ -78,8 +63,8 @@ public class OktaAccount implements Account {
     private ImmutableSet<Roles> roles;
     private String healthCode;
     
-    OktaAccount(StudyIdentifier studyIdentifier, List<? extends SubpopulationGuid> subpopGuids,
-            User user, UserProfile userProfile, SortedMap<Integer, BridgeEncryptor> encryptors) {
+    OktaAccount(StudyIdentifier studyIdentifier, List<? extends SubpopulationGuid> subpopGuids, User user,
+            UserProfile userProfile, SortedMap<Integer, BridgeEncryptor> encryptors) {
         checkNotNull(studyIdentifier);
         checkNotNull(subpopGuids);
         checkNotNull(userProfile);
@@ -205,24 +190,12 @@ public class OktaAccount implements Account {
     }
     @Override
     public AccountStatus getStatus() {
-        return OktaAccount.getAccountStatusFromOktaStatus(user.getStatus());
+        return AccountStatus.valueOf((String)userProfile.getUnmapped().get("bridge_status"));
     }
     @Override
     public void setStatus(AccountStatus status) {
-        // TODO: You cannot just set this, I don't think, you have to call a specific API.
-        switch(status) {
-        case UNVERIFIED:
-            user.setStatus("PROVISIONED");
-            break;
-        case ENABLED:
-            user.setStatus("ACTIVE");
-            break;
-        case DISABLED:
-            user.setStatus("DEPROVISIONED");
-            break;
-        }
+        userProfile.getUnmapped().put("bridge_status", status.name());
     }
-
     @Override
     public StudyIdentifier getStudyIdentifier() {
         return studyIdentifier;

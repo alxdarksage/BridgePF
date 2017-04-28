@@ -1,7 +1,5 @@
 package org.sagebionetworks.bridge.services.email;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Map;
 
 import javax.mail.MessagingException;
@@ -9,7 +7,6 @@ import javax.mail.internet.MimeBodyPart;
 
 import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.config.BridgeConfigFactory;
-import org.sagebionetworks.bridge.exceptions.BadRequestException;
 import org.sagebionetworks.bridge.models.studies.EmailTemplate;
 import org.sagebionetworks.bridge.models.studies.MimeType;
 import org.sagebionetworks.bridge.models.studies.Study;
@@ -42,13 +39,7 @@ public class EmailSignInEmailProvider implements MimeTypeEmailProvider {
     
     @Override
     public MimeTypeEmail getMimeTypeEmail() throws MessagingException {
-        String encodedRecipientEmail = null;
-        try {
-            encodedRecipientEmail = URLEncoder.encode(recipientEmail, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            // UTF-8 is always supported, so this should never happen. 
-            throw new BadRequestException(e.getMessage());
-        }
+        String encodedRecipientEmail = BridgeUtils.encodeURIComponent(recipientEmail);
         Map<String,String> map = Maps.newHashMap();
         map.put("studyName", study.getName());
         map.put("studyId", study.getIdentifier());

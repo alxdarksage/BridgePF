@@ -10,7 +10,6 @@ import org.joda.time.DateTimeZone;
 
 import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.models.studies.StudyIdentifier;
-import org.sagebionetworks.bridge.okta.OktaAccount;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,7 +36,8 @@ public final class AccountSummary {
         UserProfile profile = user.getProfile();
         String firstName = NAME_PLACEHOLDER_STRING.equals(profile.getFirstName()) ? null : profile.getFirstName();
         String lastName = NAME_PLACEHOLDER_STRING.equals(profile.getLastName()) ? null : profile.getLastName();
-        AccountStatus status = OktaAccount.getAccountStatusFromOktaStatus(user.getStatus());;
+        
+        AccountStatus status = AccountStatus.valueOf((String)user.getProfile().getUnmapped().get(Account.STATUS));
         return new AccountSummary(firstName, lastName, profile.getEmail(), id, createdOn, status, studyId);
     }
     

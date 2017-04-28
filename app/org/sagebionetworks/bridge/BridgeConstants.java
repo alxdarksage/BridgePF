@@ -100,6 +100,8 @@ public class BridgeConstants {
     
     public static final Set<Roles> NO_CALLER_ROLES = ImmutableSet.of();
     
+    public static final String OKTA_DEV_KEY = "okta.dev.key";
+    
     /**
      * This whitelist adds a few additional tags and attributes that are used by the CKEDITOR options we have 
      * displayed in the UI.
