@@ -1,7 +1,5 @@
 package org.sagebionetworks.bridge.services.email;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Map;
 
 import javax.mail.MessagingException;
@@ -9,7 +7,6 @@ import javax.mail.internet.MimeBodyPart;
 
 import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.config.BridgeConfigFactory;
-import org.sagebionetworks.bridge.exceptions.BadRequestException;
 import org.sagebionetworks.bridge.models.studies.EmailTemplate;
 import org.sagebionetworks.bridge.models.studies.Study;
 
@@ -48,7 +45,7 @@ public class BasicEmailProvider implements MimeTypeEmailProvider {
         tokenMap.put("supportEmail", study.getSupportEmail());
         tokenMap.put("technicalEmail", study.getTechnicalEmail());
         tokenMap.put("sponsorName", study.getSponsorName());
-        tokenMap.put("email", encodeString(recipientEmail));
+        tokenMap.put("email", BridgeUtils.encodeURIComponent(recipientEmail));
         tokenMap.put("host", BridgeConfigFactory.getConfig().getHostnameWithPostfix("webservices"));
         
         final MimeTypeEmailBuilder builder = new MimeTypeEmailBuilder();
@@ -70,17 +67,6 @@ public class BasicEmailProvider implements MimeTypeEmailProvider {
         return builder.build();
     }
     
-    private String encodeString(String inputValue) {
-        String encodedOutput = null;
-        try {
-            encodedOutput = URLEncoder.encode(inputValue, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            // UTF-8 is always supported, so this should never happen. 
-            throw new BadRequestException(e.getMessage());
-        }
-        return encodedOutput;
-    }
-
     public static class Builder {
         private Study study;
         private Map<String,String> tokenMap = Maps.newHashMap();

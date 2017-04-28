@@ -126,7 +126,8 @@ public interface AccountDao {
             String emailFilter, DateTime startDate, DateTime endDate);
     
     /**
-     * For MailChimp, and other external systems, we need a way to get a healthCode for a given email.
+     * For MailChimp, and other external systems, we need a way to get a healthCode for a given email. Should return
+     * null if the email is not an account in the study.
      */
     String getHealthCodeForEmail(Study study, String email);
 }

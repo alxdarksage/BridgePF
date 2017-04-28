@@ -128,12 +128,6 @@ public interface Study extends BridgeEntity, StudyIdentifier {
     void setStormpathHref(String stormpathHref);
     
     /**
-     * The identifier for an Okta organization. Probably an URL?
-     */
-    String getOktaOrg();
-    void setOktaOrg(String oktaOrg);
-    
-    /**
      * Extension attributes that can be accepted on the UserProfile object for this study. These 
      * attributes will be exported with the participant roster. 
      */

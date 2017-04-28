@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
@@ -20,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import org.sagebionetworks.bridge.BridgeConstants;
 import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.cache.CacheProvider;
 import org.sagebionetworks.bridge.config.BridgeConfigFactory;
@@ -29,7 +27,6 @@ import org.sagebionetworks.bridge.dao.AccountDao;
 import org.sagebionetworks.bridge.exceptions.AccountDisabledException;
 import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
 import org.sagebionetworks.bridge.exceptions.EntityNotFoundException;
-import org.sagebionetworks.bridge.json.BridgeObjectMapper;
 import org.sagebionetworks.bridge.models.PagedResourceList;
 import org.sagebionetworks.bridge.models.accounts.Account;
 import org.sagebionetworks.bridge.models.accounts.AccountStatus;
@@ -50,18 +47,12 @@ import org.sagebionetworks.bridge.services.SubpopulationService;
 import org.sagebionetworks.bridge.services.email.BasicEmailProvider;
 import org.sagebionetworks.bridge.util.BridgeCollectors;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.okta.sdk.clients.AuthApiClient;
 import com.okta.sdk.clients.UserApiClient;
 import com.okta.sdk.exceptions.ApiException;
-import com.okta.sdk.framework.ApiClientConfiguration;
 import com.okta.sdk.framework.ErrorCause;
 import com.okta.sdk.framework.FilterBuilder;
 import com.okta.sdk.framework.PagedResults;
@@ -71,18 +62,10 @@ import com.okta.sdk.models.users.Password;
 import com.okta.sdk.models.users.User;
 import com.okta.sdk.models.users.UserProfile;
 
-/**
- * The following template variables now exist for the emails that are sent:
- * ${resetPasswordLink} or ${activationLink}
- * ${org.name}
- * ${user.firstName}
- * ${user.login} (aka the user's email)
- */
 @Component("oktaAccountDao")
 public class OktaAccountDao implements AccountDao {
 
     private static final Logger LOG = LoggerFactory.getLogger(OktaAccountDao.class);
-    private static final String OKTA_DEV_KEY = BridgeConfigFactory.getConfig().get(BridgeConstants.OKTA_DEV_KEY);
     private static final String BASE_URL = BridgeConfigFactory.getConfig().get("webservices.url");
     
     private StudyService studyService;
@@ -90,6 +73,8 @@ public class OktaAccountDao implements AccountDao {
     private HealthCodeService healthCodeService;
     private CacheProvider cacheProvider;
     private SendMailService sendMailService;
+    private AuthApiClient authApiClient;
+    private UserApiClient userApiClient;
     private SortedMap<Integer, BridgeEncryptor> encryptors = Maps.newTreeMap();
     
     @Autowired
@@ -112,6 +97,14 @@ public class OktaAccountDao implements AccountDao {
     final void setSendMailService(SendMailService sendMailService) {
         this.sendMailService = sendMailService;
     }
+    @Autowired
+    final void setAuthApiClient(AuthApiClient authApiClient) {
+        this.authApiClient = authApiClient;
+    }
+    @Autowired
+    final void setUserApiClient(UserApiClient userApiClient) {
+        this.userApiClient = userApiClient;
+    }
     @Resource(name="encryptorList")
     final void setEncryptors(List<BridgeEncryptor> list) {
         for (BridgeEncryptor encryptor : list) {
@@ -119,71 +112,21 @@ public class OktaAccountDao implements AccountDao {
         }
     }
     
-    public static class VerificationData {
-        private final String studyId;
-        private final String userId;
-        @JsonCreator
-        public VerificationData(@JsonProperty("studyId") String studyId, @JsonProperty("userId") String userId) {
-            checkArgument(isNotBlank(studyId));
-            checkArgument(isNotBlank(userId));
-            this.studyId = studyId;
-            this.userId = userId;
-        }
-        public String getStudyId() {
-            return studyId;
-        }
-        public String getUserId() {
-            return userId;
-        }
-    }
-    
-    private LoadingCache<String, UserApiClient> userApiClients = CacheBuilder.newBuilder()
-            .maximumSize(100).build(new CacheLoader<String, UserApiClient>() {
-                public UserApiClient load(String key) {
-                    ApiClientConfiguration config = new ApiClientConfiguration(key, OKTA_DEV_KEY); 
-                    return new UserApiClient(config);
-                }
-            });
-    private LoadingCache<String, AuthApiClient> authApiClients = CacheBuilder.newBuilder()
-            .maximumSize(100).build(new CacheLoader<String, AuthApiClient>() {
-                public AuthApiClient load(String key) {
-                    ApiClientConfiguration config = new ApiClientConfiguration(key, OKTA_DEV_KEY);
-                    return new AuthApiClient(config);
-                }
-            });
-    
-    private UserApiClient getUserApiClient(Study study) {
-        try {
-            study.setOktaOrg("https://dev-578886.oktapreview.com"); // REMOVEME, use study.getOktaOrg()
-            return userApiClients.get(study.getOktaOrg());
-        } catch (ExecutionException e) {
-            throw new BridgeServiceException(e);
-        }
-    }
-    
-    private AuthApiClient getAuthApiClient(Study study) {
-        try {
-            study.setOktaOrg("https://dev-578886.oktapreview.com"); // REMOVEME, use study.getOktaOrg()
-            return authApiClients.get(study.getOktaOrg());
-        } catch (ExecutionException e) {
-            throw new BridgeServiceException(e);
-        }
-    }
-    
     @Override
     public void verifyEmail(EmailVerification verification) {
         checkNotNull(verification);
 
-        VerificationData data = restoreVerification(verification.getSptoken());
+        String userId = restoreVerification(verification.getSptoken());
         try {
-            Study study = studyService.getStudy(data.getStudyId());
-            UserApiClient userApiClient = getUserApiClient(study);
-            
-            User user = userApiClient.getUser(data.getUserId());
-            user.getProfile().getUnmapped().put(Account.STATUS, AccountStatus.ENABLED.name());
+            User user = userApiClient.getUser(userId);
+            // This would be rare, but it's possible if admin is changing the user
+            if (user == null) {
+                throw new EntityNotFoundException(Account.class);
+            }
+            user.getProfile().getUnmapped().put(OktaAccount.STATUS, AccountStatus.ENABLED.name());
             userApiClient.updateUser(user);
         } catch (IOException e) {
-            rethrowException(e, data.getUserId());
+            rethrowException(e, userId);
         }
     }
 
@@ -193,9 +136,7 @@ public class OktaAccountDao implements AccountDao {
         checkNotNull(email);
         
         Study study = studyService.getStudy(studyIdentifier);
-        UserApiClient userApiClient = getUserApiClient(study);
         try {
-            // TODO: You could argue this isn't necessary... ? If the user doesn't exist, so what?
             User user = getUserByEmailWithoutThrowing(userApiClient, email.getEmail());
             if (user != null) {
                 sendEmailVerificationToken(study, user.getId(), email.getEmail());    
@@ -210,11 +151,10 @@ public class OktaAccountDao implements AccountDao {
         checkNotNull(study);
         checkNotNull(email);
         
-        UserApiClient userApiClient = getUserApiClient(study); 
         try {
             User user = getUserByEmailWithoutThrowing(userApiClient, email.getEmail());
             if (user != null) {
-                String sptoken = BridgeUtils.generateGuid().replaceAll("-", "");
+                String sptoken = createTimeLimitedToken();
                 String cacheKey = sptoken + ":" + study.getIdentifier();
                 cacheProvider.setString(cacheKey, email.getEmail(), 60*5);
                 
@@ -238,14 +178,12 @@ public class OktaAccountDao implements AccountDao {
     public void resetPassword(PasswordReset passwordReset) {
         checkNotNull(passwordReset);
         
-        Study study = studyService.getStudy(passwordReset.getStudyIdentifier());
         try {
-            String cacheKey = passwordReset.getSptoken() + ":" + study.getIdentifier();
+            String cacheKey = passwordReset.getSptoken() + ":" + passwordReset.getStudyIdentifier();
             String email = cacheProvider.getString(cacheKey);
             if (email != null) {
                 cacheProvider.removeString(cacheKey);
                 
-                UserApiClient userApiClient = getUserApiClient(study);
                 User user = getUserByEmailWithoutThrowing(userApiClient, email);
                 if (user != null) {
                     userApiClient.setPassword(user.getId(), passwordReset.getPassword());    
@@ -261,8 +199,6 @@ public class OktaAccountDao implements AccountDao {
         checkNotNull(account);
         checkArgument(isNotBlank(newPassword));
         
-        Study study = studyService.getStudy(account.getStudyIdentifier());
-        UserApiClient userApiClient = getUserApiClient(study);
         try {
             userApiClient.setPassword(account.getId(), newPassword);
         } catch(IOException e) {
@@ -276,8 +212,6 @@ public class OktaAccountDao implements AccountDao {
         checkNotNull(study);
         checkNotNull(signIn);
         
-        UserApiClient userApiClient = getUserApiClient(study);
-        AuthApiClient authApiClient = getAuthApiClient(study);
         Account account = null;
         try {
             AuthResult result = authApiClient.authenticate(signIn.getEmail(), signIn.getPassword(), null);
@@ -334,14 +268,13 @@ public class OktaAccountDao implements AccountDao {
         checkNotNull(account);
         
         account.setStatus(sendVerifyEmail ? AccountStatus.UNVERIFIED : AccountStatus.ENABLED);
-        UserApiClient userApiClient = getUserApiClient(study);
         try {
             User user = ((OktaAccount)account).getUser();
             User response = userApiClient.createUser(user, true);
             ((OktaAccount)account).setUser(response);
             
             if (sendVerifyEmail) {
-                sendEmailVerificationToken(study, response.getId(), response.getProfile().getEmail());    
+                sendEmailVerificationToken(study, response.getId(), account.getEmail());    
             }
         } catch(IOException e) {
             rethrowException(e, account.getId());
@@ -351,9 +284,6 @@ public class OktaAccountDao implements AccountDao {
     @Override
     public void updateAccount(Account account) {
         checkNotNull(account);
-        
-        Study study = studyService.getStudy(account.getStudyIdentifier());
-        UserApiClient userApiClient = getUserApiClient(study);
         
         try {
             User user = ((OktaAccount)account).getUser();
@@ -369,7 +299,6 @@ public class OktaAccountDao implements AccountDao {
         checkNotNull(study);
         checkArgument(isNotBlank(id));
         
-        UserApiClient userApiClient = getUserApiClient(study);
         Account account = null;
         try {
             User user = userApiClient.getUser(id);
@@ -385,7 +314,6 @@ public class OktaAccountDao implements AccountDao {
         checkNotNull(study);
         checkArgument(isNotBlank(email));
         
-        UserApiClient userApiClient = getUserApiClient(study);
         Account account = null;
         try {
             User user = getUserByEmailWithoutThrowing(userApiClient, email);
@@ -403,7 +331,6 @@ public class OktaAccountDao implements AccountDao {
         checkNotNull(study);
         checkArgument(isNotBlank(userId));
         
-        UserApiClient userApiClient = getUserApiClient(study);
         try {
             User user = userApiClient.getUser(userId);
             if (user != null) {
@@ -433,7 +360,6 @@ public class OktaAccountDao implements AccountDao {
     public Iterator<AccountSummary> getStudyAccounts(Study study) {
         checkNotNull(study);
         
-        UserApiClient userApiClient = getUserApiClient(study);
         return new OktaAccountIterator(study.getStudyIdentifier(), userApiClient);
     }
 
@@ -441,16 +367,24 @@ public class OktaAccountDao implements AccountDao {
     public PagedResourceList<AccountSummary> getPagedAccountSummaries(Study study, String offsetBy, int pageSize,
             String emailFilter, DateTime startDate, DateTime endDate) {
         
-        UserApiClient userApiClient = getUserApiClient(study);
         try {
+            boolean addClause = false;
             FilterBuilder filter = new FilterBuilder();
             if (emailFilter != null) {
                 filter = filter.where("profile.email").startsWith(emailFilter);
+                addClause = true;
             }
             if (startDate != null) {
+                if (addClause) {
+                    filter = filter.and();
+                }
                 filter = filter.where("user.created").greaterThanOrEqual(startDate);
+                addClause = true;
             }
             if (endDate != null) {
+                if (addClause) {
+                    filter = filter.and();
+                }
                 filter = filter.where("user.created").lessThanOrEqual(endDate);
             }
             PagedResults<User> results = null;
@@ -484,7 +418,6 @@ public class OktaAccountDao implements AccountDao {
         checkNotNull(study);
         checkArgument(isNotBlank(email));
         
-        UserApiClient userApiClient = getUserApiClient(study);
         try {
             User user = getUserByEmailWithoutThrowing(userApiClient, email);
             if (user != null) {
@@ -497,14 +430,14 @@ public class OktaAccountDao implements AccountDao {
         return null;
     }
     
-    private void sendEmailVerificationToken(Study study, String userId, String email) {
+    protected void sendEmailVerificationToken(Study study, String userId, String email) {
         checkNotNull(study);
         checkArgument(isNotBlank(userId));
         checkArgument(isNotBlank(email));
 
-        String sptoken = BridgeUtils.generateGuid().replaceAll("-", "");
+        String sptoken = createTimeLimitedToken();
         
-        saveVerification(sptoken, new VerificationData(study.getIdentifier(), userId));
+        saveVerification(sptoken, userId);
         
         String studyId = BridgeUtils.encodeURIComponent(study.getIdentifier());
         String url = String.format("%s/mobile/verifyEmail.html?study=%s&sptoken=%s",
@@ -518,30 +451,22 @@ public class OktaAccountDao implements AccountDao {
         sendMailService.sendEmail(provider);         
     }
     
-    private void saveVerification(String sptoken, VerificationData data) {
+    private void saveVerification(String sptoken, String userId) {
         checkArgument(isNotBlank(sptoken));
-        checkNotNull(data);
+        checkArgument(isNotBlank(userId));
         
-        try {
-            cacheProvider.setString(sptoken, BridgeObjectMapper.get().writeValueAsString(data), 60*5);
-        } catch (IOException e) {
-            throw new BridgeServiceException(e);
-        }
+        cacheProvider.setString(sptoken, userId, 60*5);
     }
     
-    private VerificationData restoreVerification(String sptoken) {
+    private String restoreVerification(String sptoken) {
         checkArgument(isNotBlank(sptoken));
         
-        String json = cacheProvider.getString(sptoken);
-        if (json != null) {
-            try {
-                cacheProvider.removeString(sptoken);
-                return BridgeObjectMapper.get().readValue(json, VerificationData.class);
-            } catch (IOException e) {
-                // Suppress. We'll report this as a 404 error.
-            }
+        String userId = cacheProvider.getString(sptoken);
+        if (userId == null) {
+            throw new BridgeServiceException(
+                    "Email verification token not found. You may have already enabled this account.", 404);
         }
-        throw new BridgeServiceException("Email verification token not found. You may have already enabled this account.", 404);
+        return userId;
     }
     
     private User getUserByEmailWithoutThrowing(UserApiClient userApiClient, String email) throws IOException {
@@ -593,7 +518,16 @@ public class OktaAccountDao implements AccountDao {
         return account;
     }
     
-    private List<SubpopulationGuid> getSubpopulationGuids(StudyIdentifier studyId) {
+    /**
+     * Create a token that will be sent via email and used to verify the caller. There are 
+     * other algorithms used to create such tokens, but this is sufficiently unique and random 
+     * that it should work.
+     */
+    protected String createTimeLimitedToken() {
+        return BridgeUtils.generateGuid().replaceAll("-", "");
+    }
+    
+    protected List<SubpopulationGuid> getSubpopulationGuids(StudyIdentifier studyId) {
         return subpopService.getSubpopulations(studyId)
                 .stream()
                 .map(Subpopulation::getGuid)

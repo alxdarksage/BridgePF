@@ -18,9 +18,6 @@ import org.sagebionetworks.bridge.models.subpopulations.SubpopulationGuid;
  */
 public interface Account extends BridgeEntity {
 
-    public static final String ROLES = "bridge_roles";
-    public static final String STATUS = "bridge_status";
-
     default ConsentSignature getActiveConsentSignature(SubpopulationGuid subpopGuid) {
         List<ConsentSignature> history = getConsentSignatureHistory(subpopGuid);
         if (!history.isEmpty()) {

@@ -23,7 +23,7 @@ public class OktaAccountIterator implements Iterator<AccountSummary> {
         this.studyId = studyId;
         this.userApiClient = userApiClient;
         try {
-            page = userApiClient.getUsersPagedResultsWithLimit(100);
+            page = userApiClient.getUsersPagedResultsWithLimit(LIMIT);
             iterator = page.getResult().iterator();
         } catch(IOException e) {
             throw new BridgeServiceException(e);

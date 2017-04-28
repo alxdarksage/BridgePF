@@ -1,7 +1,7 @@
 package org.sagebionetworks.bridge.models.accounts;
 
 import static org.sagebionetworks.bridge.BridgeConstants.STORMPATH_NAME_PLACEHOLDER_STRING;
-import static org.sagebionetworks.bridge.BridgeConstants.NAME_PLACEHOLDER_STRING;
+import static org.sagebionetworks.bridge.BridgeConstants.OKTA_NAME_PLACEHOLDER_STRING;
 
 import java.util.Objects;
 
@@ -10,6 +10,7 @@ import org.joda.time.DateTimeZone;
 
 import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.models.studies.StudyIdentifier;
+import org.sagebionetworks.bridge.okta.OktaAccount;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -34,10 +35,10 @@ public final class AccountSummary {
         String id = user.getId();
         
         UserProfile profile = user.getProfile();
-        String firstName = NAME_PLACEHOLDER_STRING.equals(profile.getFirstName()) ? null : profile.getFirstName();
-        String lastName = NAME_PLACEHOLDER_STRING.equals(profile.getLastName()) ? null : profile.getLastName();
+        String firstName = OKTA_NAME_PLACEHOLDER_STRING.equals(profile.getFirstName()) ? null : profile.getFirstName();
+        String lastName = OKTA_NAME_PLACEHOLDER_STRING.equals(profile.getLastName()) ? null : profile.getLastName();
         
-        AccountStatus status = AccountStatus.valueOf((String)user.getProfile().getUnmapped().get(Account.STATUS));
+        AccountStatus status = AccountStatus.valueOf((String)user.getProfile().getUnmapped().get(OktaAccount.STATUS));
         return new AccountSummary(firstName, lastName, profile.getEmail(), id, createdOn, status, studyId);
     }
     

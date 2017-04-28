@@ -2,7 +2,7 @@ package org.sagebionetworks.bridge.okta;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.sagebionetworks.bridge.BridgeConstants.NAME_PLACEHOLDER_STRING;
+import static org.sagebionetworks.bridge.BridgeConstants.OKTA_NAME_PLACEHOLDER_STRING;
 import static org.sagebionetworks.bridge.BridgeConstants.STORMPATH_NAME_PLACEHOLDER_STRING;
 
 import java.io.IOException;
@@ -40,6 +40,9 @@ import com.okta.sdk.models.users.UserProfile;
 
 @BridgeTypeName("Account")
 public class OktaAccount implements Account {
+    
+    public static final String ROLES = "bridge_roles";
+    public static final String STATUS = "bridge_status";
     
     private static final TypeReference<List<ConsentSignature>> CONSENT_SIGNATURES_TYPE = new TypeReference<List<ConsentSignature>>() {};
     private static final ObjectMapper MAPPER = BridgeObjectMapper.get();
@@ -125,12 +128,12 @@ public class OktaAccount implements Account {
     @Override
     public String getFirstName() {
         String firstName = userProfile.getFirstName();
-        return (NAME_PLACEHOLDER_STRING.equals(firstName)) ? null : firstName;
+        return (OKTA_NAME_PLACEHOLDER_STRING.equals(firstName)) ? null : firstName;
     }
     @Override
     public void setFirstName(String firstName) {
         if (isBlank(firstName)|| STORMPATH_NAME_PLACEHOLDER_STRING.equals(firstName)) {
-            userProfile.setFirstName(NAME_PLACEHOLDER_STRING);
+            userProfile.setFirstName(OKTA_NAME_PLACEHOLDER_STRING);
         } else {
             userProfile.setFirstName(firstName);    
         }
@@ -138,12 +141,12 @@ public class OktaAccount implements Account {
     @Override
     public String getLastName() {
         String lastName = userProfile.getLastName();
-        return (NAME_PLACEHOLDER_STRING.equals(lastName)) ? null : lastName;
+        return (OKTA_NAME_PLACEHOLDER_STRING.equals(lastName)) ? null : lastName;
     }
     @Override
     public void setLastName(String lastName) {
         if (isBlank(lastName) || STORMPATH_NAME_PLACEHOLDER_STRING.equals(lastName)) {
-            userProfile.setLastName(NAME_PLACEHOLDER_STRING);
+            userProfile.setLastName(OKTA_NAME_PLACEHOLDER_STRING);
         } else {
             userProfile.setLastName(lastName);    
         }
@@ -190,7 +193,8 @@ public class OktaAccount implements Account {
     }
     @Override
     public AccountStatus getStatus() {
-        return AccountStatus.valueOf((String)userProfile.getUnmapped().get("bridge_status"));
+        String statusString = (String)userProfile.getUnmapped().get("bridge_status");
+        return (statusString == null) ? null : AccountStatus.valueOf(statusString);
     }
     @Override
     public void setStatus(AccountStatus status) {

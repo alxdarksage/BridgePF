@@ -285,11 +285,13 @@ public class BridgeUtils {
     
     public static String encodeURIComponent(String component) {
         String encoded = null;
-        try {
-            encoded = URLEncoder.encode(component, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            // UTF-8 is always supported, so this should never happen. 
-            throw new BadRequestException(e.getMessage());
+        if (component != null) {
+            try {
+                encoded = URLEncoder.encode(component, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                // UTF-8 is always supported, so this should never happen. 
+                throw new BadRequestException(e.getMessage());
+            }
         }
         return encoded;
     }

@@ -26,6 +26,7 @@ import org.sagebionetworks.bridge.crypto.BridgeEncryptor;
 import org.sagebionetworks.bridge.crypto.Encryptor;
 import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
 import org.sagebionetworks.bridge.json.BridgeObjectMapper;
+import org.sagebionetworks.bridge.models.accounts.AccountStatus;
 import org.sagebionetworks.bridge.models.studies.StudyIdentifier;
 import org.sagebionetworks.bridge.models.studies.StudyIdentifierImpl;
 import org.sagebionetworks.bridge.models.subpopulations.ConsentSignature;
@@ -62,15 +63,15 @@ public class OktaAccountTest {
     
     private SortedMap<Integer, BridgeEncryptor> encryptors;
     
-    private Map<String,Object> data;
+    private Map<String,Object> userProfileUnmapped;
     
     @Before
     public void setUp() throws Exception {
         userProfile = mock(UserProfile.class);
         user = mock(User.class);
         
-        data = new HashMap<String,Object>();
-        when(userProfile.getUnmapped()).thenReturn(data);
+        userProfileUnmapped = new HashMap<String,Object>();
+        when(userProfile.getUnmapped()).thenReturn(userProfileUnmapped);
 
         BridgeEncryptor encryptor1 = mock(BridgeEncryptor.class);
         when(encryptor1.getVersion()).thenReturn(1);
@@ -110,7 +111,7 @@ public class OktaAccountTest {
         String json = BridgeObjectMapper.get().writeValueAsString(acct.getConsentSignatureHistory(SUBPOP_GUID));
         acct.getUserProfile(); // necessary to trigger update of customData
         
-        assertEquals("encrypted-2-"+json, data.get("foo_consent_signatures"));
+        assertEquals("encrypted-2-"+json, userProfileUnmapped.get("foo_consent_signatures"));
         assertEquals(signatures, acct.getConsentSignatureHistory(SUBPOP_GUID));
     }
     
@@ -138,18 +139,18 @@ public class OktaAccountTest {
     public void newSensitiveValueIsEncryptedWithLastEncryptor() {
         acct.setAttribute("phone", "111-222-3333");
         
-        assertEquals("encrypted-2-111-222-3333", data.get("phone"));
+        assertEquals("encrypted-2-111-222-3333", userProfileUnmapped.get("phone"));
         assertEquals("111-222-3333", acct.getAttribute("phone"));
     }
     
     @Test
     public void sensitiveValueWhenClearedRemovesVersionKey() {
         acct.setAttribute("phone", "111-222-3333");
-        assertEquals(2, data.get("phone_version"));
+        assertEquals(2, userProfileUnmapped.get("phone_version"));
         
         acct.setAttribute("phone", null);
-        assertNull(data.get("phone"));
-        assertNull(data.get("phone_version"));
+        assertNull(userProfileUnmapped.get("phone"));
+        assertNull(userProfileUnmapped.get("phone_version"));
     }
     
     @Test
@@ -159,14 +160,14 @@ public class OktaAccountTest {
     
     @Test
     public void oldValuesDecryptedWithOldDecryptorAndEncryptedWithNewDecryptor() {
-        data.put("phone", "encrypted-1-111-222-3333");
-        data.put("phone_version", 1);
+        userProfileUnmapped.put("phone", "encrypted-1-111-222-3333");
+        userProfileUnmapped.put("phone_version", 1);
 
         assertEquals("111-222-3333", acct.getAttribute("phone"));
         
         acct.setAttribute("phone", acct.getAttribute("phone"));
         
-        assertEquals("encrypted-2-111-222-3333", data.get("phone"));
+        assertEquals("encrypted-2-111-222-3333", userProfileUnmapped.get("phone"));
         assertEquals("111-222-3333", acct.getAttribute("phone"));
     }
     
@@ -192,8 +193,8 @@ public class OktaAccountTest {
     
     @Test
     public void healthIdRetrievedWithNewVersion() {
-        data.put("foo_code", "encrypted-1-aHealthId");
-        data.put("foo_code_version", 1);
+        userProfileUnmapped.put("foo_code", "encrypted-1-aHealthId");
+        userProfileUnmapped.put("foo_code_version", 1);
         
         String healthId = acct.getHealthId();
         assertEquals("aHealthId", healthId);
@@ -201,8 +202,8 @@ public class OktaAccountTest {
     
     @Test
     public void healthIdRetrievedWithOldVersion() {
-        data.put("foo_code", "encrypted-1-HealthId");
-        data.put("fooversion", 1);
+        userProfileUnmapped.put("foo_code", "encrypted-1-HealthId");
+        userProfileUnmapped.put("fooversion", 1);
         
         String healthId = acct.getHealthId();
         assertEquals("HealthId", healthId);
@@ -212,7 +213,7 @@ public class OktaAccountTest {
     public void consentSignatureRetrievedWithNoVersion() throws Exception {
         // This is a key that predates the encryptors. SHould still be found when we 
         // retrieve the value through the new consent signature list.
-        data.put("foo_consent_signature", MAPPER.writeValueAsString(sig));
+        userProfileUnmapped.put("foo_consent_signature", MAPPER.writeValueAsString(sig));
         
         acct = new OktaAccount(STUDY_ID, SUBPOP_GUIDS, user, userProfile, encryptors);
         
@@ -225,8 +226,8 @@ public class OktaAccountTest {
     
     @Test
     public void consentSignatureRetrievedFromEncryptedSingleObjectSlot() throws Exception {
-        data.put("foo_consent_signature", MAPPER.writeValueAsString(sig));
-        data.put("foo_consent_signature_version", 2);
+        userProfileUnmapped.put("foo_consent_signature", MAPPER.writeValueAsString(sig));
+        userProfileUnmapped.put("foo_consent_signature_version", 2);
         
         acct = new OktaAccount(STUDY_ID, SUBPOP_GUIDS, user, userProfile, encryptors);
         
@@ -250,8 +251,8 @@ public class OktaAccountTest {
         history.add(new ConsentSignature.Builder().withName("Stephen Maturin").withBirthdate("1790-04-12")
                 .withWithdrewOn(DateTime.now().getMillis()).build());
         history.add(sig);
-        data.put("foo_consent_signatures", MAPPER.writeValueAsString(history));
-        data.put("foo_consent_signatures_version", 2);
+        userProfileUnmapped.put("foo_consent_signatures", MAPPER.writeValueAsString(history));
+        userProfileUnmapped.put("foo_consent_signatures_version", 2);
         
         acct = new OktaAccount(STUDY_ID, SUBPOP_GUIDS, user, userProfile, encryptors);
         
@@ -271,8 +272,8 @@ public class OktaAccountTest {
         history.add(new ConsentSignature.Builder().withName("Stephen Maturin").withBirthdate("1790-04-12")
                 .withWithdrewOn(DateTime.now().getMillis()).build());
         
-        data.put("foo_consent_signatures", MAPPER.writeValueAsString(history));
-        data.put("foo_consent_signatures_version", 2);
+        userProfileUnmapped.put("foo_consent_signatures", MAPPER.writeValueAsString(history));
+        userProfileUnmapped.put("foo_consent_signatures_version", 2);
         
         acct = new OktaAccount(STUDY_ID, SUBPOP_GUIDS, user, userProfile, encryptors);
         
@@ -283,8 +284,8 @@ public class OktaAccountTest {
     @Test
     public void failsIfNoEncryptorForVersion() {
         try {
-            data.put("foo_code", "111");
-            data.put("fooversion", 3);
+            userProfileUnmapped.put("foo_code", "111");
+            userProfileUnmapped.put("fooversion", 3);
             
             acct.getHealthId();
         } catch(BridgeServiceException e) {
@@ -294,7 +295,7 @@ public class OktaAccountTest {
     
     @Test
     public void phoneRetrievedWithNoVersion() {
-        data.put("phone", "encrypted-2-555-555-5555");
+        userProfileUnmapped.put("phone", "encrypted-2-555-555-5555");
         
         // This must use version 2, there's no version listed.
         String phone = acct.getAttribute("phone");
@@ -303,8 +304,8 @@ public class OktaAccountTest {
     
     @Test
     public void phoneRetrievedWithCorrect() {
-        data.put("phone", "encrypted-2-555-555-5555");
-        data.put("phone_version", 2);
+        userProfileUnmapped.put("phone", "encrypted-2-555-555-5555");
+        userProfileUnmapped.put("phone_version", 2);
         
         // This must use version 2, there's no version listed.
         String phone = acct.getAttribute("phone");
@@ -313,8 +314,8 @@ public class OktaAccountTest {
     
     @Test(expected = BridgeServiceException.class)
     public void phoneNotRetrievedWithIncorrectVersion() {
-        data.put("phone", "encryptedphonenumber");
-        data.put("phone_version", 3);
+        userProfileUnmapped.put("phone", "encryptedphonenumber");
+        userProfileUnmapped.put("phone_version", 3);
         
         acct.getAttribute("phone");
     }
@@ -378,7 +379,7 @@ public class OktaAccountTest {
     @Test
     public void ifEncryptorVersionMissingDefaultToLastEncryptor() {
         // no _version for this attribute, throws NPE without setting the version
-        data.put("foo", "111"); 
+        userProfileUnmapped.put("foo", "111"); 
 
         // Does not throw NPE, it uses last version in sorted map
         assertEquals("111", acct.getAttribute("foo"));
@@ -394,7 +395,9 @@ public class OktaAccountTest {
         when(userProfile.getEmail()).thenReturn("email@email.com");
         when(userProfile.getFirstName()).thenReturn("firstName");
         when(userProfile.getLastName()).thenReturn("lastName");
-        data.put("bridge_roles", "DEVELOPER, ADMIN");
+        
+        userProfileUnmapped.put(OktaAccount.STATUS, "ENABLED");
+        userProfileUnmapped.put(OktaAccount.ROLES, "DEVELOPER, ADMIN");
 
         // Signatures and encrypted values (including attributes) are tested in more depth in other tests
         // These are basic values from the Stormpath userProfile
@@ -408,29 +411,30 @@ public class OktaAccountTest {
         assertEquals(Sets.newHashSet(Roles.DEVELOPER,Roles.ADMIN), account.getRoles());
         assertEquals("123", account.getId());
         assertEquals(createdOn.getMillis(), account.getCreatedOn().getMillis());
-        assertEquals(org.sagebionetworks.bridge.models.accounts.AccountStatus.ENABLED, account.getStatus());
+        assertEquals(AccountStatus.ENABLED, account.getStatus());
         
         account.setFirstName("New First Name");
         account.setLastName("New Last Name");
         account.setEmail("email2@email.com");
-        account.setStatus(org.sagebionetworks.bridge.models.accounts.AccountStatus.DISABLED);
+        account.setStatus(AccountStatus.DISABLED);
+        account.setRoles(Sets.newHashSet(Roles.ADMIN));
         
         UserProfile updatedAcct = account.getUserProfile();
         verify(updatedAcct).setFirstName("New First Name");
         verify(updatedAcct).setLastName("New Last Name");
         verify(updatedAcct).setEmail("email2@email.com");
         
-        User updatedUser = account.getUser();
-        verify(updatedUser).setStatus("DEPROVISIONED");
+        assertEquals("DISABLED", userProfileUnmapped.get(OktaAccount.STATUS));
+        assertEquals("ADMIN", userProfileUnmapped.get(OktaAccount.ROLES));
     }
     
     private void verifyOneConsentStream(SubpopulationGuid guid, ConsentSignature sig1)
             throws IOException, JsonParseException, JsonMappingException {
-        Integer version = (Integer)data.get(guid.getGuid()+"_consent_signatures_version");
+        Integer version = (Integer)userProfileUnmapped.get(guid.getGuid()+"_consent_signatures_version");
         assertEquals(new Integer(2), version);
         
         // The mock implementation of customData prefixes stuff... we'll unprefix it and parse it into JSON 
-        String contentJson = (String)data.get(guid.getGuid()+"_consent_signatures");
+        String contentJson = (String)userProfileUnmapped.get(guid.getGuid()+"_consent_signatures");
         assertTrue(contentJson.startsWith("encrypted-2-"));
         
         String json = contentJson.substring("encrypted-2-".length(), contentJson.length());

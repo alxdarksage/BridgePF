@@ -92,15 +92,18 @@ public class BridgeConstants {
     
     public static final String STORMPATH_ACCOUNT_BASE_HREF = "https://enterprise.stormpath.io/v1/accounts/";
     
+    /** Stormpath does not allow given/family name to be empty, this is the placeholder value we use instead. */
     public static final String STORMPATH_NAME_PLACEHOLDER_STRING = "<EMPTY>";
     
-    public static final String NAME_PLACEHOLDER_STRING = "__EMPTY__";
+    /**
+     * Okta does not allow first/last name to be empty (or an HTML tag-like string), this is the placeholder value we
+     * use instead.
+     */
+    public static final String OKTA_NAME_PLACEHOLDER_STRING = "__EMPTY__";
     
     public static final String TEST_USER_GROUP = "test_user";
     
     public static final Set<Roles> NO_CALLER_ROLES = ImmutableSet.of();
-    
-    public static final String OKTA_DEV_KEY = "okta.dev.key";
     
     /**
      * This whitelist adds a few additional tags and attributes that are used by the CKEDITOR options we have 
