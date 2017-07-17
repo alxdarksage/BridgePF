@@ -781,7 +781,7 @@ public class MigrationAccountDaoTest {
         // Until we backfill, all accounts are in Stormpath, so we just call the Stormpath version.
         List<AccountSummary> accountSummaryList = ImmutableList.of(ACCOUNT_SUMMARY);
         PagedResourceList<AccountSummary> pagedAccountSummaryList = new PagedResourceList<>(accountSummaryList,
-                null, 10, 1);
+                0, 10, 1);
 
         // MySQL case
         {

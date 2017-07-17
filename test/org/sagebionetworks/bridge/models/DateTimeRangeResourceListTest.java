@@ -21,12 +21,11 @@ public class DateTimeRangeResourceListTest {
         JsonNode node = BridgeObjectMapper.get().valueToTree(list);
         assertEquals("2016-02-03T10:10:10.000-08:00", node.get("startTime").asText());
         assertEquals("2016-02-23T14:14:14.000-08:00", node.get("endTime").asText());
-        assertEquals(3, node.get("total").asInt());
         assertEquals("DateTimeRangeResourceList", node.get("type").asText());
         assertEquals("1", node.get("items").get(0).asText());
         assertEquals("2", node.get("items").get(1).asText());
         assertEquals("3", node.get("items").get(2).asText());
-        assertEquals(5, node.size());
+        assertEquals(4, node.size());
         
         // We never deserialize this on the server side (only in the SDK).
     }

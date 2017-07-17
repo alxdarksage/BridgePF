@@ -31,13 +31,12 @@ public class ReportTypeResourceListTest {
         
         JsonNode node = BridgeObjectMapper.get().valueToTree(list);
         assertEquals("participant", node.get("reportType").asText());
-        assertEquals(2, node.get("total").asInt());
         assertEquals("ReportTypeResourceList", node.get("type").asText());
         assertEquals("foo", node.get("items").get(0).get("identifier").asText());
         assertFalse(node.get("items").get(0).get("public").asBoolean());
         assertEquals("bar", node.get("items").get(1).get("identifier").asText());
         assertTrue(node.get("items").get(1).get("public").asBoolean());
-        assertEquals(4, node.size());
+        assertEquals(3, node.size());
         
         // We never deserialize this on the server side (only in the SDK).
     }

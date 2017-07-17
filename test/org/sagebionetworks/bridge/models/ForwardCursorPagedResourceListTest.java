@@ -85,7 +85,7 @@ public class ForwardCursorPagedResourceListTest {
         accounts.add("value1");
         accounts.add("value2");
         
-        ForwardCursorPagedResourceList<String> page = new ForwardCursorPagedResourceList<>(accounts, null, 100)
+        ForwardCursorPagedResourceList<String> page = new ForwardCursorPagedResourceList<>(accounts, "offsetKey", 100)
                 .withFilter("idFilter", "foo").withFilter("assignmentFilter", "bar");
         JsonNode node = BridgeObjectMapper.get().valueToTree(page);
         assertEquals(100, node.get("pageSize").asInt());
@@ -99,11 +99,11 @@ public class ForwardCursorPagedResourceListTest {
         assertEquals("value2", items.get(1).asText());
         
         // We don't deserialize this, but let's verify for the SDK
-        PagedResourceList<String> serPage = BridgeObjectMapper.get().readValue(node.toString(), 
-                new TypeReference<PagedResourceList<String>>() {});
+        ForwardCursorPagedResourceList<String> serPage = BridgeObjectMapper.get().readValue(node.toString(),
+                new TypeReference<ForwardCursorPagedResourceList<String>>() {
+                });
         
         assertEquals(page.getPageSize(), serPage.getPageSize());
-        assertEquals(page.getFilters().get("offsetKey"), serPage.getFilters().get("offsetKey"));
         assertEquals(page.getOffsetKey(), serPage.getOffsetKey());
         assertEquals(page.getFilters().get("idFilter"), serPage.getFilters().get("idFilter"));
         assertEquals(page.getFilters().get("assignmentFilter"), serPage.getFilters().get("assignmentFilter"));
