@@ -150,7 +150,8 @@ public class DynamoExternalIdDao implements ExternalIdDao {
         } while ((identifiers.size() < pageSize) && (offsetKey != null));
 
         ForwardCursorPagedResourceList<ExternalIdentifierInfo> resourceList = new ForwardCursorPagedResourceList<>(
-                identifiers, offsetKey, pageSize).withFilter(ID_FILTER, idFilter);
+                identifiers, offsetKey, pageSize)
+                .withFilter(ID_FILTER, idFilter);
         if (assignmentFilter != null) {
             resourceList = resourceList.withFilter(ASSIGNMENT_FILTER, assignmentFilter.toString());
         }

@@ -2,6 +2,8 @@ package org.sagebionetworks.bridge.models;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import org.joda.time.DateTime;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -13,12 +15,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class ForwardCursorPagedResourceList<T> extends ResourceList<T> {
 
-    private final String offsetKey;
     private final int pageSize;
+    private final @Nullable String offsetKey;
 
     @JsonCreator
     public ForwardCursorPagedResourceList(
-            @JsonProperty("items") List<T> items,
+            @JsonProperty("items") List<T> items, 
             @JsonProperty("offsetKey") String offsetKey,
             @JsonProperty("pageSize") int pageSize) {
         super(items);
