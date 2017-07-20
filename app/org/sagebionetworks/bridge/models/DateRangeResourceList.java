@@ -1,6 +1,7 @@
 package org.sagebionetworks.bridge.models;
 
 import java.util.List;
+import java.util.Map;
 
 import org.joda.time.LocalDate;
 
@@ -24,5 +25,12 @@ public class DateRangeResourceList<T> extends ResourceList<T> {
     }
     public LocalDate getEndDate() {
         return endDate;
+    }
+    @Override
+    public Map<String, Object> getRequestParams() {
+        Map<String, Object> map = super.getRequestParams();
+        map.put("startDate", startDate);
+        map.put("endDate", endDate);
+        return map;
     }
 }

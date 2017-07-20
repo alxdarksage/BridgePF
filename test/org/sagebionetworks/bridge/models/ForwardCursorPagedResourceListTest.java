@@ -59,6 +59,9 @@ public class ForwardCursorPagedResourceListTest {
         assertEquals(page.hasNext(), serPage.hasNext());
         
         assertEquals(page.getItems(), serPage.getItems());
+        assertEquals(100, serPage.getRequestParams().get("pageSize"));
+        assertEquals("2", serPage.getRequestParams().get("offsetKey"));
+        assertEquals("filterString", serPage.getRequestParams().get("emailFilter"));
     }
     
     @Test
@@ -73,7 +76,7 @@ public class ForwardCursorPagedResourceListTest {
         assertEquals("filterString", node.get("emailFilter").asText());
         assertEquals("ForwardCursorPagedResourceList", node.get("type").asText());
         assertFalse(node.get("hasNext").asBoolean());
-        assertEquals(5, node.size());
+        assertEquals(6, node.size());
     }
     
     // This test was moved from another class that implemented PagedResourceList for

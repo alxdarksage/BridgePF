@@ -2,6 +2,7 @@ package org.sagebionetworks.bridge.models;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +40,20 @@ public class ResourceList<T> {
         }
         return this;
     }
+    
+    /**
+     * Return all the various parameters being used to generate these lists (with the exception 
+     * of offsetKey when it is the key needed to retrieve the next page of results). This includes 
+     * (at the least) all the filters.
+     */
+    public Map<String,Object> getRequestParams() {
+        Map<String,Object> map = new HashMap<>();
+        for (String key : filters.keySet()) {
+            map.put(key, filters.get(key));
+        }
+        return map;
+    }
+    
     @JsonAnyGetter
     public Map<String, String> getFilters() {
         return ImmutableMap.copyOf(filters);

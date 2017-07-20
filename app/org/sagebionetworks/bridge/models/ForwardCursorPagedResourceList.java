@@ -1,6 +1,7 @@
 package org.sagebionetworks.bridge.models;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 
@@ -46,6 +47,13 @@ public class ForwardCursorPagedResourceList<T> extends ResourceList<T> {
         super.withFilter(key, date);
         return this;
     }
+    @Override
+    public Map<String,Object> getRequestParams() {
+        Map<String,Object> map = super.getRequestParams();
+        map.put("offsetKey", offsetKey);
+        map.put("pageSize", pageSize);
+        return map;
+    };
     @Override
     public String toString() {
         return "ForwardCursorPagedResourceList [items=" + getItems() + ", pageSize=" + pageSize + ", filters=" + getFilters() + "]";

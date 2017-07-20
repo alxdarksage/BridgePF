@@ -1,6 +1,7 @@
 package org.sagebionetworks.bridge.models;
 
 import java.util.List;
+import java.util.Map;
 
 import org.joda.time.DateTime;
 
@@ -44,6 +45,13 @@ public class PagedResourceList<T> extends ResourceList<T> {
     }
     public int getTotal() {
         return total;
+    }
+    @Override
+    public Map<String, Object> getRequestParams() {
+        Map<String, Object> map = super.getRequestParams();
+        map.put("offsetBy", offsetBy);
+        map.put("pageSize", pageSize);
+        return map;
     }
     @Override
     public String toString() {

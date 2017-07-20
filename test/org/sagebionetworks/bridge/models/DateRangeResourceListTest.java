@@ -12,12 +12,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 
 public class DateRangeResourceListTest {
+    
+    private static final LocalDate START_DATE = LocalDate.parse("2016-02-03");
+    private static final LocalDate END_DATE = LocalDate.parse("2016-02-23");
 
     @Test
     public void canSerialize() throws Exception {
         DateRangeResourceList<String> list = new DateRangeResourceList<>(
-                Lists.newArrayList("1", "2", "3"), LocalDate.parse("2016-02-03"),
-                LocalDate.parse("2016-02-23"));
+                Lists.newArrayList("1", "2", "3"), START_DATE, END_DATE);
         
         JsonNode node = BridgeObjectMapper.get().valueToTree(list);
         assertEquals("2016-02-03", node.get("startDate").asText());
@@ -26,7 +28,7 @@ public class DateRangeResourceListTest {
         assertEquals("1", node.get("items").get(0).asText());
         assertEquals("2", node.get("items").get(1).asText());
         assertEquals("3", node.get("items").get(2).asText());
-        assertEquals(4, node.size());
+        assertEquals(5, node.size());
         
         list = BridgeObjectMapper.get().readValue(node.toString(), 
                 new TypeReference<DateRangeResourceList<String>>() {});
@@ -36,6 +38,9 @@ public class DateRangeResourceListTest {
         assertEquals("1", list.getItems().get(0));
         assertEquals("2", list.getItems().get(1));
         assertEquals("3", list.getItems().get(2));
+        
+        assertEquals(START_DATE, list.getRequestParams().get("startDate"));
+        assertEquals(END_DATE, list.getRequestParams().get("endDate"));
     }
     
 }

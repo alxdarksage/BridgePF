@@ -31,6 +31,7 @@ public class PagedResourceListTest {
                 .withFilter("emailFilter", "filterString");
         
         JsonNode node = BridgeObjectMapper.get().valueToTree(page);
+        System.out.println(node.toString());
         assertEquals(2, node.get("offsetBy").asInt());
         assertEquals(100, node.get("pageSize").asInt());
         assertEquals("filterString", node.get("emailFilter").asText());
@@ -55,6 +56,10 @@ public class PagedResourceListTest {
         assertEquals(page.getFilters().get("emailFilter"), serPage.getFilters().get("emailFilter"));
         
         assertEquals(page.getItems(), serPage.getItems());
+        
+        assertEquals(2, serPage.getRequestParams().get("offsetBy"));
+        assertEquals(100, serPage.getRequestParams().get("pageSize"));
+        assertEquals("filterString", serPage.getRequestParams().get("emailFilter"));
     }
     
     @Test
@@ -69,7 +74,7 @@ public class PagedResourceListTest {
         assertEquals(100, node.get("pageSize").asInt());
         assertEquals("filterString", node.get("emailFilter").asText());
         assertEquals("PagedResourceList", node.get("type").asText());
-        assertEquals(6, node.size());
+        assertEquals(7, node.size());
     }
     
     // This test was moved from another class that implemented PagedResourceList for

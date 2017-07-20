@@ -1,6 +1,7 @@
 package org.sagebionetworks.bridge.models;
 
 import java.util.List;
+import java.util.Map;
 
 import org.joda.time.DateTime;
 
@@ -29,5 +30,15 @@ public class DateTimeRangeResourceList<T> extends ResourceList<T> {
     public DateTime getEndTime() {
         return endTime;
     }
-
+    @Override
+    public Map<String, Object> getRequestParams() {
+        Map<String, Object> map = super.getRequestParams();
+        if (startTime != null) {
+            map.put("startTime", startTime.toString());    
+        }
+        if (endTime != null) {
+            map.put("endTime", endTime.toString());    
+        }
+        return map;
+    }
 }

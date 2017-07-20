@@ -2,6 +2,7 @@ package org.sagebionetworks.bridge.models;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -36,8 +37,30 @@ public class ReportTypeResourceListTest {
         assertFalse(node.get("items").get(0).get("public").asBoolean());
         assertEquals("bar", node.get("items").get(1).get("identifier").asText());
         assertTrue(node.get("items").get(1).get("public").asBoolean());
-        assertEquals(3, node.size());
+        
+        JsonNode requestParams = node.get("requestParams");
+        assertEquals("participant", requestParams.get("reportType").asText());
+        
+        assertEquals(4, node.size());
         
         // We never deserialize this on the server side (only in the SDK).
+    }
+    
+    @Test
+    public void testMissingTypeSerialization() {
+        ReportIndex index1 = ReportIndex.create();
+        index1.setKey("doesn't matter what this is");
+        index1.setIdentifier("foo");
+        
+        ReportIndex index2 = ReportIndex.create();
+        index2.setKey("doesn't matter what this is");
+        index2.setIdentifier("bar");
+        index2.setPublic(true);
+        
+        ReportTypeResourceList<ReportIndex> list = new ReportTypeResourceList<>(
+                Lists.newArrayList(index1, index2), null);
+        
+        JsonNode node = BridgeObjectMapper.get().valueToTree(list);
+        assertNull(node.get("requestParams").get("reportType"));
     }
 }
