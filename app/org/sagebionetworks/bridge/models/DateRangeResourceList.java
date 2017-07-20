@@ -29,8 +29,12 @@ public class DateRangeResourceList<T> extends ResourceList<T> {
     @Override
     public Map<String, Object> getRequestParams() {
         Map<String, Object> map = super.getRequestParams();
-        map.put("startDate", startDate);
-        map.put("endDate", endDate);
+        if (startDate != null) {
+            map.put("startDate", startDate);    
+        }
+        if (endDate != null) {
+            map.put("endDate", endDate);    
+        }
         return map;
     }
 }

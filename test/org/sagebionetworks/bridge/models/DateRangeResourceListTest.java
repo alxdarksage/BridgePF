@@ -1,6 +1,7 @@
 package org.sagebionetworks.bridge.models;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import org.joda.time.LocalDate;
 import org.junit.Test;
@@ -43,4 +44,14 @@ public class DateRangeResourceListTest {
         assertEquals(END_DATE, list.getRequestParams().get("endDate"));
     }
     
+    @Test
+    public void nullValuesSerializedCorrectly() {
+        // Checks that the map created does not have null keys;
+        DateRangeResourceList<String> list = new DateRangeResourceList<>(
+                Lists.newArrayList("1", "2", "3"), null, null);
+        
+        JsonNode node = BridgeObjectMapper.get().valueToTree(list);
+        assertNull(node.get("requestParams").get("startDate"));
+        assertNull(node.get("requestParams").get("endDate"));
+    }
 }
