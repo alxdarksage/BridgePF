@@ -16,8 +16,8 @@ public class DateTimeRangeResourceList<T> extends ResourceList<T> {
     private final DateTime endTime;
 
     @JsonCreator
-    public DateTimeRangeResourceList(@JsonProperty("items") List<T> items,
-            @JsonProperty("startTime") DateTime startTime, @JsonProperty("endTime") DateTime endTime) {
+    public DateTimeRangeResourceList(@JsonProperty(ITEMS_KEY) List<T> items,
+            @JsonProperty(STARTTIME_KEY) DateTime startTime, @JsonProperty(ENDTIME_KEY) DateTime endTime) {
         super(items);
         this.startTime = startTime;
         this.endTime = endTime;
@@ -33,12 +33,8 @@ public class DateTimeRangeResourceList<T> extends ResourceList<T> {
     @Override
     public Map<String, Object> getRequestParams() {
         Map<String, Object> map = super.getRequestParams();
-        if (startTime != null) {
-            map.put("startTime", startTime.toString());    
-        }
-        if (endTime != null) {
-            map.put("endTime", endTime.toString());    
-        }
+        addMapItem(map, STARTTIME_KEY, startTime);
+        addMapItem(map, ENDTIME_KEY, endTime);
         return map;
     }
 }

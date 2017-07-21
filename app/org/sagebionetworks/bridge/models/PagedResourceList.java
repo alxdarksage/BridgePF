@@ -20,10 +20,10 @@ public class PagedResourceList<T> extends ResourceList<T> {
 
     @JsonCreator
     public PagedResourceList(
-            @JsonProperty("items") List<T> items, 
-            @JsonProperty("offsetBy") int offsetBy,
-            @JsonProperty("pageSize") int pageSize, 
-            @JsonProperty("total") int total) {
+            @JsonProperty(ITEMS_KEY) List<T> items, 
+            @JsonProperty(OFFSETBY_KEY) int offsetBy,
+            @JsonProperty(PAGESIZE_KEY) int pageSize, 
+            @JsonProperty(TOTAL_KEY) int total) {
         super(items);
         this.offsetBy = offsetBy;
         this.pageSize = pageSize;
@@ -49,8 +49,8 @@ public class PagedResourceList<T> extends ResourceList<T> {
     @Override
     public Map<String, Object> getRequestParams() {
         Map<String, Object> map = super.getRequestParams();
-        map.put("offsetBy", offsetBy);
-        map.put("pageSize", pageSize);
+        addMapItem(map, OFFSETBY_KEY, offsetBy);
+        addMapItem(map, PAGESIZE_KEY, pageSize);
         return map;
     }
     @Override

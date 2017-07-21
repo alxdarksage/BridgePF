@@ -21,9 +21,9 @@ public class ForwardCursorPagedResourceList<T> extends ResourceList<T> {
 
     @JsonCreator
     public ForwardCursorPagedResourceList(
-            @JsonProperty("items") List<T> items, 
-            @JsonProperty("offsetKey") String offsetKey,
-            @JsonProperty("pageSize") int pageSize) {
+            @JsonProperty(ITEMS_KEY) List<T> items, 
+            @JsonProperty(OFFSET_KEY) String offsetKey,
+            @JsonProperty(PAGESIZE_KEY) int pageSize) {
         super(items);
         this.offsetKey = offsetKey;
         this.pageSize = pageSize;
@@ -50,8 +50,8 @@ public class ForwardCursorPagedResourceList<T> extends ResourceList<T> {
     @Override
     public Map<String,Object> getRequestParams() {
         Map<String,Object> map = super.getRequestParams();
-        map.put("offsetKey", offsetKey);
-        map.put("pageSize", pageSize);
+        addMapItem(map, OFFSET_KEY, offsetKey);
+        addMapItem(map, PAGESIZE_KEY, pageSize);
         return map;
     };
     @Override

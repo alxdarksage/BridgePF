@@ -17,12 +17,23 @@ import com.google.common.collect.Maps;
 
 public class ResourceList<T> {
     
+    protected static final String ITEMS_KEY = "items";
+    protected static final String OFFSET_KEY = "offsetKey";
+    protected static final String PAGESIZE_KEY = "pageSize";
+    protected static final String REPORTTYPE_KEY = "reportType";
+    protected static final String STARTDATE_KEY = "startDate";
+    protected static final String ENDDATE_KEY = "endDate";
+    protected static final String OFFSETBY_KEY = "offsetBy";
+    protected static final String TOTAL_KEY = "total";
+    protected static final String STARTTIME_KEY = "startTime";
+    protected static final String ENDTIME_KEY = "endTime";
+    
     private final Map<String,String> filters = Maps.newHashMap();
     
     private final List<T> items;
 
     @JsonCreator
-    public ResourceList(@JsonProperty("items") List<T> items) {
+    public ResourceList(@JsonProperty(ITEMS_KEY) List<T> items) {
         this.items = items;
     }
     public List<T> getItems() {
@@ -52,6 +63,12 @@ public class ResourceList<T> {
             map.put(key, filters.get(key));
         }
         return map;
+    }
+    
+    protected void addMapItem(Map<String,Object> map, String fieldName, Object value) {
+        if (value != null) {
+            map.put(fieldName, value.toString());
+        }
     }
     
     @JsonAnyGetter

@@ -12,8 +12,8 @@ public class ReportTypeResourceList<T> extends ResourceList<T> {
     private final ReportType reportType;
 
     @JsonCreator
-    public ReportTypeResourceList(@JsonProperty("items") List<T> items,
-            @JsonProperty("reportType") ReportType reportType) {
+    public ReportTypeResourceList(@JsonProperty(ITEMS_KEY) List<T> items,
+            @JsonProperty(REPORTTYPE_KEY) ReportType reportType) {
         super(items);
         this.reportType = reportType;
     }
@@ -24,7 +24,7 @@ public class ReportTypeResourceList<T> extends ResourceList<T> {
     public Map<String, Object> getRequestParams() {
         Map<String, Object> map = super.getRequestParams();
         if (reportType != null) {
-            map.put("reportType", reportType.name().toLowerCase());    
+            map.put(REPORTTYPE_KEY, reportType.name().toLowerCase());    
         }
         return map;
     }

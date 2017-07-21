@@ -14,8 +14,8 @@ public class DateRangeResourceList<T> extends ResourceList<T> {
     private final LocalDate endDate;
 
     @JsonCreator
-    public DateRangeResourceList(@JsonProperty("items") List<T> items, @JsonProperty("startDate") LocalDate startDate,
-            @JsonProperty("endDate") LocalDate endDate) {
+    public DateRangeResourceList(@JsonProperty(ITEMS_KEY) List<T> items, @JsonProperty(STARTDATE_KEY) LocalDate startDate,
+            @JsonProperty(ENDDATE_KEY) LocalDate endDate) {
         super(items);
         this.startDate = startDate;
         this.endDate = endDate;
@@ -29,12 +29,8 @@ public class DateRangeResourceList<T> extends ResourceList<T> {
     @Override
     public Map<String, Object> getRequestParams() {
         Map<String, Object> map = super.getRequestParams();
-        if (startDate != null) {
-            map.put("startDate", startDate);    
-        }
-        if (endDate != null) {
-            map.put("endDate", endDate);    
-        }
+        addMapItem(map, STARTDATE_KEY, startDate);
+        addMapItem(map, ENDDATE_KEY, endDate);
         return map;
     }
 }
