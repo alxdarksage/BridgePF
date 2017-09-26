@@ -16,8 +16,12 @@ import org.sagebionetworks.bridge.models.schedules.TaskReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
+/**
+ * Helper class that converts scheduled activities so that all surveys, schemas, and compound activities 
+ * reference a recent and published version that the client should be using. 
+ */
 class ModelReferenceResolver {
     private static final Logger LOG = LoggerFactory.getLogger(ModelReferenceResolver.class);
     
@@ -31,20 +35,8 @@ class ModelReferenceResolver {
         this.compoundActivityCache = new HashMap<>();
         this.schemaCache = new HashMap<>();
         this.surveyCache = new HashMap<>();
-        {
-            ImmutableMap.Builder<String,SurveyReference> builder = new ImmutableMap.Builder<>();
-            for (SurveyReference ref : appConfig.getSurveyReferences()) {
-                builder.put(ref.getGuid(), ref);
-            }
-            this.surveyReferences = builder.build();
-        }
-        {
-            ImmutableMap.Builder<String,SchemaReference> builder = new ImmutableMap.Builder<>();
-            for (SchemaReference ref : appConfig.getSchemaReferences()) {
-                builder.put(ref.getId(), ref);
-            }
-            this.schemaReferences = builder.build();
-        }
+        this.surveyReferences = Maps.uniqueIndex(appConfig.getSurveyReferences(), SurveyReference::getGuid);
+        this.schemaReferences = Maps.uniqueIndex(appConfig.getSchemaReferences(), SchemaReference::getId);
     }
     
     // Allows for verification via a spy
