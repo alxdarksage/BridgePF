@@ -12,6 +12,7 @@ import org.sagebionetworks.bridge.config.BridgeConfigFactory;
 import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
 import org.sagebionetworks.bridge.json.BridgeObjectMapper;
 import org.sagebionetworks.bridge.models.RequestInfo;
+import org.sagebionetworks.bridge.models.accounts.SignIn;
 import org.sagebionetworks.bridge.models.accounts.StudyParticipant;
 import org.sagebionetworks.bridge.models.accounts.UserSession;
 import org.sagebionetworks.bridge.models.studies.Study;
@@ -297,6 +298,42 @@ public class CacheProvider {
     }
     
     public void removeString(String cacheKey) {
+        try {
+            oldJedisOps.del(cacheKey);
+            newJedisOps.del(cacheKey);
+        } catch(Throwable e) {
+            promptToStartRedisIfLocal(e);
+            throw new BridgeServiceException(e);
+        }
+    }
+    
+    public void setSignIn(String cacheKey, SignIn signIn, int expireInSeconds) {
+        try {
+            String ser = BridgeObjectMapper.get().writeValueAsString(signIn);
+            String result = newJedisOps.setex(cacheKey, expireInSeconds, ser);
+            if (!"OK".equals(result)) {
+                throw new BridgeServiceException("View storage error");
+            }
+        } catch (Throwable e) {
+            promptToStartRedisIfLocal(e);
+            throw new BridgeServiceException(e);
+        }
+    }
+
+    public SignIn getSignIn(String cacheKey) {
+        try {
+            String ser = getWithFallback(cacheKey, false);
+            if (ser != null) {
+                return BridgeObjectMapper.get().readValue(ser, SignIn.class);
+            }
+            return null;
+        } catch (Throwable e) {
+            promptToStartRedisIfLocal(e);
+            throw new BridgeServiceException(e);
+        }
+    }
+    
+    public void removeSignIn(String cacheKey) {
         try {
             oldJedisOps.del(cacheKey);
             newJedisOps.del(cacheKey);

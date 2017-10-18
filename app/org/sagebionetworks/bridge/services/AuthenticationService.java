@@ -10,13 +10,12 @@ import org.sagebionetworks.bridge.cache.CacheProvider;
 import org.sagebionetworks.bridge.config.BridgeConfig;
 import org.sagebionetworks.bridge.dao.AccountDao;
 import org.sagebionetworks.bridge.exceptions.AccountDisabledException;
-import org.sagebionetworks.bridge.exceptions.AuthenticationFailedException;
 import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
 import org.sagebionetworks.bridge.exceptions.ConsentRequiredException;
 import org.sagebionetworks.bridge.exceptions.EntityAlreadyExistsException;
 import org.sagebionetworks.bridge.exceptions.EntityNotFoundException;
-import org.sagebionetworks.bridge.exceptions.LimitExceededException;
 import org.sagebionetworks.bridge.exceptions.UnauthorizedException;
+import org.sagebionetworks.bridge.json.BridgeObjectMapper;
 import org.sagebionetworks.bridge.models.CriteriaContext;
 import org.sagebionetworks.bridge.models.accounts.Account;
 import org.sagebionetworks.bridge.models.accounts.AccountStatus;
@@ -47,7 +46,6 @@ public class AuthenticationService {
 
     private final Logger logger = LoggerFactory.getLogger(AuthenticationService.class);
     
-    private static final String SESSION_SIGNIN_CACHE_KEY = "%s:%s:signInRequest";
     private static final int SESSION_SIGNIN_TIMEOUT = 60;
     
     private CacheProvider cacheProvider;
@@ -102,18 +100,12 @@ public class AuthenticationService {
         this.accountWorkflowService = accountWorkflowService;
     }
     
-    public void requestEmailSignIn(SignIn signIn) {
+    public void requestEmailSignIn(SignIn signIn) throws Exception {
         Validate.entityThrowingException(SignInValidator.EMAIL_SIGNIN_REQUEST, signIn);
         
         Study study = studyService.getStudy(signIn.getStudyId());
         if (!study.isEmailSignInEnabled()) {
             throw new UnauthorizedException("Email-based sign in not enabled for study: " + study.getName());
-        }
-        
-        // check that email is not already locked
-        String cacheKey = getEmailSignInCacheKey(study, signIn.getEmail());
-        if (cacheProvider.getString(cacheKey) != null) {
-            throw new LimitExceededException("Email currently pending confirmation.");
         }
         
         // check that email is in the study, if not, return quietly to prevent session enumeration attacks
@@ -122,8 +114,9 @@ public class AuthenticationService {
         }
         
         // set a time-limited token
-        String token = BridgeUtils.generateGuid().replaceAll("-", "");
-        cacheProvider.setString(cacheKey, token, SESSION_SIGNIN_TIMEOUT);
+        String token = getVerificationToken();
+        String ser = BridgeObjectMapper.get().writeValueAsString(signIn);
+        cacheProvider.setString(token, ser, SESSION_SIGNIN_TIMEOUT);
         
         // email the user the token
         BasicEmailProvider provider = new BasicEmailProvider.Builder()
@@ -139,14 +132,6 @@ public class AuthenticationService {
         Validate.entityThrowingException(SignInValidator.EMAIL_SIGNIN, signIn);
         
         Study study = studyService.getStudy(signIn.getStudyId());
-        String cacheKey = getEmailSignInCacheKey(study, signIn.getEmail());
-        
-        String storedToken = cacheProvider.getString(cacheKey);
-        if (storedToken == null || !storedToken.equals(signIn.getToken())) {
-            throw new AuthenticationFailedException();
-        }
-        // Consume the key regardless of what happens
-        cacheProvider.removeString(cacheKey);
         
         Account account = accountDao.getAccountWithEmail(study, signIn.getEmail());
         if (account.getStatus() == AccountStatus.UNVERIFIED) {
@@ -285,6 +270,10 @@ public class AuthenticationService {
         accountDao.resetPassword(passwordReset);
     }
     
+    String getVerificationToken() {
+        return BridgeUtils.generateGuid().replaceAll("-", "");
+    }
+    
     private UserSession getSessionFromAccount(Study study, CriteriaContext context, Account account) {
         StudyParticipant participant = participantService.getParticipant(study, account, false);
 
@@ -324,8 +313,5 @@ public class AuthenticationService {
         
         return session;
     }
-    
-    private String getEmailSignInCacheKey(Study study, String email) {
-        return String.format(SESSION_SIGNIN_CACHE_KEY, email, study.getIdentifier());
-    }
+
 }

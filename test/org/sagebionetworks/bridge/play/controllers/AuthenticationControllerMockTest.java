@@ -39,7 +39,7 @@ import org.sagebionetworks.bridge.TestConstants;
 import org.sagebionetworks.bridge.TestUtils;
 import org.sagebionetworks.bridge.cache.CacheProvider;
 import org.sagebionetworks.bridge.dynamodb.DynamoStudy;
-import org.sagebionetworks.bridge.exceptions.BadRequestException;
+import org.sagebionetworks.bridge.exceptions.AuthenticationFailedException;
 import org.sagebionetworks.bridge.exceptions.ConsentRequiredException;
 import org.sagebionetworks.bridge.exceptions.EntityNotFoundException;
 import org.sagebionetworks.bridge.exceptions.NotAuthenticatedException;
@@ -76,8 +76,10 @@ public class AuthenticationControllerMockTest {
     private static final String TEST_REQUEST_ID = "request-id";
     private static final String TEST_SESSION_TOKEN = "session-token";
     private static final String TEST_STUDY_ID_STRING = "study-key";
+    private static final String TEST_TOKEN = "testToken";
     private static final StudyIdentifier TEST_STUDY_ID = new StudyIdentifierImpl(TEST_STUDY_ID_STRING);
     private static final String TEST_VERIFY_EMAIL_TOKEN = "verify-email-token";
+    private static final SignIn SIGN_IN = new SignIn(TEST_STUDY_ID_STRING, TEST_EMAIL, TEST_PASSWORD, TEST_TOKEN);
 
     AuthenticationController controller;
 
@@ -140,12 +142,13 @@ public class AuthenticationControllerMockTest {
     @Test
     public void emailSignIn() throws Exception {
         StudyParticipant participant = new StudyParticipant.Builder().build();
-        mockPlayContextWithJson(TestUtils.createJson("{'study':'study-key','email':'email@email.com','token':'ABC'}"));
+        mockPlayContextWithJson(TestUtils.createJson("{'study':'study-key','email':'email@email.com','token':'testToken'}"));
         userSession.setParticipant(participant);
         userSession.setAuthenticated(true);
         study.setIdentifier("study-test");
         doReturn(study).when(studyService).getStudy("study-test");
         doReturn(userSession).when(authenticationService).emailSignIn(any(CriteriaContext.class), any(SignIn.class));
+        doReturn(SIGN_IN).when(cacheProvider).getSignIn("testToken");
         
         Result result = controller.emailSignIn();
         assertEquals(200, result.status());
@@ -157,12 +160,12 @@ public class AuthenticationControllerMockTest {
         SignIn captured = signInCaptor.getValue();
         assertEquals(TEST_EMAIL, captured.getEmail());
         assertEquals("study-key", captured.getStudyId());
-        assertEquals("ABC", captured.getToken());
+        assertEquals(TEST_TOKEN, captured.getToken());
     }
     
-    @Test(expected = BadRequestException.class)
+    @Test(expected = AuthenticationFailedException.class)
     public void emailSignInMissingStudyId() throws Exception { 
-        mockPlayContextWithJson(TestUtils.createJson("{'email':'email@email.com','token':'abc'}"));
+        mockPlayContextWithJson(TestUtils.createJson("{'token':'abc'}"));
         controller.emailSignIn();
     }
     
@@ -572,16 +575,18 @@ public class AuthenticationControllerMockTest {
     public void emailSignInBlockedByVersionKillSwitch() throws Exception {
         Map<String,String[]> headers = new ImmutableMap.Builder<String,String[]>()
                 .put("User-Agent", new String[]{"App/14 (Unknown iPhone; iOS/9.0.2) BridgeSDK/4"}).build();
-        String json = TestUtils.createJson(
-                "{'study':'" + TEST_STUDY_ID_STRING + 
-                "','email':'email@email.com','password':'bar'}");
+        String json = TestUtils.createJson("{'token':'token'}");
         TestUtils.mockPlayContextWithJson(json, headers);
         study.getMinSupportedAppVersions().put(OperatingSystem.IOS, 20);
         
         Metrics metrics = new Metrics(TEST_REQUEST_ID);
         doReturn(metrics).when(controller).getMetrics();
+        
+        when(cacheProvider.getSignIn("token")).thenReturn(SIGN_IN);
 
         controller.emailSignIn();
+        
+        verify(cacheProvider).getSignIn("token");
     }
     
     @Test

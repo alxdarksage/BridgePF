@@ -1,12 +1,11 @@
 package org.sagebionetworks.bridge.play.controllers;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.sagebionetworks.bridge.BridgeConstants.STUDY_PROPERTY;
 
 import org.sagebionetworks.bridge.BridgeConstants;
 import org.sagebionetworks.bridge.Roles;
-import org.sagebionetworks.bridge.exceptions.BadRequestException;
+import org.sagebionetworks.bridge.exceptions.AuthenticationFailedException;
 import org.sagebionetworks.bridge.exceptions.ConcurrentModificationException;
 import org.sagebionetworks.bridge.exceptions.ConsentRequiredException;
 import org.sagebionetworks.bridge.exceptions.EntityNotFoundException;
@@ -32,7 +31,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 @Controller
 public class AuthenticationController extends BaseController {
 
-    public Result requestEmailSignIn() { 
+    public Result requestEmailSignIn() throws Exception { 
         SignIn signInRequest = parseJson(request(), SignIn.class);
         
         authenticationService.requestEmailSignIn(signInRequest);
@@ -40,12 +39,16 @@ public class AuthenticationController extends BaseController {
         return acceptedResult("Email sent.");
     }
     
-    public Result emailSignIn() { 
-        SignIn signInRequest = parseJson(request(), SignIn.class);
-
-        if (isBlank(signInRequest.getStudyId())) {
-            throw new BadRequestException("Study identifier is required.");
+    public Result emailSignIn() throws Exception { 
+        SignIn tokenHolder = parseJson(request(), SignIn.class);
+        
+        SignIn signInRequest = cacheProvider.getSignIn(tokenHolder.getToken());
+        if (signInRequest == null) {
+            throw new AuthenticationFailedException();
         }
+        // Remove sign in regardless of what happens
+        cacheProvider.removeSignIn(tokenHolder.getToken());
+        
         Study study = studyService.getStudy(signInRequest.getStudyId());
         verifySupportedVersionOrThrowException(study);
         
