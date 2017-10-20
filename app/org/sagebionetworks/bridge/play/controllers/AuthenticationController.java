@@ -1,16 +1,20 @@
 package org.sagebionetworks.bridge.play.controllers;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.sagebionetworks.bridge.BridgeConstants.STUDY_PROPERTY;
 
+import java.util.LinkedHashSet;
+
 import org.sagebionetworks.bridge.BridgeConstants;
 import org.sagebionetworks.bridge.Roles;
-import org.sagebionetworks.bridge.exceptions.AuthenticationFailedException;
+import org.sagebionetworks.bridge.exceptions.BadRequestException;
 import org.sagebionetworks.bridge.exceptions.ConcurrentModificationException;
 import org.sagebionetworks.bridge.exceptions.ConsentRequiredException;
 import org.sagebionetworks.bridge.exceptions.EntityNotFoundException;
 import org.sagebionetworks.bridge.json.DateUtils;
 import org.sagebionetworks.bridge.json.JsonUtils;
+import org.sagebionetworks.bridge.models.ClientInfo;
 import org.sagebionetworks.bridge.models.CriteriaContext;
 import org.sagebionetworks.bridge.models.RequestInfo;
 import org.sagebionetworks.bridge.models.accounts.Email;
@@ -41,20 +45,17 @@ public class AuthenticationController extends BaseController {
     
     public Result emailSignIn() throws Exception { 
         SignIn tokenHolder = parseJson(request(), SignIn.class);
+
+        // We'll provide the study once we reconstitute the transaction
+        ClientInfo clientInfo = getClientInfoFromUserAgentHeader();
+        LinkedHashSet<String> langs = getLanguagesFromAcceptLanguageHeader();
         
-        SignIn signInRequest = cacheProvider.getSignIn(tokenHolder.getToken());
-        if (signInRequest == null) {
-            throw new AuthenticationFailedException();
-        }
-        // Remove sign in regardless of what happens
-        cacheProvider.removeSignIn(tokenHolder.getToken());
+        UserSession session = authenticationService.emailSignIn(clientInfo, langs, tokenHolder);
         
-        Study study = studyService.getStudy(signInRequest.getStudyId());
+        // Better late than never, now that we have the study, we can throw an exception if 
+        // the kill switch exists for the study
+        Study study = studyService.getStudy(session.getStudyIdentifier());
         verifySupportedVersionOrThrowException(study);
-        
-        CriteriaContext context = getCriteriaContext(study.getStudyIdentifier());
-        
-        UserSession session = authenticationService.emailSignIn(context, signInRequest);
         
         return okResult(UserSessionInfo.toJSON(session));
     }
@@ -63,6 +64,30 @@ public class AuthenticationController extends BaseController {
         return signInWithRetry(5);
     }
 
+    public Result reauthenticate() throws Exception {
+        SignIn signInRequest = parseJson(request(), SignIn.class);
+
+        if (isBlank(signInRequest.getStudyId())) {
+            throw new BadRequestException("Study identifier is required.");
+        }
+        Study study = studyService.getStudy(signInRequest.getStudyId());
+        verifySupportedVersionOrThrowException(study);
+        
+        CriteriaContext context = getCriteriaContext(study.getStudyIdentifier());
+        
+        UserSession session = authenticationService.reauthenticate(study, context, signInRequest);
+        
+        writeSessionInfoToMetrics(session);
+        response().setCookie(BridgeConstants.SESSION_TOKEN_HEADER, session.getSessionToken(),
+                BridgeConstants.BRIDGE_SESSION_EXPIRE_IN_SECONDS, "/");
+        
+        RequestInfo requestInfo = getRequestInfoBuilder(session)
+                .withSignedInOn(DateUtils.getCurrentDateTime()).build();
+        cacheProvider.updateRequestInfo(requestInfo);
+        
+        return okResult(UserSessionInfo.toJSON(session));
+    }
+    
     @BodyParser.Of(BodyParser.Empty.class)
     public Result signOut() throws Exception {
         final UserSession session = getSessionIfItExists();
@@ -153,7 +178,6 @@ public class AuthenticationController extends BaseController {
         if (!session.doesConsent() && !session.isInRole(Roles.ADMINISTRATIVE_ROLES)) {
             throw new ConsentRequiredException(session);
         }
-
         return okResult(UserSessionInfo.toJSON(session));
     }
 

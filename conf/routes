@@ -3,11 +3,12 @@ GET    /                           @org.sagebionetworks.bridge.play.controllers.
 GET    /index.html                 @org.sagebionetworks.bridge.play.controllers.ApplicationController.loadApp
 GET    /mobile/verifyEmail.html    @org.sagebionetworks.bridge.play.controllers.ApplicationController.verifyEmail(study: String ?= "api")
 GET    /mobile/resetPassword.html  @org.sagebionetworks.bridge.play.controllers.ApplicationController.resetPassword(study: String ?= "api")
-GET    /mobile/startSession.html   @org.sagebionetworks.bridge.play.controllers.ApplicationController.startSession(study: String ?= null, email: String ?= null, token: String ?= null)
+GET    /mobile/startSession.html   @org.sagebionetworks.bridge.play.controllers.ApplicationController.startSession(token: String ?= null)
 
 # Authentication
 POST   /v3/auth/signIn                  @org.sagebionetworks.bridge.play.controllers.AuthenticationController.signIn
 POST   /v3/auth/signOut                 @org.sagebionetworks.bridge.play.controllers.AuthenticationController.signOut
+POST   /v3/auth/reauth                  @org.sagebionetworks.bridge.play.controllers.AuthenticationController.reauthenticate
 POST   /v3/auth/requestResetPassword    @org.sagebionetworks.bridge.play.controllers.AuthenticationController.requestResetPassword
 POST   /v3/auth/resetPassword           @org.sagebionetworks.bridge.play.controllers.AuthenticationController.resetPassword
 POST   /v3/auth/signUp                  @org.sagebionetworks.bridge.play.controllers.AuthenticationController.signUp

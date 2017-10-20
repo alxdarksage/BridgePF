@@ -4,18 +4,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.sagebionetworks.bridge.BridgeConstants.NO_CALLER_ROLES;
 import static org.sagebionetworks.bridge.dao.ParticipantOption.LANGUAGES;
 
+import java.util.LinkedHashSet;
+
 import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.Roles;
 import org.sagebionetworks.bridge.cache.CacheProvider;
 import org.sagebionetworks.bridge.config.BridgeConfig;
 import org.sagebionetworks.bridge.dao.AccountDao;
 import org.sagebionetworks.bridge.exceptions.AccountDisabledException;
+import org.sagebionetworks.bridge.exceptions.AuthenticationFailedException;
 import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
 import org.sagebionetworks.bridge.exceptions.ConsentRequiredException;
 import org.sagebionetworks.bridge.exceptions.EntityAlreadyExistsException;
 import org.sagebionetworks.bridge.exceptions.EntityNotFoundException;
 import org.sagebionetworks.bridge.exceptions.UnauthorizedException;
-import org.sagebionetworks.bridge.json.BridgeObjectMapper;
+import org.sagebionetworks.bridge.models.ClientInfo;
 import org.sagebionetworks.bridge.models.CriteriaContext;
 import org.sagebionetworks.bridge.models.accounts.Account;
 import org.sagebionetworks.bridge.models.accounts.AccountStatus;
@@ -28,6 +31,7 @@ import org.sagebionetworks.bridge.models.accounts.StudyParticipant;
 import org.sagebionetworks.bridge.models.accounts.UserSession;
 import org.sagebionetworks.bridge.models.studies.Study;
 import org.sagebionetworks.bridge.models.studies.StudyIdentifier;
+import org.sagebionetworks.bridge.models.studies.StudyIdentifierImpl;
 import org.sagebionetworks.bridge.services.email.BasicEmailProvider;
 import org.sagebionetworks.bridge.validators.EmailValidator;
 import org.sagebionetworks.bridge.validators.EmailVerificationValidator;
@@ -103,6 +107,9 @@ public class AuthenticationService {
     public void requestEmailSignIn(SignIn signIn) throws Exception {
         Validate.entityThrowingException(SignInValidator.EMAIL_SIGNIN_REQUEST, signIn);
         
+        // We use the study so it's existence is verified. We retrieve the account so we verify it
+        // exists as well. If the token is returned to the server, we can safely use the credentials 
+        // in the persisted SignIn object.
         Study study = studyService.getStudy(signIn.getStudyId());
         if (!study.isEmailSignInEnabled()) {
             throw new UnauthorizedException("Email-based sign in not enabled for study: " + study.getName());
@@ -113,10 +120,13 @@ public class AuthenticationService {
             return;
         }
         
-        // set a time-limited token
-        String token = getVerificationToken();
-        String ser = BridgeObjectMapper.get().writeValueAsString(signIn);
-        cacheProvider.setString(token, ser, SESSION_SIGNIN_TIMEOUT);
+        // set a time-limited token, creating and storing credentials if they haven't been created already
+        String reverseTokenLookup = getEmailReverseTokenLookup(signIn);
+        String token = cacheProvider.hasSignInToken(reverseTokenLookup);
+        if (token == null) {
+            token = getVerificationToken();
+            cacheProvider.setSignIn(token, reverseTokenLookup, signIn, SESSION_SIGNIN_TIMEOUT);
+        }
         
         // email the user the token
         BasicEmailProvider provider = new BasicEmailProvider.Builder()
@@ -128,29 +138,50 @@ public class AuthenticationService {
         sendMailService.sendEmail(provider);
     }
     
-    public UserSession emailSignIn(CriteriaContext context, SignIn signIn) {
-        Validate.entityThrowingException(SignInValidator.EMAIL_SIGNIN, signIn);
+    public UserSession emailSignIn(ClientInfo clientInfo, LinkedHashSet<String> langs, SignIn tokenHolder) {
+        // Throw invalid entity exception, if no token
+        Validate.entityThrowingException(SignInValidator.TOKEN_SIGNIN, tokenHolder);
+        
+        SignIn signIn = cacheProvider.getSignIn(tokenHolder.getToken());
+        if (signIn == null) {
+            throw new AuthenticationFailedException();
+        }
+        // Remove sign in regardless of what happens
+        String reverseTokenLookup = getEmailReverseTokenLookup(signIn);
+        cacheProvider.removeSignIn(tokenHolder.getToken(), reverseTokenLookup);
         
         Study study = studyService.getStudy(signIn.getStudyId());
         
-        Account account = accountDao.getAccountWithEmail(study, signIn.getEmail());
-        if (account.getStatus() == AccountStatus.UNVERIFIED) {
-            throw new EntityNotFoundException(Account.class);
-        } else if (account.getStatus() == AccountStatus.DISABLED) {
+        Account account = accountDao.getAccountAfterAuthentication(study, signIn.getEmail());
+        
+        // If the user accesses email sign in, we can verify the email address.
+        if (account.getStatus() == AccountStatus.DISABLED) {
             throw new AccountDisabledException();
+        } else if (account.getStatus() == AccountStatus.UNVERIFIED) {
+            account.setStatus(AccountStatus.ENABLED);
+            accountDao.updateAccount(account);
         }
+        
+        CriteriaContext.Builder builder = new CriteriaContext.Builder()
+                .withStudyIdentifier(new StudyIdentifierImpl(signIn.getStudyId()));
+        if (langs != null) {
+            builder.withLanguages(langs);
+        }
+        if (clientInfo != null) {
+            builder.withClientInfo(clientInfo);
+        }
+        CriteriaContext context = builder.build();
 
         UserSession session = getSessionFromAccount(study, context, account);
 
         if (!session.doesConsent() && !session.isInRole(Roles.ADMINISTRATIVE_ROLES)) {
             throw new ConsentRequiredException(session);
         }
-
-        // The client can optionally change the password in order to sign in when the session expires
-        if (signIn.getPassword() != null) {
-            accountDao.changePassword(account, signIn.getPassword());
-        }
         return session;
+    }
+    
+    private String getEmailReverseTokenLookup(SignIn signIn) {
+        return signIn.getStudyId() + ":" + signIn.getEmail();
     }
     
     /**
@@ -171,7 +202,8 @@ public class AuthenticationService {
     
     /**
      * This method re-constructs the session based on potential changes to the user. It is called after a user 
-     * account is updated, and takes the updated CriteriaContext to calculate the current state of the user.
+     * account is updated, and takes the updated CriteriaContext to calculate the current state of the user. We 
+     * do not rotate the reauthentication token just because the user updates their session.
      * @param study
      *      the user's study
      * @param context
@@ -182,7 +214,7 @@ public class AuthenticationService {
     public UserSession getSession(Study study, CriteriaContext context) {
         checkNotNull(study);
         checkNotNull(context);
-        
+
         Account account = accountDao.getAccount(study, context.getUserId());
         return getSessionFromAccount(study, context, account);
     }
@@ -192,7 +224,7 @@ public class AuthenticationService {
         checkNotNull(context);
         checkNotNull(signIn);
 
-        Validate.entityThrowingException(SignInValidator.PASSWORD_SIGNIN, signIn);
+        Validate.entityThrowingException(SignInValidator.EMAIL_PASSWORD_SIGNIN, signIn);
 
         Account account = accountDao.authenticate(study, signIn);
 
@@ -202,9 +234,30 @@ public class AuthenticationService {
         
         return session;
     }
+    
+    public UserSession reauthenticate(Study study, CriteriaContext context, SignIn signIn) throws EntityNotFoundException {
+        checkNotNull(study);
+        checkNotNull(context);
+        checkNotNull(signIn);
+        
+        Validate.entityThrowingException(SignInValidator.REAUTH_SIGNIN, signIn);
+
+        Account account = accountDao.reauthenticate(study, signIn);
+
+        // Force recreation of the session, including the session token
+        cacheProvider.removeSessionByUserId(account.getId());
+        UserSession session = getSessionFromAccount(study, context, account);
+        cacheProvider.setUserSession(session);
+        
+        if (!session.doesConsent() && !session.isInRole(Roles.ADMINISTRATIVE_ROLES)) {
+            throw new ConsentRequiredException(session);
+        }
+        return session;
+    }
 
     public void signOut(final UserSession session) {
         if (session != null) {
+            accountDao.signOut(session.getStudyIdentifier(), session.getParticipant().getEmail());
             cacheProvider.removeSession(session);
         }
     }
@@ -300,6 +353,7 @@ public class AuthenticationService {
         session.setAuthenticated(true);
         session.setEnvironment(config.getEnvironment());
         session.setStudyIdentifier(study.getStudyIdentifier());
+        session.setReauthToken(account.getReauthToken());
         
         CriteriaContext newContext = new CriteriaContext.Builder()
                 .withContext(context)

@@ -118,17 +118,17 @@ public class AuthenticationServiceTest {
 
     @Test(expected = BridgeServiceException.class)
     public void signInNoEmail() throws Exception {
-        authService.signIn(study, TEST_CONTEXT, new SignIn(study.getIdentifier(), null, "bar", null));
+        authService.signIn(study, TEST_CONTEXT, new SignIn.Builder().withStudyId(study.getIdentifier()).withPassword("bar").build());
     }
 
     @Test(expected = BridgeServiceException.class)
     public void signInNoPassword() throws Exception {
-        authService.signIn(study, TEST_CONTEXT, new SignIn(study.getIdentifier(), "foobar", null, null));
+        authService.signIn(study, TEST_CONTEXT, new SignIn.Builder().withStudyId(study.getIdentifier()).withEmail("foobar").build());
     }
 
     @Test(expected = EntityNotFoundException.class)
     public void signInInvalidCredentials() throws Exception {
-        authService.signIn(study, TEST_CONTEXT, new SignIn(study.getIdentifier(), "foobar", "bar", null));
+        authService.signIn(study, TEST_CONTEXT, new SignIn.Builder().withStudyId(study.getIdentifier()).withEmail("foobar").withPassword("bar").build());
     }
 
     @Test

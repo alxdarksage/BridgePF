@@ -307,22 +307,39 @@ public class CacheProvider {
         }
     }
     
-    public void setSignIn(String cacheKey, SignIn signIn, int expireInSeconds) {
-        try {
+    public void setSignIn(String token, String reverseLookupKey, SignIn signIn, int expireInSeconds) {
+        try (JedisTransaction transaction = newJedisOps.getTransaction()) {
             String ser = BridgeObjectMapper.get().writeValueAsString(signIn);
-            String result = newJedisOps.setex(cacheKey, expireInSeconds, ser);
-            if (!"OK".equals(result)) {
-                throw new BridgeServiceException("View storage error");
+            List<Object> results = transaction
+                .setex(token, expireInSeconds, ser)
+                .setex(reverseLookupKey, expireInSeconds, token)
+                .exec();
+            if (results == null) {
+                throw new BridgeServiceException("Storage error.");
+            }
+            for (Object result : results) {
+                if (!"OK".equals(result)) {
+                    throw new BridgeServiceException("Storage error.");
+                }
             }
         } catch (Throwable e) {
             promptToStartRedisIfLocal(e);
             throw new BridgeServiceException(e);
         }
     }
-
-    public SignIn getSignIn(String cacheKey) {
+    
+    public String hasSignInToken(String reverseLookupKey) {
         try {
-            String ser = getWithFallback(cacheKey, false);
+            return newJedisOps.get(reverseLookupKey);
+        } catch (Throwable e) {
+            promptToStartRedisIfLocal(e);
+            throw new BridgeServiceException(e);
+        }
+    }
+    
+    public SignIn getSignIn(String token) {
+        try {
+            String ser = getWithFallback(token, false);
             if (ser != null) {
                 return BridgeObjectMapper.get().readValue(ser, SignIn.class);
             }
@@ -333,10 +350,12 @@ public class CacheProvider {
         }
     }
     
-    public void removeSignIn(String cacheKey) {
+    public void removeSignIn(String token, String reverseLookupKey) {
         try {
-            oldJedisOps.del(cacheKey);
-            newJedisOps.del(cacheKey);
+            oldJedisOps.del(token);
+            newJedisOps.del(token);
+            oldJedisOps.del(reverseLookupKey);
+            newJedisOps.del(reverseLookupKey);
         } catch(Throwable e) {
             promptToStartRedisIfLocal(e);
             throw new BridgeServiceException(e);
