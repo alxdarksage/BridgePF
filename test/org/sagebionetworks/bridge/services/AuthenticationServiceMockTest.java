@@ -61,13 +61,13 @@ public class AuthenticationServiceMockTest {
     private static final String REAUTH_TOKEN = "GHI-JKL";
     private static final String USER_ID = "user-id";
     private static final String PASSWORD = "password";
-    private static final SignIn SIGN_IN_REQUEST = new SignIn.Builder().withStudyId(STUDY_ID).withEmail(RECIPIENT_EMAIL)
+    private static final SignIn SIGN_IN_REQUEST = new SignIn.Builder().withStudy(STUDY_ID).withEmail(RECIPIENT_EMAIL)
             .build();
-    private static final SignIn SIGN_IN = new SignIn.Builder().withStudyId(STUDY_ID).withEmail(RECIPIENT_EMAIL)
+    private static final SignIn SIGN_IN = new SignIn.Builder().withStudy(STUDY_ID).withEmail(RECIPIENT_EMAIL)
             .withToken(TOKEN).build();
-    private static final SignIn PASSWORD_SIGN_IN = new SignIn.Builder().withStudyId(STUDY_ID).withEmail(RECIPIENT_EMAIL)
+    private static final SignIn PASSWORD_SIGN_IN = new SignIn.Builder().withStudy(STUDY_ID).withEmail(RECIPIENT_EMAIL)
             .withPassword(PASSWORD).build();
-    private static final SignIn REAUTH_REQUEST = new SignIn.Builder().withStudyId(STUDY_ID).withEmail(RECIPIENT_EMAIL)
+    private static final SignIn REAUTH_REQUEST = new SignIn.Builder().withStudy(STUDY_ID).withEmail(RECIPIENT_EMAIL)
             .withReauthToken(TOKEN).build();
     private static final SubpopulationGuid SUBPOP_GUID = SubpopulationGuid.create("ABC");
     private static final ConsentStatus CONSENTED_STATUS = new ConsentStatus.Builder().withName("Name")
@@ -241,7 +241,7 @@ public class AuthenticationServiceMockTest {
     
     @Test(expected = InvalidEntityException.class)
     public void emailSignInRequestMissingEmail() throws Exception {
-        SignIn signInRequest = new SignIn.Builder().withStudyId(STUDY_ID).withToken(TOKEN).build();
+        SignIn signInRequest = new SignIn.Builder().withStudy(STUDY_ID).withToken(TOKEN).build();
         
         service.requestEmailSignIn(signInRequest);
     }
@@ -251,7 +251,7 @@ public class AuthenticationServiceMockTest {
         doReturn(TOKEN).when(cacheProvider).hasSignInToken(STUDY_ID+":"+RECIPIENT_EMAIL);
         doReturn(account).when(accountDao).getAccountWithEmail(study, RECIPIENT_EMAIL);
         
-        SignIn signInRequest = new SignIn.Builder().withStudyId(STUDY_ID).withEmail(RECIPIENT_EMAIL).build();
+        SignIn signInRequest = new SignIn.Builder().withStudy(STUDY_ID).withEmail(RECIPIENT_EMAIL).build();
         
         service.requestEmailSignIn(signInRequest);
         

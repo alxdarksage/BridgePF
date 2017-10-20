@@ -339,7 +339,7 @@ public class CacheProvider {
     
     public SignIn getSignIn(String token) {
         try {
-            String ser = getWithFallback(token, false);
+            String ser = newJedisOps.get(token);
             if (ser != null) {
                 return BridgeObjectMapper.get().readValue(ser, SignIn.class);
             }
@@ -352,10 +352,8 @@ public class CacheProvider {
     
     public void removeSignIn(String token, String reverseLookupKey) {
         try {
-            oldJedisOps.del(token);
-            newJedisOps.del(token);
-            oldJedisOps.del(reverseLookupKey);
             newJedisOps.del(reverseLookupKey);
+            newJedisOps.del(token);
         } catch(Throwable e) {
             promptToStartRedisIfLocal(e);
             throw new BridgeServiceException(e);

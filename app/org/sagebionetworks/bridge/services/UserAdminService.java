@@ -127,7 +127,7 @@ public class UserAdminService {
         
         UserSession newUserSession = null;
         try {
-            SignIn signIn = new SignIn.Builder().withStudyId(study.getIdentifier()).withEmail(participant.getEmail())
+            SignIn signIn = new SignIn.Builder().withStudy(study.getIdentifier()).withEmail(participant.getEmail())
                     .withPassword(participant.getPassword()).build();
             newUserSession = authenticationService.signIn(study, context, signIn);
             

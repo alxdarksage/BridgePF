@@ -49,7 +49,7 @@ public class TestUserAdminHelper {
             return session.getParticipant();
         }
         public SignIn getSignIn() {
-            return new SignIn.Builder().withStudyId(study.getIdentifier()).withEmail(getStudyParticipant().getEmail())
+            return new SignIn.Builder().withStudy(study.getIdentifier()).withEmail(getStudyParticipant().getEmail())
                     .withPassword(getStudyParticipant().getPassword()).build();
         }
         public String getEmail() {

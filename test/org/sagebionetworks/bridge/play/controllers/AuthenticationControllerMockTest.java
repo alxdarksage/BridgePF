@@ -44,6 +44,7 @@ import org.sagebionetworks.bridge.dynamodb.DynamoStudy;
 import org.sagebionetworks.bridge.exceptions.BadRequestException;
 import org.sagebionetworks.bridge.exceptions.ConsentRequiredException;
 import org.sagebionetworks.bridge.exceptions.EntityNotFoundException;
+import org.sagebionetworks.bridge.exceptions.InvalidEntityException;
 import org.sagebionetworks.bridge.exceptions.NotAuthenticatedException;
 import org.sagebionetworks.bridge.exceptions.UnsupportedVersionException;
 import org.sagebionetworks.bridge.json.BridgeObjectMapper;
@@ -82,7 +83,7 @@ public class AuthenticationControllerMockTest {
     private static final String TEST_TOKEN = "testToken";
     private static final StudyIdentifier TEST_STUDY_ID = new StudyIdentifierImpl(TEST_STUDY_ID_STRING);
     private static final String TEST_VERIFY_EMAIL_TOKEN = "verify-email-token";
-    private static final SignIn SIGN_IN = new SignIn.Builder().withStudyId(TEST_STUDY_ID_STRING).withEmail(TEST_EMAIL)
+    private static final SignIn SIGN_IN = new SignIn.Builder().withStudy(TEST_STUDY_ID_STRING).withEmail(TEST_EMAIL)
             .withPassword(TEST_PASSWORD).withToken(TEST_TOKEN).build();
     private static final Map<String, String[]> HEADERS = new ImmutableMap.Builder<String, String[]>()
             .put("Accept-Language", new String[] { "en" }).build();
@@ -150,8 +151,7 @@ public class AuthenticationControllerMockTest {
     @Test
     public void emailSignIn() throws Exception {
         StudyParticipant participant = new StudyParticipant.Builder().build();
-        mockPlayContextWithJson(TestUtils.createJson("{'study':'study-key','email':'email@email.com','token':'testToken'}"),
-                HEADERS);
+        mockPlayContextWithJson(TestUtils.createJson("{'token':'testToken'}"), HEADERS);
         userSession.setParticipant(participant);
         userSession.setAuthenticated(true);
         study.setIdentifier("study-test");
@@ -167,9 +167,17 @@ public class AuthenticationControllerMockTest {
         verify(authenticationService).emailSignIn(any(), any(), signInCaptor.capture());
         
         SignIn captured = signInCaptor.getValue();
-        assertEquals(TEST_EMAIL, captured.getEmail());
-        assertEquals("study-key", captured.getStudyId());
         assertEquals(TEST_TOKEN, captured.getToken());
+    }
+    
+    @Test(expected = InvalidEntityException.class)
+    public void emailSignInNoToken() throws Exception {
+        SignIn signIn = new SignIn.Builder().build();
+        mockPlayContextWithJson(TestUtils.createJson("{}"), HEADERS);
+
+        when(authenticationService.emailSignIn(any(), any(), any())).thenThrow(new InvalidEntityException(signIn,""));
+        
+        controller.emailSignIn();
     }
     
     @Test(expected = BadRequestException.class)

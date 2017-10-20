@@ -3,6 +3,7 @@ package org.sagebionetworks.bridge.models.accounts;
 import org.sagebionetworks.bridge.json.SignInDeserializer;
 import org.sagebionetworks.bridge.models.BridgeEntity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 @JsonDeserialize(using = SignInDeserializer.class)
@@ -24,6 +25,7 @@ public final class SignIn implements BridgeEntity {
         this.reauthToken = reauthToken;
     }
     
+    @JsonProperty("study")
     public String getStudyId() {
         return studyId;
     }
@@ -67,8 +69,8 @@ public final class SignIn implements BridgeEntity {
             this.password = password;
             return this;
         }
-        public Builder withStudyId(String studyId) {
-            this.studyId = studyId;
+        public Builder withStudy(String study) {
+            this.studyId = study;
             return this;
         }
         public Builder withToken(String token) {

@@ -180,10 +180,6 @@ public class AuthenticationService {
         return session;
     }
     
-    private String getEmailReverseTokenLookup(SignIn signIn) {
-        return signIn.getStudyId() + ":" + signIn.getEmail();
-    }
-    
     /**
      * This method returns the cached session for the user. A CriteriaContext object is not provided to the method, 
      * and the user's consent status is not re-calculated based on participation in one more more subpopulations. 
@@ -323,10 +319,6 @@ public class AuthenticationService {
         accountDao.resetPassword(passwordReset);
     }
     
-    String getVerificationToken() {
-        return BridgeUtils.generateGuid().replaceAll("-", "");
-    }
-    
     private UserSession getSessionFromAccount(Study study, CriteriaContext context, Account account) {
         StudyParticipant participant = participantService.getParticipant(study, account, false);
 
@@ -367,5 +359,12 @@ public class AuthenticationService {
         
         return session;
     }
-
+    
+    String getVerificationToken() {
+        return BridgeUtils.generateGuid().replaceAll("-", "");
+    }
+    
+    private String getEmailReverseTokenLookup(SignIn signIn) {
+        return signIn.getStudyId() + ":" + signIn.getEmail();
+    }
 }

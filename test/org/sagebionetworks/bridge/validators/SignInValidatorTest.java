@@ -18,7 +18,7 @@ public class SignInValidatorTest {
     
     @Test
     public void emailSignInRequestOK() {
-        SignIn signIn = new SignIn.Builder().withStudyId(STUDY_ID).withEmail(EMAIL).build();
+        SignIn signIn = new SignIn.Builder().withStudy(STUDY_ID).withEmail(EMAIL).build();
         Validate.entityThrowingException(SignInValidator.EMAIL_SIGNIN_REQUEST, signIn);
     }
     @Test
@@ -28,12 +28,12 @@ public class SignInValidatorTest {
     }
     @Test
     public void emailSignInRequestNoEmail() {
-        SignIn signIn = new SignIn.Builder().withStudyId(STUDY_ID).build();
+        SignIn signIn = new SignIn.Builder().withStudy(STUDY_ID).build();
         assertValidatorMessage(SignInValidator.EMAIL_SIGNIN_REQUEST, signIn, "email", "is required");
     }
     @Test
     public void phoneSignInRequestOK() {
-        SignIn signIn = new SignIn.Builder().withStudyId(STUDY_ID).withPhone(PHONE).build();
+        SignIn signIn = new SignIn.Builder().withStudy(STUDY_ID).withPhone(PHONE).build();
         Validate.entityThrowingException(SignInValidator.PHONE_SIGNIN_REQUEST, signIn);
     }
     @Test
@@ -43,7 +43,7 @@ public class SignInValidatorTest {
     }
     @Test
     public void phoneSignInRequestNoPhone() {
-        SignIn signIn = new SignIn.Builder().withStudyId(STUDY_ID).build();
+        SignIn signIn = new SignIn.Builder().withStudy(STUDY_ID).build();
         assertValidatorMessage(SignInValidator.PHONE_SIGNIN_REQUEST, signIn, "phone", "is required");
     }
     @Test
@@ -58,7 +58,7 @@ public class SignInValidatorTest {
     }
     @Test
     public void emailPasswordSignInOK() {
-        SignIn signIn = new SignIn.Builder().withStudyId(STUDY_ID).withEmail(EMAIL).withPassword(PASSWORD).build();
+        SignIn signIn = new SignIn.Builder().withStudy(STUDY_ID).withEmail(EMAIL).withPassword(PASSWORD).build();
         Validate.entityThrowingException(SignInValidator.EMAIL_PASSWORD_SIGNIN, signIn);
     }
     @Test
@@ -68,12 +68,12 @@ public class SignInValidatorTest {
     }
     @Test
     public void emailPasswordSignInNoEmail() {
-        SignIn signIn = new SignIn.Builder().withStudyId(STUDY_ID).withPassword(PASSWORD).build();
+        SignIn signIn = new SignIn.Builder().withStudy(STUDY_ID).withPassword(PASSWORD).build();
         assertValidatorMessage(SignInValidator.EMAIL_PASSWORD_SIGNIN, signIn, "email", "is required");
     }
     @Test
     public void emailPasswordSignInNoPassword() {
-        SignIn signIn = new SignIn.Builder().withStudyId(STUDY_ID).withEmail(EMAIL).build();
+        SignIn signIn = new SignIn.Builder().withStudy(STUDY_ID).withEmail(EMAIL).build();
         assertValidatorMessage(SignInValidator.EMAIL_PASSWORD_SIGNIN, signIn, "password", "is required");
     }
     @Test

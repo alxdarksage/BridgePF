@@ -32,7 +32,7 @@ public class SignInDeserializer extends JsonDeserializer<SignIn> {
         
         String accountIdentifier = (StringUtils.isNotBlank(username)) ? username : email;
         
-        return new SignIn.Builder().withStudyId(studyId).withEmail(accountIdentifier).withPhone(phone)
+        return new SignIn.Builder().withStudy(studyId).withEmail(accountIdentifier).withPhone(phone)
                 .withPassword(password).withToken(token).withReauthToken(reauthToken).build();
     }
 

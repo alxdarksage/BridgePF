@@ -35,6 +35,7 @@ public class SignInDeserializerTest {
                 "'password':'passwordValue',"+
                 "'study':'studyValue',"+
                 "'token':'tokenValue',"+
+                "'phone':'1234567890',"+
                 "'reauthToken':'reauthTokenValue'"+
                 "}"));
         when(parser.getCodec()).thenReturn(codec);
@@ -46,6 +47,7 @@ public class SignInDeserializerTest {
         assertEquals("passwordValue", signIn.getPassword());
         assertEquals("studyValue", signIn.getStudyId());
         assertEquals("tokenValue", signIn.getToken());
+        assertEquals("1234567890", signIn.getPhone());
         assertEquals("reauthTokenValue", signIn.getReauthToken());
     }
     
