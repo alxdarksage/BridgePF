@@ -164,7 +164,7 @@ public class AuthenticationServiceMockTest {
         verify(accountDao).getAccountWithEmail(study, RECIPIENT_EMAIL);
         
         verify(cacheProvider).setSignIn(eq(TOKEN), eq(STUDY_ID + ":" + RECIPIENT_EMAIL), signInCaptor.capture(),
-                eq(60));
+                eq(300));
         SignIn signIn = signInCaptor.getValue();
         assertEquals(SIGN_IN_REQUEST, signIn);
 

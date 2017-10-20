@@ -50,7 +50,7 @@ public class AuthenticationService {
 
     private final Logger logger = LoggerFactory.getLogger(AuthenticationService.class);
     
-    private static final int SESSION_SIGNIN_TIMEOUT = 60;
+    private static final int SESSION_SIGNIN_TIMEOUT = 60*5;
     
     private CacheProvider cacheProvider;
     private BridgeConfig config;
