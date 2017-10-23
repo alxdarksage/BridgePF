@@ -12,11 +12,16 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
 public class SignInValidator implements Validator {
-    
+
+    /** Sign in using email and password. */
     public static final SignInValidator EMAIL_PASSWORD_SIGNIN = new SignInValidator(Type.EMAIL_PASSWORD_SIGNIN);
+    /** Request a token for sign in via a link in an email message. */
     public static final SignInValidator EMAIL_SIGNIN_REQUEST = new SignInValidator(Type.EMAIL_SIGNIN_REQUEST);
+    /** Request a token for sign in via SMS. */
     public static final SignInValidator PHONE_SIGNIN_REQUEST = new SignInValidator(Type.PHONE_SIGNIN_REQUEST);
+    /** Token-based reauthentication after an initial authentication attempt. */
     public static final SignInValidator REAUTH_SIGNIN = new SignInValidator(Type.REAUTH_SIGNIN);
+    /** Token-based authentication, using a token sent through an authentication channel like emai or SMS. */
     public static final SignInValidator TOKEN_SIGNIN = new SignInValidator(Type.TOKEN_SIGNIN);
     
     private static enum Type {

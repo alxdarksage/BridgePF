@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -48,6 +49,7 @@ import org.sagebionetworks.bridge.exceptions.InvalidEntityException;
 import org.sagebionetworks.bridge.exceptions.NotAuthenticatedException;
 import org.sagebionetworks.bridge.exceptions.UnsupportedVersionException;
 import org.sagebionetworks.bridge.json.BridgeObjectMapper;
+import org.sagebionetworks.bridge.models.ClientInfo;
 import org.sagebionetworks.bridge.models.Metrics;
 import org.sagebionetworks.bridge.models.OperatingSystem;
 import org.sagebionetworks.bridge.models.RequestInfo;
@@ -176,6 +178,16 @@ public class AuthenticationControllerMockTest {
         mockPlayContextWithJson(TestUtils.createJson("{}"), HEADERS);
 
         when(authenticationService.emailSignIn(any(), any(), any())).thenThrow(new InvalidEntityException(signIn,""));
+        
+        controller.emailSignIn();
+    }
+    
+    @Test(expected = UnsupportedVersionException.class)
+    public void emailSignInUnsupportedExceptionThrownNotConsentRequired() throws Exception {
+        mockPlayContextWithJson(TestUtils.createJson("{}"), HEADERS);
+        UserSession session = new UserSession();
+        when(authenticationService.emailSignIn(any(), any(), any())).thenThrow(new ConsentRequiredException(session));
+        doThrow(new UnsupportedVersionException(ClientInfo.UNKNOWN_CLIENT)).when(controller).verifySupportedVersionOrThrowException(any());
         
         controller.emailSignIn();
     }

@@ -123,7 +123,7 @@ public class AuthenticationService {
             throw new UnauthorizedException("Email-based sign in not enabled for study: " + study.getName());
         }
         
-        // check that email is in the study, if not, return quietly to prevent session enumeration attacks
+        // check that email is in the study, if not, return quietly to prevent account enumeration attacks
         if (accountDao.getAccountWithEmail(study, signIn.getEmail()) == null) {
             // The not found case returns *much* faster than the normal case. To prevent account enumeration 
             // attacks, measure time of a successful case and delay for that period before returning.
@@ -168,10 +168,10 @@ public class AuthenticationService {
         
         Account account = accountDao.getAccountAfterAuthentication(study, signIn.getEmail());
         
-        // If the user accesses email sign in, we can verify the email address.
         if (account.getStatus() == AccountStatus.DISABLED) {
             throw new AccountDisabledException();
         } else if (account.getStatus() == AccountStatus.UNVERIFIED) {
+            // If the user accesses email sign in, we can verify the email address.
             account.setStatus(AccountStatus.ENABLED);
             accountDao.updateAccount(account);
         }

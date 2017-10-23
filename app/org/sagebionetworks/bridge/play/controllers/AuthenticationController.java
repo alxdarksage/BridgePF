@@ -50,12 +50,24 @@ public class AuthenticationController extends BaseController {
         ClientInfo clientInfo = getClientInfoFromUserAgentHeader();
         LinkedHashSet<String> langs = getLanguagesFromAcceptLanguageHeader();
         
-        UserSession session = authenticationService.emailSignIn(clientInfo, langs, tokenHolder);
-        
-        // Better late than never, now that we have the study, we can throw an exception if 
-        // the kill switch exists for the study
+        // We reverse the order in which we check and throw consent and unsupported version
+        // exceptions. We want to throw the unsupported version exception if applicable, 
+        // but need in this case to authenticate so we know the study we are examining. 
+        ConsentRequiredException consentRequiredException = null;
+        UserSession session = null;
+        try {
+            session = authenticationService.emailSignIn(clientInfo, langs, tokenHolder);
+        } catch(ConsentRequiredException e) {
+            consentRequiredException = e;
+            session = e.getUserSession();
+        }
+        // Now we can check and throw this first
         Study study = studyService.getStudy(session.getStudyIdentifier());
         verifySupportedVersionOrThrowException(study);
+        
+        if (consentRequiredException != null) {
+            throw consentRequiredException;
+        }
         
         return okResult(UserSessionInfo.toJSON(session));
     }
