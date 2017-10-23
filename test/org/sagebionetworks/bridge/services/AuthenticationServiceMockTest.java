@@ -2,6 +2,7 @@ package org.sagebionetworks.bridge.services;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doReturn;
@@ -63,7 +64,7 @@ public class AuthenticationServiceMockTest {
     private static final String PASSWORD = "password";
     private static final SignIn SIGN_IN_REQUEST = new SignIn.Builder().withStudy(STUDY_ID).withEmail(RECIPIENT_EMAIL)
             .build();
-    private static final SignIn SIGN_IN = new SignIn.Builder().withStudy(STUDY_ID).withEmail(RECIPIENT_EMAIL)
+    private static final SignIn TOKEN_SIGN_IN = new SignIn.Builder().withStudy(STUDY_ID).withEmail(RECIPIENT_EMAIL)
             .withToken(TOKEN).build();
     private static final SignIn PASSWORD_SIGN_IN = new SignIn.Builder().withStudy(STUDY_ID).withEmail(RECIPIENT_EMAIL)
             .withPassword(PASSWORD).build();
@@ -176,6 +177,18 @@ public class AuthenticationServiceMockTest {
         assertEquals(RECIPIENT_EMAIL, Iterables.getFirst(provider.getRecipientEmails(), null));
     }
     
+    @Test
+    public void requestEmailSignInFailureDelays() throws Exception {
+        service.getEmailSignInRequestInMillis().set(1000);
+        doReturn(null).when(accountDao).getAccountWithEmail(any(), any());
+        
+        long start = System.currentTimeMillis();
+        service.requestEmailSignIn(SIGN_IN_REQUEST);
+        long total = System.currentTimeMillis()-start;
+        assertTrue(total >= 1000);
+        service.getEmailSignInRequestInMillis().set(0);
+    }
+    
     @Test(expected = UnauthorizedException.class)
     public void requestEmailSignInDisabled() throws Exception {
         study.setEmailSignInEnabled(false);
@@ -217,14 +230,14 @@ public class AuthenticationServiceMockTest {
 
     @Test
     public void emailSignIn() {
-        doReturn(SIGN_IN).when(cacheProvider).getSignIn(SIGN_IN.getToken());
+        doReturn(TOKEN_SIGN_IN).when(cacheProvider).getSignIn(TOKEN_SIGN_IN.getToken());
         account.setReauthToken(REAUTH_TOKEN);
         doReturn(TOKEN).when(cacheProvider).getString(REAUTH_TOKEN);
         doReturn(account).when(accountDao).getAccountAfterAuthentication(study, RECIPIENT_EMAIL);
         doReturn(PARTICIPANT).when(participantService).getParticipant(study, account, false);
         doReturn(CONSENTED_STATUS_MAP).when(consentService).getConsentStatuses(any());
         
-        UserSession retSession = service.emailSignIn(INFO, LANGS, SIGN_IN);
+        UserSession retSession = service.emailSignIn(INFO, LANGS, TOKEN_SIGN_IN);
         
         assertNotNull(retSession);
         assertEquals(REAUTH_TOKEN, retSession.getReauthToken());
@@ -271,7 +284,7 @@ public class AuthenticationServiceMockTest {
     public void emailSignInEnablesAccount() {
         StudyParticipant participant = new StudyParticipant.Builder().withStatus(AccountStatus.ENABLED).build();
         
-        doReturn(SIGN_IN).when(cacheProvider).getSignIn(SIGN_IN.getToken());
+        doReturn(TOKEN_SIGN_IN).when(cacheProvider).getSignIn(TOKEN_SIGN_IN.getToken());
         doReturn(participant).when(participantService).getParticipant(study, account, false);
         study.setIdentifier(STUDY_ID);
         doReturn(study).when(studyService).getStudy(STUDY_ID);
@@ -279,7 +292,7 @@ public class AuthenticationServiceMockTest {
         doReturn(CONSENTED_STATUS_MAP).when(consentService).getConsentStatuses(any());
         account.setStatus(AccountStatus.UNVERIFIED);
         
-        service.emailSignIn(INFO, LANGS, SIGN_IN);
+        service.emailSignIn(INFO, LANGS, TOKEN_SIGN_IN);
         
         verify(accountDao).updateAccount(accountCaptor.capture());
         assertEquals(AccountStatus.ENABLED, accountCaptor.getValue().getStatus());
@@ -289,28 +302,28 @@ public class AuthenticationServiceMockTest {
     public void emailSignInThrowsAccountDisabled() {
         StudyParticipant participant = new StudyParticipant.Builder().withStatus(AccountStatus.DISABLED).build();
         
-        doReturn(SIGN_IN).when(cacheProvider).getSignIn(SIGN_IN.getToken());
+        doReturn(TOKEN_SIGN_IN).when(cacheProvider).getSignIn(TOKEN_SIGN_IN.getToken());
         doReturn(participant).when(participantService).getParticipant(study, account, false);
         study.setIdentifier(STUDY_ID);
         doReturn(study).when(studyService).getStudy(STUDY_ID);
         doReturn(account).when(accountDao).getAccountAfterAuthentication(study, RECIPIENT_EMAIL);
         account.setStatus(AccountStatus.DISABLED);
         
-        service.emailSignIn(INFO, LANGS, SIGN_IN);
+        service.emailSignIn(INFO, LANGS, TOKEN_SIGN_IN);
     }
     
     @Test(expected = ConsentRequiredException.class)
     public void emailSignInThrowsConsentRequired() {
         StudyParticipant participant = new StudyParticipant.Builder().withStatus(AccountStatus.DISABLED).build();
         
-        doReturn(SIGN_IN).when(cacheProvider).getSignIn(SIGN_IN.getToken());
+        doReturn(TOKEN_SIGN_IN).when(cacheProvider).getSignIn(TOKEN_SIGN_IN.getToken());
         doReturn(UNCONSENTED_STATUS_MAP).when(consentService).getConsentStatuses(any());
         doReturn(participant).when(participantService).getParticipant(study, account, false);
         study.setIdentifier(STUDY_ID);
         doReturn(study).when(studyService).getStudy(STUDY_ID);
         doReturn(account).when(accountDao).getAccountAfterAuthentication(study, RECIPIENT_EMAIL);
         
-        service.emailSignIn(INFO, LANGS, SIGN_IN);
+        service.emailSignIn(INFO, LANGS, TOKEN_SIGN_IN);
     }
     
     @Test
@@ -338,7 +351,7 @@ public class AuthenticationServiceMockTest {
     
     @Test(expected = InvalidEntityException.class)
     public void reauthTokenRequired() {
-        service.reauthenticate(study, CONTEXT, SIGN_IN); // doesn't have reauth token
+        service.reauthenticate(study, CONTEXT, TOKEN_SIGN_IN); // doesn't have reauth token
     }
     
     @Test(expected = ConsentRequiredException.class)
