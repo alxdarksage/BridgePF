@@ -1,12 +1,11 @@
 package org.sagebionetworks.bridge.models.accounts;
 
-import org.sagebionetworks.bridge.json.SignInDeserializer;
 import org.sagebionetworks.bridge.models.BridgeEntity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-@JsonDeserialize(using = SignInDeserializer.class)
+@JsonDeserialize(builder = SignIn.Builder.class)
 public final class SignIn implements BridgeEntity {
 
     private final String email;
@@ -51,12 +50,18 @@ public final class SignIn implements BridgeEntity {
     }
     
     public static class Builder {
+        private String username;
         private String email;
         private String phone;
         private String password;
         private String studyId;
         private String token;
         private String reauthToken;
+        
+        public Builder withUsername(String username) {
+            this.username = username;    
+            return this;
+        }
         public Builder withEmail(String email) {
             this.email = email;
             return this;
@@ -82,7 +87,8 @@ public final class SignIn implements BridgeEntity {
             return this;
         }
         public SignIn build() {
-            return new SignIn(studyId, email, phone, password, token, reauthToken);
+            String identifier = (username != null) ? username : email;
+            return new SignIn(studyId, identifier, phone, password, token, reauthToken);
         }
     }
 }
