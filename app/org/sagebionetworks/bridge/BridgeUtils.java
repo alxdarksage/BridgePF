@@ -397,5 +397,13 @@ public class BridgeUtils {
         }
         throw new BridgeServiceException("Invalid activityType specified");    
     }
+    
+    /**
+     * Compares two values to detect a change, where nulls are equivalent to one another.
+     */
+    public static <T> boolean valueChanged(T original, T update) {
+        return !((original == null && update== null) ||
+                (original != null && original.equals(update)));
+    }
 
 }

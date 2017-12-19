@@ -10,6 +10,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
 import org.sagebionetworks.bridge.BridgeUtils;
+import org.sagebionetworks.bridge.models.accounts.Account;
 import org.sagebionetworks.bridge.models.accounts.Phone;
 import org.sagebionetworks.bridge.models.accounts.StudyParticipant;
 import org.sagebionetworks.bridge.models.studies.PasswordPolicy;
@@ -19,11 +20,13 @@ public class StudyParticipantValidator implements Validator {
 
     private static final EmailValidator EMAIL_VALIDATOR = EmailValidator.getInstance();
     private final Study study;
+    private final Account account;
     private final boolean isNew;
     
-    public StudyParticipantValidator(Study study, boolean isNew) {
+    public StudyParticipantValidator(Study study, Account account) {
         this.study = study;
-        this.isNew = isNew;
+        this.account = account;
+        this.isNew = (account == null);
     }
     
     @Override
@@ -63,6 +66,15 @@ public class StudyParticipantValidator implements Validator {
             if (isBlank(participant.getId())) {
                 errors.rejectValue("id", "is required");
             }
+            // You can only change email or phone if the other value remains unchanged, and it is 
+            // already verified. This is to prevent a user from locking themselves out of the account.
+            boolean emailChanged = !isUnchangedVerifiedValue(account.getEmail(), participant.getEmail(),
+                    account.getEmailVerified());
+            boolean phoneChanged = !isUnchangedVerifiedValue(account.getPhone(), participant.getPhone(),
+                    account.getPhoneVerified());
+            if (emailChanged && phoneChanged) {
+                errors.reject("cannot change email or phone when the other is unverified (or both at the same time)");
+            }
         }
         
         // if external ID validation is enabled, it's not covered by the validator.
@@ -76,6 +88,10 @@ public class StudyParticipantValidator implements Validator {
                 errors.rejectValue("attributes", messageForSet(study.getUserProfileAttributes(), attributeName));
             }
         }
+    }
+    
+    <T> boolean isUnchangedVerifiedValue(T original, T changed, Boolean verified) {
+        return !BridgeUtils.valueChanged(original, changed) && verified == Boolean.TRUE;
     }
     
     private String messageForSet(Set<String> set, String fieldName) {

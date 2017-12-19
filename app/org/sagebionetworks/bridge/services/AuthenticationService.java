@@ -270,7 +270,7 @@ public class AuthenticationService {
         checkNotNull(study);
         checkNotNull(participant);
         
-        Validate.entityThrowingException(new StudyParticipantValidator(study, true), participant);
+        Validate.entityThrowingException(new StudyParticipantValidator(study, null), participant);
         
         try {
             // Since caller has no roles, no roles can be assigned on sign up.

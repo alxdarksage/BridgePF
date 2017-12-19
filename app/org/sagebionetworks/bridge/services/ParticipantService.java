@@ -246,7 +246,7 @@ public class ParticipantService {
             throwExceptionIfLimitMetOrExceeded(study);
         }
 
-        Validate.entityThrowingException(new StudyParticipantValidator(study, true), participant);
+        Validate.entityThrowingException(new StudyParticipantValidator(study, null), participant);
         
         Account account = accountDao.constructAccount(study, participant.getEmail(), participant.getPhone(),
                 participant.getPassword());
@@ -268,9 +268,9 @@ public class ParticipantService {
         checkNotNull(callerRoles);
         checkNotNull(participant);
         
-        Validate.entityThrowingException(new StudyParticipantValidator(study, false), participant);
-        
         Account account = getAccountThrowingException(study, participant.getId());
+        Validate.entityThrowingException(new StudyParticipantValidator(study, account), participant);
+        
         Map<ParticipantOption, String> options = Maps.newHashMap();
 
         // Do this first because if the ID has been taken or is invalid, we do not want to update anything else.

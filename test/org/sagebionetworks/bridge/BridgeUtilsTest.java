@@ -1,6 +1,7 @@
 package org.sagebionetworks.bridge;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -385,6 +386,31 @@ public class BridgeUtilsTest {
     @Test(expected = BadRequestException.class)
     public void getLocalDateWithError() {
         BridgeUtils.getLocalDateOrDefault("2017-05-10T05:05:10.000Z", null);
+    }
+    
+    @Test
+    public void nullValuesUnchanged() {
+        assertFalse(BridgeUtils.valueChanged(null, null));
+    }
+    
+    @Test
+    public void removeValueChanged() {
+        assertTrue(BridgeUtils.valueChanged("", null));
+    }
+    
+    @Test
+    public void addValueChanged() {
+        assertTrue(BridgeUtils.valueChanged(null, ""));
+    }
+    
+    @Test
+    public void samveValueUnchanged() {
+        assertFalse(BridgeUtils.valueChanged(1L, 1L));
+    }
+    
+    @Test
+    public void differentValueChanged() {
+        assertTrue(BridgeUtils.valueChanged(2L, 1L));
     }
     
     // assertEquals with two sets doesn't verify the order is the same... hence this test method.
