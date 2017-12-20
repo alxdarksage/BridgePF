@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import org.sagebionetworks.bridge.BridgeConstants;
+import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.Roles;
 import org.sagebionetworks.bridge.cache.CacheProvider;
 import org.sagebionetworks.bridge.dao.AccountDao;
@@ -90,6 +91,8 @@ public class ParticipantService {
     private ScheduledActivityService scheduledActivityService;
 
     private ActivityEventService activityEventService;
+    
+    private AccountWorkflowService accountWorkflowService;
 
     @Autowired
     final void setAccountDao(AccountDao accountDao) {
@@ -144,6 +147,11 @@ public class ParticipantService {
     @Autowired
     final void setActivityEventService(ActivityEventService activityEventService) {
         this.activityEventService = activityEventService;
+    }
+    
+    @Autowired
+    final void setAccountWorkflowService(AccountWorkflowService accountWorkflowService) {
+        this.accountWorkflowService = accountWorkflowService;
     }
 
     public StudyParticipant getParticipant(Study study, String id, boolean includeHistory) {
@@ -292,6 +300,10 @@ public class ParticipantService {
         }
         accountDao.updateAccount(account);
         optionsService.setAllOptions(study.getStudyIdentifier(), account.getHealthCode(), options);
+        
+        if (study.isEmailVerificationEnabled() && BridgeUtils.valueChanged(account.getEmail(), participant.getEmail())) {
+            accountWorkflowService.sendEmailVerificationToken(study, account.getId(), participant.getEmail());
+        }
     }
 
     private void throwExceptionIfLimitMetOrExceeded(Study study) {

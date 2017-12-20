@@ -354,13 +354,15 @@ public class HibernateAccountDao implements AccountDao {
             throw new EntityNotFoundException(Account.class, "Account " + accountId + " not found");
         }
         accountToUpdate.setStudyId(persistedAccount.getStudyId());
-        accountToUpdate.setEmail(persistedAccount.getEmail());
-        accountToUpdate.setPhone(persistedAccount.getPhone());
-        accountToUpdate.setEmailVerified(persistedAccount.getEmailVerified());
-        accountToUpdate.setPhoneVerified(persistedAccount.getPhoneVerified());
         accountToUpdate.setCreatedOn(persistedAccount.getCreatedOn());
         accountToUpdate.setPasswordModifiedOn(persistedAccount.getPasswordModifiedOn());
-
+        
+        if (BridgeUtils.valueChanged(persistedAccount.getEmail(), accountToUpdate.getEmail())) {
+            accountToUpdate.setEmailVerified(Boolean.FALSE);
+        }
+        if (BridgeUtils.valueChanged(persistedAccount.getPhone(),  accountToUpdate.getPhone())) {
+            accountToUpdate.setPhoneVerified(Boolean.FALSE);
+        }
         // Update modifiedOn.
         accountToUpdate.setModifiedOn(DateUtils.getCurrentMillisFromEpoch());
 

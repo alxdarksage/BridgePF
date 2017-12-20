@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.sagebionetworks.bridge.models.CriteriaContext;
 import org.sagebionetworks.bridge.models.accounts.AccountId;
+import org.sagebionetworks.bridge.models.accounts.Phone;
 import org.sagebionetworks.bridge.models.accounts.SignIn;
 import org.sagebionetworks.bridge.models.accounts.StudyParticipant;
 import org.sagebionetworks.bridge.models.accounts.UserSession;
@@ -135,6 +136,7 @@ public class TestUserAdminHelper {
         private Set<String> dataGroups;
         private String email;
         private String password;
+        private Phone phone;
         
         private Builder(Class<?> cls) {
             this.cls = cls;
@@ -178,6 +180,10 @@ public class TestUserAdminHelper {
             this.password = password;
             return this;
         }
+        public Builder withPhone(Phone phone) {
+            this.phone = phone;
+            return this;
+        }
         public TestUser build() {
             // There are tests where we partially create a user with the builder, then change just
             // some fields before creating another test user with multiple build() calls. Anything we
@@ -185,7 +191,7 @@ public class TestUserAdminHelper {
             Study finalStudy = (study == null) ? studyService.getStudy(TEST_STUDY_IDENTIFIER) : study;
             String finalEmail = (email == null) ? TestUtils.makeRandomTestEmail(cls) : email;
             String finalPassword = (password == null) ? PASSWORD : password;
-            StudyParticipant finalParticipant = new StudyParticipant.Builder().withEmail(finalEmail)
+            StudyParticipant finalParticipant = new StudyParticipant.Builder().withEmail(finalEmail).withPhone(phone)
                     .withPassword(finalPassword).withRoles(roles).withDataGroups(dataGroups).build();
             
             UserSession session = userAdminService.createUser(

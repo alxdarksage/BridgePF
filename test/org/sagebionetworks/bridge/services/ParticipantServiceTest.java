@@ -1,5 +1,7 @@
 package org.sagebionetworks.bridge.services;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -182,6 +184,9 @@ public class ParticipantServiceTest {
     @Mock
     private ExternalIdService externalIdService;
     
+    @Mock
+    private AccountWorkflowService accountWorkflowService;
+    
     @Captor
     ArgumentCaptor<StudyParticipant> participantCaptor;
     
@@ -225,22 +230,30 @@ public class ParticipantServiceTest {
         participantService.setUploadService(uploadService);
         participantService.setNotificationsService(notificationsService);
         participantService.setScheduledActivityService(scheduledActivityService);
+        participantService.setAccountWorkflowService(accountWorkflowService);
     }
     
-    private void mockHealthCodeAndAccountRetrieval() {
+    private void mockHealthCodeAndAccountRetrieval(String email, Boolean emailVerified, Phone phone, Boolean phoneVerified) {
         when(account.getId()).thenReturn(ID);
         when(accountDao.constructAccount(STUDY, EMAIL, PHONE, PASSWORD)).thenReturn(account);
         when(accountDao.createAccount(same(STUDY), same(account), anyBoolean())).thenReturn(ID);
         when(accountDao.getAccount(ACCOUNT_ID)).thenReturn(account);
         when(account.getHealthCode()).thenReturn(HEALTH_CODE);
-        when(account.getEmail()).thenReturn(EMAIL);
+        if (email != null) {
+            when(account.getEmail()).thenReturn(email);
+            when(account.getEmailVerified()).thenReturn(emailVerified);
+        }
+        if (phone != null) {
+            when(account.getPhone()).thenReturn(phone);
+            when(account.getPhoneVerified()).thenReturn(phoneVerified);
+        }
         when(optionsService.getOptions(HEALTH_CODE)).thenReturn(lookup);
     }
     
     @Test
     public void createParticipant() {
         STUDY.setExternalIdValidationEnabled(true);
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         IdentifierHolder idHolder = participantService.createParticipant(STUDY, CALLER_ROLES, PARTICIPANT, false);
         assertEquals(ID, idHolder.getIdentifier());
@@ -282,7 +295,7 @@ public class ParticipantServiceTest {
     @Test
     public void createParticipantWithAssignedId() {
         STUDY.setExternalIdValidationEnabled(true);
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         doThrow(new EntityAlreadyExistsException(ExternalIdentifier.class, "identifier", "AAA"))
             .when(externalIdService).reserveExternalId(STUDY, EXTERNAL_ID, HEALTH_CODE);
@@ -300,7 +313,7 @@ public class ParticipantServiceTest {
     @Test
     public void createParticipantWithExternalIdValidation() {
         STUDY.setExternalIdValidationEnabled(true);
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         participantService.createParticipant(STUDY, CALLER_ROLES, PARTICIPANT, false);
         verify(externalIdService).reserveExternalId(STUDY, EXTERNAL_ID, HEALTH_CODE);
@@ -393,7 +406,7 @@ public class ParticipantServiceTest {
         when(account.getConsentSignatureHistory(SubpopulationGuid.create("guid1"))).thenReturn(sigs1);
         when(account.getClientData()).thenReturn(TestUtils.getClientData());
         
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         List<Subpopulation> subpopulations = Lists.newArrayList();
         // Two subpopulations for mocking.
@@ -476,7 +489,7 @@ public class ParticipantServiceTest {
     @Test
     public void updateParticipantWithExternalIdValidationAddingId() {
         STUDY.setExternalIdValidationEnabled(true);
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         StudyParticipant participant = new StudyParticipant.Builder()
                 .withHealthCode(HEALTH_CODE)
@@ -517,9 +530,10 @@ public class ParticipantServiceTest {
     
     @Test(expected = InvalidEntityException.class)
     public void updateParticipantWithInvalidParticipant() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         StudyParticipant participant = new StudyParticipant.Builder()
+                .withId(ID)
                 .withDataGroups(Sets.newHashSet("bogusGroup"))
                 .build();
         participantService.updateParticipant(STUDY, CALLER_ROLES, participant);
@@ -575,7 +589,7 @@ public class ParticipantServiceTest {
 
     @Test
     public void notSettingStatusDoesntClearStatus() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
 
         StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
                 .withStatus(null).build();
@@ -629,7 +643,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void getParticipantWithoutHistories() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         doReturn(STUDY.getIdentifier()).when(subpopulation).getGuidString();
         doReturn(SUBPOP_GUID).when(subpopulation).getGuid();
@@ -642,7 +656,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void getParticipantWithHistories() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         doReturn(STUDY.getIdentifier()).when(subpopulation).getGuidString();
         doReturn(SUBPOP_GUID).when(subpopulation).getGuid();
@@ -705,7 +719,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void getStudyParticipantWithAccount() throws Exception {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         doReturn(lookup).when(optionsService).getOptions(HEALTH_CODE);
         doReturn(EMAIL).when(account).getEmail();
         doReturn(HEALTH_CODE).when(account).getHealthCode();
@@ -730,7 +744,7 @@ public class ParticipantServiceTest {
 
     @Test
     public void requestResetPassword() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         participantService.requestResetPassword(STUDY, ID);
         
@@ -745,7 +759,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void canGetActivityHistoryV2WithAllValues() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         participantService.getActivityHistory(STUDY, ID, ACTIVITY_GUID, START_DATE, END_DATE, PAGED_BY, PAGE_SIZE);
 
@@ -755,7 +769,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void canGetActivityHistoryV2WithDefaults() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         participantService.getActivityHistory(STUDY, ID, ACTIVITY_GUID, null, null, null, PAGE_SIZE);
 
@@ -769,7 +783,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void deleteActivities() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         participantService.deleteActivities(STUDY, ID);
         
@@ -783,7 +797,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void resendEmailVerification() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         participantService.resendEmailVerification(STUDY, ID);
         
@@ -796,7 +810,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void resendConsentAgreement() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         participantService.resendConsentAgreement(STUDY, SUBPOP_GUID, ID);
         
@@ -808,7 +822,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void withdrawAllConsents() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         Withdrawal withdrawal = new Withdrawal("Reasons");
         long withdrewOn = DateTime.now().getMillis();
@@ -823,7 +837,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void withdrawConsent() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         Withdrawal withdrawal = new Withdrawal("Reasons");
         long withdrewOn = DateTime.now().getMillis();
@@ -838,7 +852,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void getUploads() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         DateTime startTime = DateTime.parse("2015-11-01T00:00:00.000Z");
         DateTime endTime = DateTime.parse("2015-11-01T23:59:59.999Z");
         
@@ -850,7 +864,7 @@ public class ParticipantServiceTest {
     @Test
     public void getUploadsWithoutDates() {
         // Just verify this throws no exceptions
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         participantService.getUploads(STUDY, ID, null, null, 10, null);
         
@@ -859,7 +873,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void listNotificationRegistrations() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         participantService.listRegistrations(STUDY, ID);
         
@@ -868,7 +882,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void sendNotification() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         NotificationMessage message = TestUtils.getNotificationMessage();
         
         participantService.sendNotification(STUDY, ID, message);
@@ -904,7 +918,7 @@ public class ParticipantServiceTest {
 
     @Test
     public void limitNotExceededException() {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         STUDY.setAccountLimit(10);
         when(accountSummaries.getTotal()).thenReturn(9);
         when(accountDao.getPagedAccountSummaries(STUDY, 0, BridgeConstants.API_MINIMUM_PAGE_SIZE, null, null, null, null))
@@ -938,8 +952,131 @@ public class ParticipantServiceTest {
         participantService.createParticipant(STUDY, CALLER_ROLES, PARTICIPANT, false);
     }
     
+    @Test
+    public void cannotDeleteEmailOnUpdate() {
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
+                .withEmail(null).build();
+        try {
+            participantService.updateParticipant(STUDY, CALLER_ROLES, participant);
+            fail("Should have thrown an exception");
+        } catch(InvalidEntityException e) {
+            assertEquals("email cannot be deleted", e.getErrors().get("email").get(0));
+        }
+    }
+    
+    @Test
+    public void cannotDeletePhoneOnUpdate() {
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, PHONE, TRUE);
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
+                .withPhone(null).build();
+        try {
+            participantService.updateParticipant(STUDY, CALLER_ROLES, participant);
+            fail("Should have thrown an exception");
+        } catch(InvalidEntityException e) {
+            assertEquals("phone cannot be deleted", e.getErrors().get("phone").get(0));
+        }
+    }
+    
+    @Test
+    public void cannotChangeEmailIfPhoneUnverified() {
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, PHONE, FALSE);
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
+                .withEmail("newemail@newemail.com").build();
+        try {
+            participantService.updateParticipant(STUDY, CALLER_ROLES, participant);
+            fail("Should have thrown an exception");
+        } catch(InvalidEntityException e) {
+            assertTrue(e.getMessage().contains("cannot change email or phone when the other is unverified"));
+        }
+    }
+    
+    @Test
+    public void cannotChangePhoneIfEmailUnverified() {
+        mockHealthCodeAndAccountRetrieval(EMAIL, FALSE, null, null);
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
+                .withPhone(PHONE).build();
+        try {
+            participantService.updateParticipant(STUDY, CALLER_ROLES, participant);
+            fail("Should have thrown an exception");
+        } catch(InvalidEntityException e) {
+            assertTrue(e.getMessage().contains("cannot change email or phone when the other is unverified"));
+        }
+    }
+    
+    @Test
+    public void cannotChangeEmailIfPhoneNull() {
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
+                .withEmail("newEmail@newEmail.com").build();
+        try {
+            participantService.updateParticipant(STUDY, CALLER_ROLES, participant);
+            fail("Should have thrown an exception");
+        } catch(InvalidEntityException e) {
+            assertTrue(e.getMessage().contains("cannot change email or phone when the other is unverified"));
+        }
+    }
+    
+    @Test
+    public void cannotChangePhoneIfEmailNull() {
+        mockHealthCodeAndAccountRetrieval(null, null, PHONE, TRUE);
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
+                .withPhone(new Phone("4082588569", "US")).build();
+        try {
+            participantService.updateParticipant(STUDY, CALLER_ROLES, participant);
+            fail("Should have thrown an exception");
+        } catch(InvalidEntityException e) {
+            assertTrue(e.getMessage().contains("cannot change email or phone when the other is unverified"));
+        }
+    }
+    
+    @Test
+    public void cannotChangeEmailAndPhoneEvenIfBothVerified() {
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, PHONE, TRUE);
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
+                .withEmail("newEmail@newEmail.com")
+                .withPhone(new Phone("4082588569", "US")).build();
+        try {
+            participantService.updateParticipant(STUDY, CALLER_ROLES, participant);
+            fail("Should have thrown an exception");
+        } catch(InvalidEntityException e) {
+            assertTrue(e.getMessage().contains("cannot change email or phone when the other is unverified"));
+        }
+    }
+    
+    @Test
+    public void canAddEmailWithVerification() {
+        mockHealthCodeAndAccountRetrieval(null, null, PHONE, TRUE);
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
+                .withEmail("newEmail@newEmail.com").build();
+        STUDY.setEmailVerificationEnabled(true);
+        
+        participantService.updateParticipant(STUDY, CALLER_ROLES, participant);
+        verify(accountWorkflowService).sendEmailVerificationToken(STUDY, ID, "newEmail@newEmail.com");
+    }
+    
+    @Test
+    public void canAddEmailWithoutVerification() {
+        mockHealthCodeAndAccountRetrieval(null, null, PHONE, TRUE);
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
+                .withEmail("newEmail@newEmail.com").build();
+        STUDY.setEmailVerificationEnabled(false);
+        
+        participantService.updateParticipant(STUDY, CALLER_ROLES, participant);
+        verify(accountWorkflowService, never()).sendEmailVerificationToken(STUDY, ID, "newEmail@newEmail.com");
+    }
+    
+    @Test
+    public void canAddPhone() {
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
+                .withPhone(new Phone("4082588569","US")).build();
+        participantService.updateParticipant(STUDY, CALLER_ROLES, participant);
+        verify(accountWorkflowService, never()).sendEmailVerificationToken(any(), any(), any());
+    }
+    
     private void verifyStatusCreate(Set<Roles> callerRoles) {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
                 .withStatus(AccountStatus.ENABLED).build();
@@ -956,7 +1093,7 @@ public class ParticipantServiceTest {
     // There's no actual vs expected here because either we don't set it, or we set it and that's what we're verifying,
     // that it has been set. If the setter is not called, the existing status will be sent back to account store.
     private void verifyStatusUpdate(Set<Roles> roles, boolean canSetStatus) {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
                 .withStatus(AccountStatus.ENABLED).build();
@@ -974,7 +1111,7 @@ public class ParticipantServiceTest {
     }
 
     private void verifyRoleCreate(Set<Roles> callerRoles, Set<Roles> rolesThatAreSet) {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
                 .withRoles(Sets.newHashSet(ADMIN, RESEARCHER, DEVELOPER, WORKER)).build();
@@ -994,7 +1131,7 @@ public class ParticipantServiceTest {
     }
     
     private void verifyRoleUpdate(Set<Roles> callerRoles, Set<Roles> rolesThatAreSet, Set<Roles> expected) {
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
         
         StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
                 .withRoles(rolesThatAreSet).build();
@@ -1018,7 +1155,7 @@ public class ParticipantServiceTest {
     private void setupExternalIdTest(boolean withValidation, boolean requiredOnSignUp) {
         STUDY.setExternalIdValidationEnabled(withValidation);
         STUDY.setExternalIdRequiredOnSignup(requiredOnSignUp);
-        mockHealthCodeAndAccountRetrieval();
+        mockHealthCodeAndAccountRetrieval(EMAIL, TRUE, null, null);
     }
     
     private void verifyIdReservation(String withId) {

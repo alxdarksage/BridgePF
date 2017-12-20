@@ -67,6 +67,7 @@ public class HibernateAccountDaoTest {
     private static final String DUMMY_TOKEN = "dummy-token";
     private static final String EMAIL = "eggplant@example.com";
     private static final Phone PHONE = TestConstants.PHONE;
+    private static final String OTHER_EMAIL = "otheremail@otheremail.com";
     private static final Phone OTHER_PHONE = new Phone("+12065881469", "US");
     private static final String HEALTH_CODE = "health-code";
     private static final String HEALTH_ID = "health-id";
@@ -819,8 +820,8 @@ public class HibernateAccountDaoTest {
     
     @Test
     public void updateSuccess() {
-        // Some fields can't be modified. Create the persisted account and set the base fields so we can verify they
-        // weren't modified.
+        // Set some values on the persisted account that should not be persisted, we'll verify they are reverted
+        // correct from changes in the modified object.
         HibernateAccount persistedAccount = new HibernateAccount();
         persistedAccount.setStudyId("persisted-study");
         persistedAccount.setEmail("persisted@example.com");
@@ -838,24 +839,25 @@ public class HibernateAccountDaoTest {
 
         // execute
         GenericAccount account = makeValidGenericAccount();
+        account.setStudyId(new StudyIdentifierImpl("other-study"));
+        account.setCreatedOn(DateTime.now().minusDays(1));
+        account.setEmail(OTHER_EMAIL);
         account.setPhone(OTHER_PHONE);
-        account.setEmailVerified(Boolean.FALSE);
-        account.setPhoneVerified(Boolean.FALSE);
         dao.updateAccount(account);
 
         // verify hibernate update
         ArgumentCaptor<HibernateAccount> updatedHibernateAccountCaptor = ArgumentCaptor.forClass(
                 HibernateAccount.class);
         verify(mockHibernateHelper).update(updatedHibernateAccountCaptor.capture());
-
+        
         HibernateAccount updatedHibernateAccount = updatedHibernateAccountCaptor.getValue();
         assertEquals(ACCOUNT_ID, updatedHibernateAccount.getId());
         assertEquals("persisted-study", updatedHibernateAccount.getStudyId());
-        assertEquals("persisted@example.com", updatedHibernateAccount.getEmail());
-        assertEquals(PHONE.getNationalFormat(),
+        assertEquals(OTHER_EMAIL, updatedHibernateAccount.getEmail());
+        assertEquals(OTHER_PHONE.getNationalFormat(),
                 updatedHibernateAccount.getPhone().getNationalFormat());
-        assertEquals(Boolean.TRUE, updatedHibernateAccount.getEmailVerified());
-        assertEquals(Boolean.TRUE, updatedHibernateAccount.getPhoneVerified());
+        assertEquals(Boolean.FALSE, updatedHibernateAccount.getEmailVerified());
+        assertEquals(Boolean.FALSE, updatedHibernateAccount.getPhoneVerified());
         assertEquals(1234, updatedHibernateAccount.getCreatedOn().longValue());
         assertEquals(5678, updatedHibernateAccount.getPasswordModifiedOn().longValue());
         assertEquals(MOCK_NOW_MILLIS, updatedHibernateAccount.getModifiedOn().longValue());

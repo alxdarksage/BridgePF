@@ -29,6 +29,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import org.sagebionetworks.bridge.DefaultStudyBootstrapper;
 import org.sagebionetworks.bridge.Roles;
+import org.sagebionetworks.bridge.TestConstants;
 import org.sagebionetworks.bridge.TestUserAdminHelper;
 import org.sagebionetworks.bridge.TestUserAdminHelper.TestUser;
 import org.sagebionetworks.bridge.TestUtils;
@@ -54,6 +55,7 @@ import org.sagebionetworks.bridge.models.accounts.UserSession;
 import org.sagebionetworks.bridge.models.accounts.UserSessionInfo;
 import org.sagebionetworks.bridge.models.studies.Study;
 import org.sagebionetworks.bridge.models.subpopulations.SubpopulationGuid;
+import org.sagebionetworks.bridge.services.AuthenticationService.ChannelType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -399,6 +401,10 @@ public class AuthenticationServiceTest {
         testUser = helper.getBuilder(AuthenticationServiceTest.class).withConsent(false)
                 .withDataGroups(ORIGINAL_DATA_GROUPS).withSignIn(false).build();
         String userId = testUser.getId();
+
+        // To update the account you must verify the email channel. Otherwise it looks changed.
+        Account account = accountDao.getAccount(AccountId.forId(testUser.getStudy().getIdentifier(), userId));
+        accountDao.verifyChannel(ChannelType.EMAIL, account);
         
         // Update the data groups
         StudyParticipant participant = participantService.getParticipant(study, userId, false);
@@ -453,4 +459,32 @@ public class AuthenticationServiceTest {
         assertEquals(testUser.getStudyParticipant().getHealthCode(), session.getHealthCode());
         // etc.
     }
-}
+    
+    @Test(expected = InvalidEntityException.class)
+    public void cannotDeleteEmail() {
+        testUser = helper.getBuilder(AuthenticationServiceTest.class).withConsent(false).withSignIn(false).build();
+        
+        Account account = accountDao.getAccount(AccountId.forId(testUser.getStudy().getIdentifier(), testUser.getId()));
+        accountDao.verifyChannel(ChannelType.EMAIL, account);
+        
+        StudyParticipant updated = new StudyParticipant.Builder().copyOf(testUser.getStudyParticipant())
+                .withEmail(null).build();
+        
+        participantService.updateParticipant(testUser.getStudy(), CALLER_ROLES, updated);
+    }
+    
+    @Test(expected = InvalidEntityException.class)
+    public void cannotDeletePhone() {
+        testUser = helper.getBuilder(AuthenticationServiceTest.class).withConsent(false).withPhone(TestConstants.PHONE)
+                .withSignIn(false).build();
+        
+        Account account = accountDao.getAccount(AccountId.forId(testUser.getStudy().getIdentifier(), testUser.getId()));
+        accountDao.verifyChannel(ChannelType.EMAIL, account);
+        accountDao.verifyChannel(ChannelType.PHONE, account);
+        
+        StudyParticipant updated = new StudyParticipant.Builder().copyOf(testUser.getStudyParticipant())
+                .withPhone(null).build();
+        
+        participantService.updateParticipant(testUser.getStudy(), CALLER_ROLES, updated);
+    }
+}    

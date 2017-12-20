@@ -66,14 +66,23 @@ public class StudyParticipantValidator implements Validator {
             if (isBlank(participant.getId())) {
                 errors.rejectValue("id", "is required");
             }
-            // You can only change email or phone if the other value remains unchanged, and it is 
-            // already verified. This is to prevent a user from locking themselves out of the account.
-            boolean emailChanged = !isUnchangedVerifiedValue(account.getEmail(), participant.getEmail(),
-                    account.getEmailVerified());
-            boolean phoneChanged = !isUnchangedVerifiedValue(account.getPhone(), participant.getPhone(),
-                    account.getPhoneVerified());
-            if (emailChanged && phoneChanged) {
-                errors.reject("cannot change email or phone when the other is unverified (or both at the same time)");
+            // You cannot nullify a value. I'm not sure what could break if you do this.
+            if (participant.getEmail() == null && account.getEmail() != null) {
+                errors.rejectValue("email", "cannot be deleted");
+            }
+            if (participant.getPhone() == null && account.getPhone() != null) {
+                errors.rejectValue("phone", "cannot be deleted");
+            }
+            if (!errors.hasErrors()) {
+                // Furthermore, you can only change email or phone if the other value remains unchanged, and 
+                // it is already verified. This is to prevent a user from locking themselves out of the account.
+                boolean emailChanged = !isUnchangedVerifiedValue(account.getEmail(), participant.getEmail(),
+                        account.getEmailVerified());
+                boolean phoneChanged = !isUnchangedVerifiedValue(account.getPhone(), participant.getPhone(),
+                        account.getPhoneVerified());
+                if (emailChanged && phoneChanged) {
+                    errors.reject("cannot change email or phone when the other is unverified (or both at the same time)");
+                }
             }
         }
         

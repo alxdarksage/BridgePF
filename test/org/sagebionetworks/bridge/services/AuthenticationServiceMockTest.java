@@ -533,4 +533,5 @@ public class AuthenticationServiceMockTest {
     public void phoneSignInFails() {
         service.phoneSignIn(CONTEXT, SIGN_IN_WITH_PHONE);
     }
+    
 }
