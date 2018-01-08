@@ -291,6 +291,9 @@ public class ParticipantService {
         Validate.entityThrowingException(new StudyParticipantValidator(study, false), participant);
         
         Account account = getAccountThrowingException(study, participant.getId());
+        
+        boolean sendVerificationEmail = (account.getEmail() == null && participant.getEmail() != null);
+        
         Map<ParticipantOption, String> options = Maps.newHashMap();
 
         // Do this first because if the ID has been taken or is invalid, we do not want to update anything else.
@@ -308,6 +311,10 @@ public class ParticipantService {
         }
         accountDao.updateAccount(account);
         optionsService.setAllOptions(study.getStudyIdentifier(), account.getHealthCode(), options);
+        
+        if (study.isEmailVerificationEnabled() && sendVerificationEmail) {
+            accountWorkflowService.sendEmailVerificationToken(study, account.getId(), participant.getEmail());
+        }
     }
 
     private void throwExceptionIfLimitMetOrExceeded(Study study) {
@@ -331,6 +338,17 @@ public class ParticipantService {
         account.setFirstName(participant.getFirstName());
         account.setLastName(participant.getLastName());
         account.setClientData(participant.getClientData());
+        // If the existing value has not been set and a value is being provided, then set it, but otherwise,
+        // we do not update the fields.
+        if (account.getEmail() == null && participant.getEmail() != null) {
+            account.setEmail(participant.getEmail());
+            account.setEmailVerified(Boolean.FALSE);
+        }
+        if (account.getPhone() == null && participant.getPhone() != null) {
+            account.setPhone(participant.getPhone());
+            account.setPhoneVerified(Boolean.FALSE);
+        }
+
         for (String attribute : study.getUserProfileAttributes()) {
             String value = participant.getAttributes().get(attribute);
             account.setAttribute(attribute, value);

@@ -113,8 +113,14 @@ public class HibernateHelper {
                 return null;
             });
         } catch (OptimisticLockException ex) {
-            throw new ConcurrentModificationException("Row has the wrong version number; it may have been saved in " +
-                    "the background.");
+            throw new ConcurrentModificationException("Row has the wrong version number; it may have " + 
+                    "been saved in the background.");
+        } catch (PersistenceException ex) {
+            if (ex.getCause() instanceof ConstraintViolationException) {
+                throw new ConcurrentModificationException(ex.getMessage());
+            } else {
+                throw ex;
+            }
         }
     }
 

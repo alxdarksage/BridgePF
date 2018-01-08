@@ -61,6 +61,7 @@ import org.sagebionetworks.bridge.models.RequestInfo;
 import org.sagebionetworks.bridge.models.accounts.AccountStatus;
 import org.sagebionetworks.bridge.models.accounts.AccountSummary;
 import org.sagebionetworks.bridge.models.accounts.IdentifierHolder;
+import org.sagebionetworks.bridge.models.accounts.Phone;
 import org.sagebionetworks.bridge.models.accounts.StudyParticipant;
 import org.sagebionetworks.bridge.models.accounts.UserSession;
 import org.sagebionetworks.bridge.models.accounts.Withdrawal;
@@ -438,6 +439,7 @@ public class ParticipantControllerTest {
         
         doReturn(participant).when(mockParticipantService).getParticipant(study, ID, false);
         doReturn(new UserSession(participant)).when(authService).getSession(eq(study), any());
+        doReturn(participant).when(mockParticipantService).getParticipant(study, ID, true);
         
         String json = MAPPER.writeValueAsString(participant);
         mockPlayContextWithJson(json);
@@ -485,6 +487,7 @@ public class ParticipantControllerTest {
                 .withStatus(AccountStatus.DISABLED)
                 .withExternalId("POWERS").build();
         doReturn(participant).when(mockParticipantService).getParticipant(study, ID, false);
+        doReturn(participant).when(mockParticipantService).getParticipant(study, ID, true);
         
         mockPlayContextWithJson(createJson("{'externalId':'simpleStringChange',"+
                 "'sharingScope':'no_sharing',"+
@@ -517,6 +520,33 @@ public class ParticipantControllerTest {
     }
     
     @Test
+    public void updateSelfParticipantReturnsParticipantAsSaved() throws Exception {
+        // All values should be copied over here, also add a healthCode to verify it is not unset.
+        StudyParticipant participant = new StudyParticipant.Builder()
+                .copyOf(TestUtils.getStudyParticipant(ParticipantControllerTest.class))
+                .withHealthCode("healthCode").build();
+        
+        Phone originalPhone = new Phone("408-258-8569", "US");
+        StudyParticipant notUpdatedParticipant = new StudyParticipant.Builder()
+                .withPhone(originalPhone)
+                .withEmail("not-updated@email.com").build();
+        doReturn(participant).when(mockParticipantService).getParticipant(study, ID, false);
+        doReturn(new UserSession(participant)).when(authService).getSession(eq(study), any());
+        doReturn(notUpdatedParticipant).when(mockParticipantService).getParticipant(study, ID, true);
+        
+        String json = MAPPER.writeValueAsString(participant);
+        mockPlayContextWithJson(json);
+
+        Result result = controller.updateSelfParticipant();
+        
+        assertEquals(200, result.status());
+        JsonNode node = TestUtils.getJson(result);
+        assertEquals("UserSessionInfo", node.get("type").textValue());
+        assertEquals("+14082588569", node.get("phone").get("number").textValue());
+        assertEquals("not-updated@email.com", node.get("email").textValue());
+    }
+    
+    @Test
     public void requestResetPassword() throws Exception {
         Result result = controller.requestResetPassword(ID);
         assertResult(result, 200, "Request to reset password sent to user.");
@@ -540,6 +570,7 @@ public class ParticipantControllerTest {
         StudyParticipant participant = TestUtils.getStudyParticipant(ParticipantControllerTest.class);
         participant = new StudyParticipant.Builder().copyOf(participant).withId(ID).build();
         doReturn(participant).when(mockParticipantService).getParticipant(study, ID, false);
+        doReturn(participant).when(mockParticipantService).getParticipant(study, ID, true);
         
         // Now change to some other ID
         participant = new StudyParticipant.Builder().copyOf(participant).withId("someOtherId").build();

@@ -784,12 +784,8 @@ public class HibernateAccountDaoTest {
         // weren't modified.
         HibernateAccount persistedAccount = new HibernateAccount();
         persistedAccount.setStudyId("persisted-study");
-        persistedAccount.setEmail("persisted@example.com");
         persistedAccount.setCreatedOn(1234L);
         persistedAccount.setPasswordModifiedOn(5678L);
-        persistedAccount.setPhone(PHONE);
-        persistedAccount.setEmailVerified(Boolean.TRUE);
-        persistedAccount.setPhoneVerified(Boolean.TRUE);
 
         // Set a dummy modifiedOn to make sure we're overwriting it.
         persistedAccount.setModifiedOn(5678L);
@@ -812,11 +808,6 @@ public class HibernateAccountDaoTest {
         HibernateAccount updatedHibernateAccount = updatedHibernateAccountCaptor.getValue();
         assertEquals(ACCOUNT_ID, updatedHibernateAccount.getId());
         assertEquals("persisted-study", updatedHibernateAccount.getStudyId());
-        assertEquals("persisted@example.com", updatedHibernateAccount.getEmail());
-        assertEquals(PHONE.getNationalFormat(),
-                updatedHibernateAccount.getPhone().getNationalFormat());
-        assertEquals(Boolean.TRUE, updatedHibernateAccount.getEmailVerified());
-        assertEquals(Boolean.TRUE, updatedHibernateAccount.getPhoneVerified());
         assertEquals(1234, updatedHibernateAccount.getCreatedOn().longValue());
         assertEquals(5678, updatedHibernateAccount.getPasswordModifiedOn().longValue());
         assertEquals(MOCK_NOW_MILLIS, updatedHibernateAccount.getModifiedOn().longValue());
