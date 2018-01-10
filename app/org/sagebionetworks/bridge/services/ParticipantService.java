@@ -269,8 +269,16 @@ public class ParticipantService {
         updateAccountOptionsAndRoles(study, callerRoles, options, account, participant);
         
         boolean sendVerifyEmail = requestSendVerifyEmail && study.isEmailVerificationEnabled();
-        
-        account.setStatus(sendVerifyEmail ? AccountStatus.UNVERIFIED : AccountStatus.ENABLED);
+        if (sendVerifyEmail) {
+            account.setStatus(AccountStatus.UNVERIFIED);
+        } else {
+            account.setStatus(AccountStatus.ENABLED);
+            if (account.getEmail() != null) {
+                account.setEmailVerified(Boolean.TRUE);
+            }
+            // If phone + password account, you will have to verify the number by signing in with it 
+            // before you can do things like requesting a password reset. See BRIDGE-2061.
+        }
         
         String accountId = accountDao.createAccount(study, account);
 
