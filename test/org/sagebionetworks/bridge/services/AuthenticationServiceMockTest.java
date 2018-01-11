@@ -39,6 +39,7 @@ import org.sagebionetworks.bridge.models.accounts.Account;
 import org.sagebionetworks.bridge.models.accounts.AccountId;
 import org.sagebionetworks.bridge.models.accounts.AccountStatus;
 import org.sagebionetworks.bridge.models.accounts.ConsentStatus;
+import org.sagebionetworks.bridge.models.accounts.EmailVerification;
 import org.sagebionetworks.bridge.models.accounts.GenericAccount;
 import org.sagebionetworks.bridge.models.accounts.SignIn;
 import org.sagebionetworks.bridge.models.accounts.StudyParticipant;
@@ -173,6 +174,7 @@ public class AuthenticationServiceMockTest {
         
         UserSession retrieved = service.signIn(study, CONTEXT, EMAIL_PASSWORD_SIGN_IN);
         assertEquals(REAUTH_TOKEN, retrieved.getReauthToken());
+        verify(cacheProvider).setUserSession(retrieved);
     }
     
     @Test(expected = ConsentRequiredException.class)
@@ -207,6 +209,7 @@ public class AuthenticationServiceMockTest {
         
         UserSession retrieved = service.signIn(study, CONTEXT, PHONE_PASSWORD_SIGN_IN);
         assertEquals(REAUTH_TOKEN, retrieved.getReauthToken());
+        verify(cacheProvider).setUserSession(retrieved);
     }
     
     @Test(expected = ConsentRequiredException.class)
@@ -328,6 +331,7 @@ public class AuthenticationServiceMockTest {
         verify(accountDao).getAccountAfterAuthentication(SIGN_IN_WITH_EMAIL.getAccountId());
         verify(accountDao).verifyChannel(AuthenticationService.ChannelType.EMAIL, account);
         verify(cacheProvider).removeObject(CACHE_KEY);
+        verify(cacheProvider).setUserSession(retSession);
     }
     
     @Test(expected = AuthenticationFailedException.class)
@@ -587,6 +591,7 @@ public class AuthenticationServiceMockTest {
         
         // this doesn't pass if our mock calls above aren't executed, but verify these:
         verify(cacheProvider).removeObject(cacheKey);
+        verify(cacheProvider).setUserSession(session);
         verify(accountDao).verifyChannel(ChannelType.PHONE, account);
     }
 
@@ -594,4 +599,22 @@ public class AuthenticationServiceMockTest {
     public void phoneSignInFails() {
         service.phoneSignIn(CONTEXT, SIGN_IN_WITH_PHONE);
     }
+    
+    @Test
+    public void verifyEmail() {
+        EmailVerification ev = new EmailVerification("sptoken");
+        when(accountWorkflowService.verifyEmail(ev)).thenReturn(account);
+        
+        service.verifyEmail(ev);
+        
+        verify(accountWorkflowService).verifyEmail(ev);
+        verify(accountDao).verifyEmail(account);
+    }
+    
+    @Test(expected = InvalidEntityException.class)
+    public void verifyEmailInvalid() {
+        EmailVerification ev = new EmailVerification(null);
+        service.verifyEmail(ev);
+    }
+
 }
