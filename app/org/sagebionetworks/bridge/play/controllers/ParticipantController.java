@@ -97,7 +97,8 @@ public class ParticipantController extends BaseController {
                 .withUserDataGroups(updated.getDataGroups())
                 .withStudyIdentifier(session.getStudyIdentifier())
                 .build();
-        // Email/phone updates are blocked, so reflect this in the session that is returned. 
+        // Email/phone can be blocked, so reflect this in the session that is returned.
+        // sessionUpdateService will update session with asUpdated StudyParticipant.
         StudyParticipant asUpdated = participantService.getParticipant(study, session.getId(), true);
         sessionUpdateService.updateParticipant(session, context, asUpdated);
         

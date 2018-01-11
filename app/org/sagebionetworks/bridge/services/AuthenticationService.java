@@ -414,7 +414,7 @@ public class AuthenticationService {
 
         UserSession session = getSessionFromAccount(study, context, account);
         cacheProvider.setUserSession(session);
-
+        
         if (!session.doesConsent() && !session.isInRole(Roles.ADMINISTRATIVE_ROLES)) {
             throw new ConsentRequiredException(session);
         }

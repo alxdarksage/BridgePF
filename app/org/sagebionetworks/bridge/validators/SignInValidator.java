@@ -78,9 +78,7 @@ public class SignInValidator implements Validator {
         if (requiredFields.contains(EMAIL_OR_PHONE)) {
             if (isBlank(signIn.getEmail()) && signIn.getPhone() == null) {
                 errors.reject("email or phone is required");
-            } /*else if (isNotBlank(signIn.getEmail()) && signIn.getPhone() != null) {
-                errors.reject("email or phone is required, but not both");
-            }*/
+            }
             if (signIn.getPhone() != null && !Phone.isValid(signIn.getPhone())) {
                 errors.rejectValue("phone", "does not appear to be a phone number");
             }
