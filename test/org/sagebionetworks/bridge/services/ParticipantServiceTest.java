@@ -347,6 +347,7 @@ public class ParticipantServiceTest {
         
         verify(accountWorkflowService, never()).sendEmailVerificationToken(any(), any(), any());
         verify(account).setStatus(AccountStatus.ENABLED);
+        verify(account).setEmailVerified(Boolean.TRUE);
     }
     
     @Test
@@ -358,6 +359,7 @@ public class ParticipantServiceTest {
         
         verify(accountWorkflowService, never()).sendEmailVerificationToken(any(), any(), any());
         verify(account).setStatus(AccountStatus.ENABLED);
+        verify(account).setEmailVerified(Boolean.TRUE);
     }
     
     @Test
@@ -369,6 +371,7 @@ public class ParticipantServiceTest {
         
         verify(accountWorkflowService, never()).sendEmailVerificationToken(any(), any(), any());
         verify(account).setStatus(AccountStatus.ENABLED);
+        verify(account).setEmailVerified(Boolean.TRUE);
     }
     
     @Test
@@ -635,6 +638,7 @@ public class ParticipantServiceTest {
 
     @Test
     public void updateParticipantEmailCannotBeChanged() {
+        STUDY.setEmailVerificationEnabled(true);
         mockHealthCodeAndAccountRetrieval();
         when(account.getEmail()).thenReturn("persisted@email.com");
         when(account.getEmailVerified()).thenReturn(Boolean.TRUE);
@@ -646,8 +650,9 @@ public class ParticipantServiceTest {
         
         verify(accountDao).updateAccount(accountCaptor.capture());
         Account account = accountCaptor.getValue();
-        assertEquals("persisted@email.com", account.getEmail());
-        assertEquals(Boolean.TRUE, account.getEmailVerified());
+        verify(account, never()).setEmail("updated@email.com");
+        verify(account, never()).setEmailVerified(Boolean.FALSE);
+        verify(accountWorkflowService, never()).sendEmailVerificationToken(STUDY, ID, "updated@email.com");
     }
 
     @Test
@@ -696,8 +701,8 @@ public class ParticipantServiceTest {
         
         verify(accountDao).updateAccount(accountCaptor.capture());
         Account account = accountCaptor.getValue();
-        assertEquals(PHONE, account.getPhone());
-        assertEquals(Boolean.TRUE, account.getPhoneVerified());
+        verify(account, never()).setPhone(PHONE);
+        verify(account, never()).setPhoneVerified(Boolean.TRUE);
         verify(accountWorkflowService, never()).sendEmailVerificationToken(STUDY, ID, EMAIL);
     }
 

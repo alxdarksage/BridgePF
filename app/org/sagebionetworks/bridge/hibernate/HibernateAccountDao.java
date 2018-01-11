@@ -324,7 +324,7 @@ public class HibernateAccountDao implements AccountDao {
         accountToUpdate.setStudyId(persistedAccount.getStudyId());
         accountToUpdate.setCreatedOn(persistedAccount.getCreatedOn());
         accountToUpdate.setPasswordModifiedOn(persistedAccount.getPasswordModifiedOn());
-        
+
         // Update modifiedOn.
         accountToUpdate.setModifiedOn(DateUtils.getCurrentMillisFromEpoch());
 

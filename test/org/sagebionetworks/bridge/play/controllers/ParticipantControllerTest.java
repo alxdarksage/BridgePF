@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
@@ -521,20 +522,23 @@ public class ParticipantControllerTest {
     
     @Test
     public void updateSelfParticipantReturnsParticipantAsSaved() throws Exception {
-        // All values should be copied over here, also add a healthCode to verify it is not unset.
-        StudyParticipant participant = new StudyParticipant.Builder()
+        StudyParticipant originalParticipant = new StudyParticipant.Builder()
+                .withId(ID)
+                .withPhone(TestConstants.PHONE)
+                .withEmail(EMAIL).build();
+        doReturn(originalParticipant).when(mockParticipantService).getParticipant(eq(study), eq(ID), anyBoolean());
+        
+        // As updated by the service, it has PHONE and that's the value that should be returned, 
+        // regardless of the fact that another phone # was submitted to the controller and initially 
+        // retrieved to do an update
+        Phone updatedPhone = new Phone("408-258-8569", "US");
+        StudyParticipant updatedParticipant = new StudyParticipant.Builder()
                 .copyOf(TestUtils.getStudyParticipant(ParticipantControllerTest.class))
-                .withHealthCode("healthCode").build();
+                .withPhone(updatedPhone)
+                .withEmail("updated@email.com").build();
+        doReturn(new UserSession(originalParticipant)).when(authService).getSession(eq(study), any());
         
-        Phone originalPhone = new Phone("408-258-8569", "US");
-        StudyParticipant notUpdatedParticipant = new StudyParticipant.Builder()
-                .withPhone(originalPhone)
-                .withEmail("not-updated@email.com").build();
-        doReturn(participant).when(mockParticipantService).getParticipant(study, ID, false);
-        doReturn(new UserSession(participant)).when(authService).getSession(eq(study), any());
-        doReturn(notUpdatedParticipant).when(mockParticipantService).getParticipant(study, ID, true);
-        
-        String json = MAPPER.writeValueAsString(participant);
+        String json = MAPPER.writeValueAsString(updatedParticipant);
         mockPlayContextWithJson(json);
 
         Result result = controller.updateSelfParticipant();
@@ -542,8 +546,8 @@ public class ParticipantControllerTest {
         assertEquals(200, result.status());
         JsonNode node = TestUtils.getJson(result);
         assertEquals("UserSessionInfo", node.get("type").textValue());
-        assertEquals("+14082588569", node.get("phone").get("number").textValue());
-        assertEquals("not-updated@email.com", node.get("email").textValue());
+        assertEquals(TestConstants.PHONE.getNumber(), node.get("phone").get("number").textValue());
+        assertEquals(EMAIL, node.get("email").textValue());
     }
     
     @Test
@@ -569,8 +573,7 @@ public class ParticipantControllerTest {
         // All values should be copied over here.
         StudyParticipant participant = TestUtils.getStudyParticipant(ParticipantControllerTest.class);
         participant = new StudyParticipant.Builder().copyOf(participant).withId(ID).build();
-        doReturn(participant).when(mockParticipantService).getParticipant(study, ID, false);
-        doReturn(participant).when(mockParticipantService).getParticipant(study, ID, true);
+        doReturn(participant).when(mockParticipantService).getParticipant(eq(study), eq(ID), anyBoolean());
         
         // Now change to some other ID
         participant = new StudyParticipant.Builder().copyOf(participant).withId("someOtherId").build();
