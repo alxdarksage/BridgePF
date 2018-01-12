@@ -527,16 +527,16 @@ public class ParticipantControllerTest {
                 .withPhone(TestConstants.PHONE)
                 .withEmail(EMAIL).build();
         doReturn(originalParticipant).when(mockParticipantService).getParticipant(eq(study), eq(ID), anyBoolean());
+        doReturn(new UserSession(originalParticipant)).when(authService).getSession(eq(study), any());
         
-        // As updated by the service, it has PHONE and that's the value that should be returned, 
-        // regardless of the fact that another phone # was submitted to the controller and initially 
-        // retrieved to do an update
+        // Simulate the case where the service does not update the participant, as can now happen. These
+        // updates are NOT returned from the service, the original participant is, and *that's* what should
+        // be used in the return from this controller, not the participant as submitted.
         Phone updatedPhone = new Phone("408-258-8569", "US");
         StudyParticipant updatedParticipant = new StudyParticipant.Builder()
                 .copyOf(TestUtils.getStudyParticipant(ParticipantControllerTest.class))
                 .withPhone(updatedPhone)
                 .withEmail("updated@email.com").build();
-        doReturn(new UserSession(originalParticipant)).when(authService).getSession(eq(study), any());
         
         String json = MAPPER.writeValueAsString(updatedParticipant);
         mockPlayContextWithJson(json);
@@ -548,6 +548,11 @@ public class ParticipantControllerTest {
         assertEquals("UserSessionInfo", node.get("type").textValue());
         assertEquals(TestConstants.PHONE.getNumber(), node.get("phone").get("number").textValue());
         assertEquals(EMAIL, node.get("email").textValue());
+        
+        // Verify sessionUpdateService was called with the participant as returned from the service,
+        // not as submitted
+        verify(cacheProvider).setUserSession(sessionCaptor.capture());
+        assertEquals(originalParticipant, sessionCaptor.getValue().getParticipant());
     }
     
     @Test

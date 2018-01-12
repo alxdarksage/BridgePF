@@ -284,8 +284,10 @@ public class ParticipantService {
 
         externalIdService.assignExternalId(study, participant.getExternalId(), account.getHealthCode());
         optionsService.setAllOptions(study.getStudyIdentifier(), account.getHealthCode(), options);
-        // send verify email
-        if (sendVerifyEmail) {
+        // send verify email. However even if that's desirable, don't try it if the account used a 
+        // phone number instead. The account is UNVERIFIED until the account signs in successfully with 
+        // a phone.
+        if (sendVerifyEmail && participant.getEmail() != null) {
             accountWorkflowService.sendEmailVerificationToken(study, accountId, account.getEmail());
         }
         return new IdentifierHolder(accountId);

@@ -189,7 +189,7 @@ public class HibernateHelperTest {
         helper.update(testObj);
     }
     
-    @Test(expected = ConcurrentModificationException.class)
+    @Test(expected = org.sagebionetworks.bridge.exceptions.ConstraintViolationException.class)
     public void updateConcurrentModificationException() {
         // mock session to throw - Need to mock the ConstraintViolationException, because the exception itself is
         // pretty heavy-weight.
