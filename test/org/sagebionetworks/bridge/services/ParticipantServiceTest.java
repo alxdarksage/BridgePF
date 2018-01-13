@@ -285,11 +285,10 @@ public class ParticipantServiceTest {
         verify(account).setAttribute("can_be_recontacted", "true");
         verify(account).setRoles(USER_ROLES);
         verify(account).setClientData(TestUtils.getClientData());
-        // Not called on create
-        verify(account, never()).setStatus(AccountStatus.DISABLED);
+        verify(account).setStatus(AccountStatus.UNVERIFIED);
         
         // don't update cache
-        verify(cacheProvider, never()).removeSessionByUserId(ID);
+        verify(cacheProvider, never()).removeSessionByUserId(anyString());
     }
     
     // Or any other failure to reserve an externalId
@@ -400,6 +399,23 @@ public class ParticipantServiceTest {
         verify(accountWorkflowService, never()).sendEmailVerificationToken(any(), any(), any());
         // The account will not be verified.
         verify(account).setStatus(AccountStatus.UNVERIFIED);
+        verify(account).setPhone(PHONE);
+        verify(account).setPhoneVerified(Boolean.FALSE);
+    }
+    
+    @Test
+    public void createParticipantWithPhoneEmailEnabledVerificationNotWanted() {
+        STUDY.setEmailVerificationEnabled(true);
+        mockHealthCodeAndAccountRetrieval(null, null);
+
+        StudyParticipant phoneOnly = new StudyParticipant.Builder()
+                .copyOf(PARTICIPANT).withEmail(null).build();
+        
+        participantService.createParticipant(STUDY, CALLER_ROLES, phoneOnly, false);
+        
+        verify(accountWorkflowService, never()).sendEmailVerificationToken(any(), any(), any());
+        // The account will not be verified.
+        verify(account).setStatus(AccountStatus.ENABLED);
         verify(account).setPhone(PHONE);
         verify(account).setPhoneVerified(Boolean.FALSE);
     }
@@ -617,6 +633,20 @@ public class ParticipantServiceTest {
     }
     
     @Test
+    public void updateParticipantNoEmailOrPhoneChange() {
+        mockHealthCodeAndAccountRetrieval(); // Account will have same phone/email as participant
+        
+        participantService.updateParticipant(STUDY, CALLER_ROLES, PARTICIPANT);
+        
+        // And so consequently, none of these are changed.
+        verify(account, never()).setEmail(anyString());
+        verify(account, never()).setEmailVerified(anyBoolean());
+        verify(account, never()).setPhone(any());
+        verify(account, never()).setPhoneVerified(anyBoolean());
+        verify(accountWorkflowService, never()).sendEmailVerificationToken(any(), any(), any());
+    }
+    
+    @Test
     public void userCannotChangeStatus() {
         verifyStatusUpdate(EnumSet.noneOf(Roles.class), false);
     }
@@ -669,7 +699,7 @@ public class ParticipantServiceTest {
         verify(accountDao).updateAccount(accountCaptor.capture());
         Account account = accountCaptor.getValue();
         verify(account, never()).setEmail(anyString());
-        verify(account, never()).setEmailVerified(Boolean.FALSE);
+        verify(account, never()).setEmailVerified(anyBoolean());
         verify(accountWorkflowService, never()).sendEmailVerificationToken(eq(STUDY), eq(ID), anyString());
     }
 
@@ -737,9 +767,9 @@ public class ParticipantServiceTest {
         
         verify(accountDao).updateAccount(accountCaptor.capture());
         Account account = accountCaptor.getValue();
-        verify(account, never()).setPhone(PHONE);
-        verify(account, never()).setPhoneVerified(Boolean.TRUE);
-        verify(accountWorkflowService, never()).sendEmailVerificationToken(STUDY, ID, EMAIL);
+        verify(account, never()).setPhone(any());
+        verify(account, never()).setPhoneVerified(anyBoolean());
+        verify(accountWorkflowService, never()).sendEmailVerificationToken(eq(STUDY), eq(ID), anyString());
     }
 
     @Test
