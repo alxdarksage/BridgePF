@@ -384,6 +384,7 @@ public class ParticipantServiceTest {
         
         verify(accountWorkflowService).sendEmailVerificationToken(any(), any(), any());
         verify(account).setStatus(AccountStatus.UNVERIFIED);
+        verify(account).setEmailVerified(Boolean.FALSE);
     }
     
     @Test
@@ -708,8 +709,9 @@ public class ParticipantServiceTest {
         STUDY.setEmailVerificationEnabled(true);
         mockHealthCodeAndAccountRetrieval(null, PHONE);
         
-        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
-                .withEmail("updated@email.com").withEmailVerified(Boolean.FALSE).build();
+        // Set emailVerified = true to test that this is always set to false, regardless of submitted object
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT).withEmail("updated@email.com")
+                .withEmailVerified(Boolean.TRUE).withEmailVerified(Boolean.FALSE).build();
         
         participantService.updateParticipant(STUDY, ImmutableSet.of(), participant);
         
@@ -725,8 +727,8 @@ public class ParticipantServiceTest {
         STUDY.setEmailVerificationEnabled(false);
         mockHealthCodeAndAccountRetrieval(null, PHONE);
         
-        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
-                .withEmail("updated@email.com").withEmailVerified(Boolean.FALSE).build();
+        StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT).withEmail("updated@email.com")
+                .withEmailVerified(Boolean.TRUE).withEmailVerified(Boolean.TRUE).build();
         
         participantService.updateParticipant(STUDY, ImmutableSet.of(), participant);
         

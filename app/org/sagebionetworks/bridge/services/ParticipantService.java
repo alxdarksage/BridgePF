@@ -271,6 +271,7 @@ public class ParticipantService {
         boolean sendVerifyEmail = requestSendVerifyEmail && study.isEmailVerificationEnabled();
         if (sendVerifyEmail) {
             account.setStatus(AccountStatus.UNVERIFIED);
+            account.setEmailVerified(Boolean.FALSE);
         } else {
             account.setStatus(AccountStatus.ENABLED);
             if (account.getEmail() != null) {
