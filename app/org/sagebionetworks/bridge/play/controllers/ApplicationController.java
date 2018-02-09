@@ -61,7 +61,7 @@ public class ApplicationController extends BaseController {
      * email sign in link. Show an error message and keeps the link valid so the user 
      * can try again on a phone.
      */
-    public Result startSession(String studyId, String email, String token) {
+    public Result startSession(String studyId) {
         Study study = studyService.getStudy(studyId);
         return ok(views.html.startSession.render(ASSETS_HOST, ASSETS_BUILD, study.getName(), study.getIdentifier()));
     }

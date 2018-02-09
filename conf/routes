@@ -3,8 +3,11 @@ GET    /                                       @org.sagebionetworks.bridge.play.
 GET    /index.html                             @org.sagebionetworks.bridge.play.controllers.ApplicationController.loadApp
 GET    /mobile/verifyEmail.html                @org.sagebionetworks.bridge.play.controllers.ApplicationController.verifyEmail(study: String ?= "api")
 GET    /mobile/resetPassword.html              @org.sagebionetworks.bridge.play.controllers.ApplicationController.resetPassword(study: String ?= "api")
-GET    /mobile/startSession.html               @org.sagebionetworks.bridge.play.controllers.ApplicationController.startSession(study: String ?= null, email: String ?= null, token: String ?= null)
-GET    /mobile/:study/startSession.html        @org.sagebionetworks.bridge.play.controllers.ApplicationController.startSession(study: String, email: String ?= null, token: String ?= null)
+GET    /mobile/startSession.html               @org.sagebionetworks.bridge.play.controllers.ApplicationController.startSession(study: String ?= null)
+GET    /ve                                     @org.sagebionetworks.bridge.play.controllers.ApplicationController.verifyEmail(study: String ?= "api")
+GET    /rp                                     @org.sagebionetworks.bridge.play.controllers.ApplicationController.resetPassword(study: String ?= "api")
+GET    /s/:study                               @org.sagebionetworks.bridge.play.controllers.ApplicationController.startSession(study: String)
+GET    /mobile/:study/startSession.html        @org.sagebionetworks.bridge.play.controllers.ApplicationController.startSession(study: String)
 GET    /.well-known/assetlinks.json            @org.sagebionetworks.bridge.play.controllers.ApplicationController.androidAppLinks
 GET    /.well-known/apple-app-site-association @org.sagebionetworks.bridge.play.controllers.ApplicationController.appleAppLinks
 

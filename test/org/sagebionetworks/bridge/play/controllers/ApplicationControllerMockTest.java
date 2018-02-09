@@ -118,7 +118,7 @@ public class ApplicationControllerMockTest {
         session.setSessionToken("ABC");
         doReturn(session).when(authenticationService).emailSignIn(any(), any());
         
-        Result result = controller.startSession("test-study", "email", "token");
+        Result result = controller.startSession("test-study");
 
         assertEquals("text/html; charset=utf-8", result.header("Content-Type"));
         assertEquals(200, result.status());
