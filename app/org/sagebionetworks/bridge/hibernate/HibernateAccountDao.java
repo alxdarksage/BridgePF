@@ -54,12 +54,16 @@ import org.sagebionetworks.bridge.services.AuthenticationService;
 import org.sagebionetworks.bridge.services.HealthCodeService;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 /** Hibernate implementation of Account Dao. */
 @Component
 public class HibernateAccountDao implements AccountDao {
     
     private static final Logger LOG = LoggerFactory.getLogger(HibernateAccountDao.class);
+    
+    public final static int CURRENT_MIGRATION_VERSION = 1;
 
     static final String ACCOUNT_SUMMARY_QUERY_PREFIX = "select new " + HibernateAccount.class.getCanonicalName() +
             "(createdOn, studyId, firstName, lastName, email, phone, id, status) ";
@@ -294,6 +298,9 @@ public class HibernateAccountDao implements AccountDao {
         hibernateAccount.setCreatedOn(DateUtils.getCurrentMillisFromEpoch());
         hibernateAccount.setModifiedOn(DateUtils.getCurrentMillisFromEpoch());
         hibernateAccount.setPasswordModifiedOn(DateUtils.getCurrentMillisFromEpoch());
+        // Accounts being created will meet the criteria for v1 of the table. We won't need to check the 
+        // ParticipantOptions table for these accounts.
+        hibernateAccount.setMigrationVersion(CURRENT_MIGRATION_VERSION);
 
         // Create account
         try {
@@ -331,15 +338,26 @@ public class HibernateAccountDao implements AccountDao {
         accountToUpdate.setStudyId(persistedAccount.getStudyId());
         accountToUpdate.setCreatedOn(persistedAccount.getCreatedOn());
         accountToUpdate.setPasswordModifiedOn(persistedAccount.getPasswordModifiedOn());
+        
+        // We don't allow this to be changed after it is first saved. It's the user's initial time zone.
+        accountToUpdate.setTimeZone(persistedAccount.getTimeZone());
+        
         if (!allowIdentifierUpdates) {
             accountToUpdate.setEmail(persistedAccount.getEmail());
             accountToUpdate.setPhone(persistedAccount.getPhone());
             accountToUpdate.setEmailVerified(persistedAccount.getEmailVerified());
             accountToUpdate.setPhoneVerified(persistedAccount.getPhoneVerified());
+            // This is an identifier. We can set it on account creation or later during assignment, 
+            // but users cannot change it afterward.
+            accountToUpdate.setExternalId(persistedAccount.getExternalId());
         }
 
         // Update modifiedOn.
         accountToUpdate.setModifiedOn(DateUtils.getCurrentMillisFromEpoch());
+        
+        // Because this was loaded and pulled all the ParticipantOptions, the act of updating tells
+        // us we can read the Account table in the future for all ParticipantOptions.
+        accountToUpdate.setMigrationVersion(HibernateAccountDao.CURRENT_MIGRATION_VERSION);
 
         // Update
         hibernateHelper.update(accountToUpdate);
@@ -528,6 +546,14 @@ public class HibernateAccountDao implements AccountDao {
         hibernateAccount.setRoles(genericAccount.getRoles());
         hibernateAccount.setStatus(genericAccount.getStatus());
         hibernateAccount.setVersion(genericAccount.getVersion());
+        hibernateAccount.setTimeZone(genericAccount.getTimeZone());
+        hibernateAccount.setSharingScope(genericAccount.getSharingScope());
+        hibernateAccount.setNotifyByEmail(genericAccount.getNotifyByEmail());
+        hibernateAccount.setExternalId(genericAccount.getExternalId());
+        hibernateAccount.setDataGroups(genericAccount.getDataGroups());
+        hibernateAccount.setLanguages(Lists.newArrayList(genericAccount.getLanguages()));
+        hibernateAccount.setMigrationVersion(genericAccount.getMigrationVersion());
+        hibernateAccount.setSharingScope(genericAccount.getSharingScope());
         
         if (genericAccount.getClientData() != null) {
             hibernateAccount.setClientData(genericAccount.getClientData().toString());
@@ -626,6 +652,13 @@ public class HibernateAccountDao implements AccountDao {
         account.setStatus(hibernateAccount.getStatus());
         account.setRoles(hibernateAccount.getRoles());
         account.setVersion(hibernateAccount.getVersion());
+        account.setTimeZone(hibernateAccount.getTimeZone());
+        account.setSharingScope(hibernateAccount.getSharingScope());
+        account.setNotifyByEmail(hibernateAccount.getNotifyByEmail());
+        account.setExternalId(hibernateAccount.getExternalId());
+        account.setDataGroups(hibernateAccount.getDataGroups());
+        account.setLanguages(Sets.newLinkedHashSet(hibernateAccount.getLanguages()));
+        account.setMigrationVersion(hibernateAccount.getMigrationVersion());
         
         // For accounts prior to the introduction of the email/phone verification flags, where 
         // the flag was not set on creation or verification of the email address, return the right value.

@@ -23,6 +23,7 @@ import static org.sagebionetworks.bridge.Roles.ADMIN;
 import static org.sagebionetworks.bridge.Roles.DEVELOPER;
 import static org.sagebionetworks.bridge.Roles.RESEARCHER;
 import static org.sagebionetworks.bridge.Roles.WORKER;
+import static org.sagebionetworks.bridge.TestUtils.newLinkedHashSet;
 
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
@@ -249,7 +250,7 @@ public class ParticipantServiceTest {
         when(accountDao.constructAccount(any(), any(), any(), any())).thenReturn(account);
         when(accountDao.createAccount(same(STUDY), same(account))).thenReturn(ID);
         when(accountDao.getAccount(ACCOUNT_ID)).thenReturn(account);
-        when(optionsService.getOptions(HEALTH_CODE)).thenReturn(lookup);
+        when(optionsService.getOptions(STUDY.getStudyIdentifier(), HEALTH_CODE)).thenReturn(lookup);
     }
     
     private void mockAccountNoEmail() {
@@ -258,7 +259,7 @@ public class ParticipantServiceTest {
         when(accountDao.constructAccount(any(), any(), any(), any())).thenReturn(account);
         when(accountDao.createAccount(same(STUDY), same(account))).thenReturn(ID);
         when(accountDao.getAccount(ACCOUNT_ID)).thenReturn(account);
-        when(optionsService.getOptions(HEALTH_CODE)).thenReturn(lookup);
+        when(optionsService.getOptions(STUDY.getStudyIdentifier(), HEALTH_CODE)).thenReturn(lookup);
     }
     
     @Test
@@ -276,20 +277,7 @@ public class ParticipantServiceTest {
         verify(accountDao).constructAccount(STUDY, EMAIL, PHONE, PASSWORD);
         // suppress email (true) == sendEmail (false)
         verify(accountDao).createAccount(eq(STUDY), accountCaptor.capture());
-        verify(optionsService).setAllOptions(eq(STUDY.getStudyIdentifier()), eq(HEALTH_CODE), optionsCaptor.capture());
         verify(accountWorkflowService).sendEmailVerificationToken(STUDY, ID, EMAIL);
-        
-        Map<ParticipantOption, String> options = optionsCaptor.getValue();
-        assertEquals(SharingScope.ALL_QUALIFIED_RESEARCHERS.name(), options.get(SHARING_SCOPE));
-        assertEquals("true", options.get(EMAIL_NOTIFICATIONS));
-        // Because strict validation is enabled, we do not update this property along with the others, we
-        // go through externalIdService
-        assertNull(options.get(EXTERNAL_IDENTIFIER));
-        assertNull(options.get(TIME_ZONE));
-        assertTrue(options.get(DATA_GROUPS).contains("group1"));
-        assertTrue(options.get(DATA_GROUPS).contains("group2"));
-        assertTrue(options.get(LANGUAGES).contains("de"));
-        assertTrue(options.get(LANGUAGES).contains("fr"));
         
         Account account = accountCaptor.getValue();
         assertEquals(FIRST_NAME, account.getFirstName());
@@ -299,6 +287,12 @@ public class ParticipantServiceTest {
         assertEquals(TestUtils.getClientData(), account.getClientData());
         assertEquals(AccountStatus.UNVERIFIED, account.getStatus());
         assertNull(account.getEmailVerified());
+        assertEquals("externalId", account.getExternalId());
+        assertEquals(null, account.getTimeZone());
+        assertEquals(Sets.newHashSet("group1","group2"), account.getDataGroups());
+        assertEquals(newLinkedHashSet("de","fr"), account.getLanguages());
+        assertEquals(Boolean.TRUE, account.getNotifyByEmail());
+        assertEquals(SharingScope.ALL_QUALIFIED_RESEARCHERS, account.getSharingScope());
 
         // don't update cache
         verify(cacheProvider, never()).removeSessionByUserId(ID);
@@ -330,10 +324,6 @@ public class ParticipantServiceTest {
         
         participantService.createParticipant(STUDY, CALLER_ROLES, PARTICIPANT, false);
         verify(externalIdService).reserveExternalId(STUDY, EXTERNAL_ID, HEALTH_CODE);
-        // Do not set the externalId with the other options, go through the externalIdService
-        verify(optionsService).setAllOptions(eq(STUDY.getStudyIdentifier()), eq(HEALTH_CODE), optionsCaptor.capture());
-        Map<ParticipantOption,String> options = optionsCaptor.getValue();
-        assertNull(options.get(EXTERNAL_IDENTIFIER));
         verify(externalIdService).assignExternalId(STUDY, EXTERNAL_ID, HEALTH_CODE);
     }
     
@@ -520,7 +510,7 @@ public class ParticipantServiceTest {
         when(lookup.getStringSet(DATA_GROUPS)).thenReturn(TestUtils.newLinkedHashSet("group1","group2"));
         when(lookup.getOrderedStringSet(LANGUAGES)).thenReturn(USER_LANGUAGES);
         when(lookup.getTimeZone(TIME_ZONE)).thenReturn(USER_TIME_ZONE);
-        when(optionsService.getOptions(HEALTH_CODE)).thenReturn(lookup);
+        when(optionsService.getOptions(STUDY.getStudyIdentifier(), HEALTH_CODE)).thenReturn(lookup);
         
         // Get the fully initialized participant object (including histories)
         StudyParticipant participant = participantService.getParticipant(STUDY, ID, true);
@@ -593,21 +583,10 @@ public class ParticipantServiceTest {
         oldSession.setStudyIdentifier(STUDY.getStudyIdentifier());
         doReturn(oldSession).when(cacheProvider).getUserSessionByUserId(ID);
 
-        doReturn(lookup).when(optionsService).getOptions(HEALTH_CODE);
+        doReturn(lookup).when(optionsService).getOptions(STUDY.getStudyIdentifier(), HEALTH_CODE);
         doReturn(null).when(lookup).getString(EXTERNAL_IDENTIFIER);
         
         participantService.updateParticipant(STUDY, CALLER_ROLES, PARTICIPANT);
-        
-        verify(optionsService).setAllOptions(eq(STUDY.getStudyIdentifier()), eq(HEALTH_CODE), optionsCaptor.capture());
-        Map<ParticipantOption, String> options = optionsCaptor.getValue();
-        assertEquals(SharingScope.ALL_QUALIFIED_RESEARCHERS.name(), options.get(SHARING_SCOPE));
-        assertEquals("true", options.get(EMAIL_NOTIFICATIONS));
-        assertTrue(options.get(DATA_GROUPS).contains("group1"));
-        assertTrue(options.get(DATA_GROUPS).contains("group2"));
-        assertTrue(options.get(LANGUAGES).contains("de"));
-        assertTrue(options.get(LANGUAGES).contains("fr"));
-        assertNull(options.get(EXTERNAL_IDENTIFIER)); // can't set this
-        assertNull(options.get(TIME_ZONE)); // can't set this
         
         verify(accountDao).updateAccount(accountCaptor.capture(), eq(false));
         Account account = accountCaptor.getValue();
@@ -615,6 +594,12 @@ public class ParticipantServiceTest {
         assertEquals(LAST_NAME, account.getLastName());
         assertEquals("true", account.getAttribute("can_be_recontacted"));
         assertEquals(TestUtils.getClientData(), account.getClientData());
+        assertEquals(SharingScope.ALL_QUALIFIED_RESEARCHERS, account.getSharingScope());
+        assertEquals(Boolean.TRUE, account.getNotifyByEmail());
+        assertEquals(Sets.newHashSet("group1","group2"), account.getDataGroups());
+        assertEquals(newLinkedHashSet("de","fr"), account.getLanguages());
+        assertEquals("externalId", account.getExternalId());
+        assertNull(account.getTimeZone());
     }
     
     @Test(expected = InvalidEntityException.class)
@@ -799,7 +784,7 @@ public class ParticipantServiceTest {
     @Test
     public void getStudyParticipantWithAccount() throws Exception {
         mockHealthCodeAndAccountRetrieval();
-        doReturn(lookup).when(optionsService).getOptions(HEALTH_CODE);
+        doReturn(lookup).when(optionsService).getOptions(STUDY.getStudyIdentifier(), HEALTH_CODE);
         account.setClientData(TestUtils.getClientData());
         
         StudyParticipant participant = participantService.getParticipant(STUDY, account, false);
@@ -985,7 +970,7 @@ public class ParticipantServiceTest {
     public void updateExternalIdValidatedRequiredWithSameValue() {
         setupExternalIdTest(true, true);
         when(lookup.getString(EXTERNAL_IDENTIFIER)).thenReturn(EXTERNAL_ID);
-        when(optionsService.getOptions(HEALTH_CODE)).thenReturn(lookup);
+        when(optionsService.getOptions(STUDY.getStudyIdentifier(), HEALTH_CODE)).thenReturn(lookup);
         
         participantService.updateParticipant(STUDY, CALLER_ROLES, PARTICIPANT);
         
@@ -1241,7 +1226,6 @@ public class ParticipantServiceTest {
     }
     
     private void verifyNotSetAsOption() {
-        verify(optionsService).setAllOptions(eq(STUDY.getStudyIdentifier()), eq(HEALTH_CODE), optionsCaptor.capture());
         for (Map<ParticipantOption,String> optionsLookup : optionsCaptor.getAllValues()) {
             assertNull(optionsLookup.get(EXTERNAL_IDENTIFIER));
         }

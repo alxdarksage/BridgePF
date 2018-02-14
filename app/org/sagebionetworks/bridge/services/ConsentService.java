@@ -2,7 +2,6 @@ package org.sagebionetworks.bridge.services;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.sagebionetworks.bridge.dao.ParticipantOption.EXTERNAL_IDENTIFIER;
 import static org.sagebionetworks.bridge.dao.ParticipantOption.SHARING_SCOPE;
 
 import java.io.IOException;
@@ -264,15 +263,15 @@ public class ConsentService {
         // Do this first, as it directly impacts the export of data, and if nothing else, we'd like this to succeed.
         optionsService.setEnum(study.getStudyIdentifier(), account.getHealthCode(), SHARING_SCOPE, SharingScope.NO_SHARING);
         
+        // Must update the account after each update to ensure the optimistic locking exception is current.
+        account = accountDao.getAccount(context.getAccountId());
         for (SubpopulationGuid subpopGuid : account.getAllConsentSignatureHistories().keySet()) {
             withdrawSignatures(account, subpopGuid, withdrewOn);
         }
         accountDao.updateAccount(account, false);
         
-        String externalId = optionsService.getOptions(account.getHealthCode()).getString(EXTERNAL_IDENTIFIER);
-        
         if (account.getEmail() != null) {
-            MimeTypeEmailProvider consentEmail = new WithdrawConsentEmailProvider(study, externalId, account, withdrawal,
+            MimeTypeEmailProvider consentEmail = new WithdrawConsentEmailProvider(study, account.getExternalId(), account, withdrawal,
                     withdrewOn);
             sendMailService.sendEmail(consentEmail);
         }

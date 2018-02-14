@@ -10,6 +10,7 @@ import org.joda.time.DateTimeZone;
 import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.exceptions.BadRequestException;
 import org.sagebionetworks.bridge.json.DateUtils;
+import org.sagebionetworks.bridge.models.accounts.Account;
 import org.sagebionetworks.bridge.models.accounts.StudyParticipant;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,8 +21,21 @@ import com.fasterxml.jackson.databind.node.TextNode;
 public enum ParticipantOption {
 
     TIME_ZONE(null, "timeZone") {
+        public String fromAccount(Account account) {
+            return DateUtils.timeZoneToOffsetString(account.getTimeZone());
+        }
         public String fromParticipant(StudyParticipant participant) {
             return DateUtils.timeZoneToOffsetString(participant.getTimeZone());
+        }
+        public Object fromString(String value) {
+            if (value == null) {
+                return value;
+            }
+            try {
+                return DateUtils.parseZoneFromOffsetString(value);
+            } catch(IllegalArgumentException e) {
+                throw new BadRequestException("timeZone is an invalid time zone offset");
+            }
         }
         public String deserialize(JsonNode node) {
             checkNotNull(node);
@@ -34,8 +48,21 @@ public enum ParticipantOption {
         }        
     },
     SHARING_SCOPE(SharingScope.NO_SHARING.name(), "sharingScope") {
+        public String fromAccount(Account account) {
+            return (account.getSharingScope() == null) ? null : account.getSharingScope().name();
+        }
         public String fromParticipant(StudyParticipant participant) {
-            return (participant.getSharingScope() == null) ? null : participant.getSharingScope().name();
+            return (participant.getSharingScope() == null) ? null :participant.getSharingScope().name();
+        }
+        public Object fromString(String value) {
+            if (value == null) {
+                return null;
+            }
+            try {
+                return SharingScope.valueOf(value.toUpperCase());
+            } catch(IllegalArgumentException e) {
+                throw new BadRequestException("sharingScope is an invalid type");
+            }
         }
         public String deserialize(JsonNode node) {
             checkNotNull(node);
@@ -48,9 +75,19 @@ public enum ParticipantOption {
         }
     },
     EMAIL_NOTIFICATIONS(Boolean.TRUE.toString(), "notifyByEmail") {
+        public String fromAccount(Account account) {
+            Boolean bool = account.getNotifyByEmail();
+            return (bool == null) ? getDefaultValue() : Boolean.toString(bool);
+        }
         public String fromParticipant(StudyParticipant participant) {
             Boolean bool = participant.isNotifyByEmail();
             return (bool == null) ? getDefaultValue() : Boolean.toString(bool);
+        }
+        public Object fromString(String value) {
+            if (value == null) {
+                return value;
+            }
+            return Boolean.parseBoolean(value);
         }
         public String deserialize(JsonNode node) {
             checkNotNull(node);
@@ -59,8 +96,14 @@ public enum ParticipantOption {
         }
     },
     EXTERNAL_IDENTIFIER(null, "externalId") {
+        public String fromAccount(Account account) {
+            return account.getExternalId();
+        }
         public String fromParticipant(StudyParticipant participant) {
             return participant.getExternalId();
+        }
+        public Object fromString(String value) {
+            return value;
         }
         public String deserialize(JsonNode node) {
             checkNotNull(node);
@@ -69,8 +112,17 @@ public enum ParticipantOption {
         }
     },
     DATA_GROUPS(null, "dataGroups") {
+        public String fromAccount(Account account) {
+            return BridgeUtils.setToCommaList(account.getDataGroups());
+        }
         public String fromParticipant(StudyParticipant participant) {
             return BridgeUtils.setToCommaList(participant.getDataGroups());
+        }
+        public Object fromString(String value) {
+            if (value == null) {
+                return value;
+            }
+            return BridgeUtils.commaListToOrderedSet(value);
         }
         public String deserialize(JsonNode node) {
             checkNotNull(node);
@@ -79,8 +131,17 @@ public enum ParticipantOption {
         }
     },
     LANGUAGES(null, "languages") {
+        public String fromAccount(Account account) {
+            return BridgeUtils.setToCommaList(account.getLanguages());
+        }
         public String fromParticipant(StudyParticipant participant) {
             return BridgeUtils.setToCommaList(participant.getLanguages());
+        }
+        public Object fromString(String value) {
+            if (value == null) {
+                return value;
+            }
+            return BridgeUtils.commaListToOrderedSet(value);
         }
         public String deserialize(JsonNode node) {
             checkNotNull(node);
@@ -121,7 +182,11 @@ public enum ParticipantOption {
         return defaultValue;
     }
     
+    public abstract String fromAccount(Account account);
+    
     public abstract String fromParticipant(StudyParticipant participant);
+    
+    public abstract Object fromString(String value);
     
     public abstract String deserialize(JsonNode node);
 

@@ -31,7 +31,6 @@ import org.sagebionetworks.bridge.BridgeConstants;
 import org.sagebionetworks.bridge.Roles;
 import org.sagebionetworks.bridge.cache.CacheProvider;
 import org.sagebionetworks.bridge.dao.AccountDao;
-import org.sagebionetworks.bridge.dao.ParticipantOption;
 import org.sagebionetworks.bridge.dao.ParticipantOption.SharingScope;
 import org.sagebionetworks.bridge.dao.ScheduledActivityDao;
 import org.sagebionetworks.bridge.exceptions.BadRequestException;
@@ -177,14 +176,22 @@ public class ParticipantService {
         }
 
         StudyParticipant.Builder builder = new StudyParticipant.Builder();
-
-        ParticipantOptionsLookup lookup = optionsService.getOptions(account.getHealthCode());
-        builder.withSharingScope(lookup.getEnum(SHARING_SCOPE, SharingScope.class));
-        builder.withNotifyByEmail(lookup.getBoolean(EMAIL_NOTIFICATIONS));
-        builder.withExternalId(lookup.getString(EXTERNAL_IDENTIFIER));
-        builder.withDataGroups(lookup.getStringSet(DATA_GROUPS));
-        builder.withLanguages(lookup.getOrderedStringSet(LANGUAGES));
-        builder.withTimeZone(lookup.getTimeZone(TIME_ZONE));
+        if (account.getMigrationVersion() < 1) {
+            ParticipantOptionsLookup lookup = optionsService.getOptions(study.getStudyIdentifier(), account.getHealthCode());
+            builder.withSharingScope(lookup.getEnum(SHARING_SCOPE, SharingScope.class));
+            builder.withNotifyByEmail(lookup.getBoolean(EMAIL_NOTIFICATIONS));
+            builder.withExternalId(lookup.getString(EXTERNAL_IDENTIFIER));
+            builder.withDataGroups(lookup.getStringSet(DATA_GROUPS));
+            builder.withLanguages(lookup.getOrderedStringSet(LANGUAGES));
+            builder.withTimeZone(lookup.getTimeZone(TIME_ZONE));
+        } else {
+            builder.withSharingScope(account.getSharingScope());
+            builder.withNotifyByEmail(account.getNotifyByEmail());
+            builder.withExternalId(account.getExternalId());
+            builder.withDataGroups(account.getDataGroups());
+            builder.withLanguages(account.getLanguages());
+            builder.withTimeZone(account.getTimeZone());
+        }
         builder.withFirstName(account.getFirstName());
         builder.withLastName(account.getLastName());
         builder.withEmail(account.getEmail());
@@ -264,11 +271,10 @@ public class ParticipantService {
         
         Account account = accountDao.constructAccount(study, participant.getEmail(), participant.getPhone(),
                 participant.getPassword());
-        Map<ParticipantOption, String> options = Maps.newHashMap();
         
         externalIdService.reserveExternalId(study, participant.getExternalId(), account.getHealthCode());
 
-        updateAccountOptionsAndRoles(study, callerRoles, options, account, participant);
+        updateAccountAndRoles(study, callerRoles, account, participant);
         
         boolean sendVerifyEmail = requestSendVerifyEmail && study.isEmailVerificationEnabled();
 
@@ -282,9 +288,9 @@ public class ParticipantService {
         }
 
         String accountId = accountDao.createAccount(study, account);
-
+        
         externalIdService.assignExternalId(study, participant.getExternalId(), account.getHealthCode());
-        optionsService.setAllOptions(study.getStudyIdentifier(), account.getHealthCode(), options);
+        //optionsService.setAllOptions(study.getStudyIdentifier(), account.getHealthCode(), options);
         // send verify email
         if (sendVerifyEmail && !study.isAutoVerificationEmailSuppressed()) {
             accountWorkflowService.sendEmailVerificationToken(study, accountId, account.getEmail());
@@ -300,12 +306,13 @@ public class ParticipantService {
         Validate.entityThrowingException(new StudyParticipantValidator(study, false), participant);
         
         Account account = getAccountThrowingException(study, participant.getId());
-        Map<ParticipantOption, String> options = Maps.newHashMap();
 
         // Do this first because if the ID has been taken or is invalid, we do not want to update anything else.
         externalIdService.assignExternalId(study, participant.getExternalId(), account.getHealthCode());
-
-        updateAccountOptionsAndRoles(study, callerRoles, options, account, participant);
+        
+        // We are writing back to the same account table, we must update the account's optimistic locking version.
+        account = getAccountThrowingException(study, participant.getId());
+        updateAccountAndRoles(study, callerRoles, account, participant);
         
         // Only Admin and Worker accounts controlled by us should be able to bypass email verification. This is
         // primarily used for integration tests, but is sometimes used to bootstrap external developers and
@@ -316,7 +323,7 @@ public class ParticipantService {
             }
         }
         accountDao.updateAccount(account, false);
-        optionsService.setAllOptions(study.getStudyIdentifier(), account.getHealthCode(), options);
+        //optionsService.setAllOptions(study.getStudyIdentifier(), account.getHealthCode(), options);
     }
 
     private void throwExceptionIfLimitMetOrExceeded(Study study) {
@@ -328,18 +335,17 @@ public class ParticipantService {
         }
     }
 
-    private void updateAccountOptionsAndRoles(Study study, Set<Roles> callerRoles,
-            Map<ParticipantOption, String> options, Account account, StudyParticipant participant) {
-        for (ParticipantOption option : ParticipantOption.values()) {
-            options.put(option, option.fromParticipant(participant));
-        }
-        // External identifier is handled by the ExternalIdService
-        options.remove(EXTERNAL_IDENTIFIER);
-        options.remove(TIME_ZONE);
-
+    private void updateAccountAndRoles(Study study, Set<Roles> callerRoles,
+            Account account, StudyParticipant participant) {
         account.setFirstName(participant.getFirstName());
         account.setLastName(participant.getLastName());
         account.setClientData(participant.getClientData());
+        account.setSharingScope(participant.getSharingScope());
+        account.setNotifyByEmail(participant.isNotifyByEmail());
+        account.setExternalId(participant.getExternalId());
+        account.setDataGroups(participant.getDataGroups());
+        account.setLanguages(participant.getLanguages());
+        
         for (String attribute : study.getUserProfileAttributes()) {
             String value = participant.getAttributes().get(attribute);
             account.setAttribute(attribute, value);

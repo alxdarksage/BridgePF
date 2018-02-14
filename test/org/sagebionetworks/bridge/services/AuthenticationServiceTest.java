@@ -260,7 +260,7 @@ public class AuthenticationServiceTest {
 
     @Test
     public void createAdminAndSignInWithoutConsentError() {
-        TestUser testUser = helper.getBuilder(AuthenticationServiceTest.class)
+        testUser = helper.getBuilder(AuthenticationServiceTest.class)
                 .withConsent(false).withSignIn(false).withRoles(Roles.ADMIN).build();
         UserSession session = authService.signIn(testUser.getStudy(), TEST_CONTEXT, testUser.getSignIn());
         helper.deleteUser(testUser.getStudy(), session.getId());
@@ -321,13 +321,21 @@ public class AuthenticationServiceTest {
         
         StudyParticipant participant = new StudyParticipant.Builder()
                 .withEmail(email).withPassword("P@ssword1").withDataGroups(groups).build();
-
-        IdentifierHolder holder = authService.signUp(study, participant, false);
         
-        Account account = accountDao.getAccount(AccountId.forId(study.getIdentifier(), holder.getIdentifier()));
-        
-        Set<String> persistedGroups = optionsService.getOptions(account.getHealthCode()).getStringSet(DATA_GROUPS);
-        assertEquals(groups, persistedGroups);
+        IdentifierHolder holder = null;
+        try {
+            holder = authService.signUp(study, participant, false);
+            
+            Account account = accountDao.getAccount(AccountId.forId(study.getIdentifier(), holder.getIdentifier()));
+            
+            Set<String> persistedGroups = optionsService.getOptions(study.getStudyIdentifier(), account.getHealthCode())
+                    .getStringSet(DATA_GROUPS);
+            assertEquals(groups, persistedGroups);
+        } finally {
+            if (holder != null) {
+                userAdminService.deleteUser(study, holder.getIdentifier());
+            }
+        }
     }
     
     @Test
@@ -345,7 +353,7 @@ public class AuthenticationServiceTest {
     @Test(expected = InvalidEntityException.class)
     public void invalidDataGroupsAreRejected() throws Exception {
         Set<String> dataGroups = Sets.newHashSet("bugleboy");
-        helper.getBuilder(AuthenticationServiceTest.class).withConsent(false).withSignIn(false)
+        testUser = helper.getBuilder(AuthenticationServiceTest.class).withConsent(false).withSignIn(false)
                 .withDataGroups(dataGroups).build();
     }
     
@@ -439,7 +447,8 @@ public class AuthenticationServiceTest {
         UserSession session = authService.signIn(study, context, testUser.getSignIn());
         assertEquals(LANGS, session.getParticipant().getLanguages());
         
-        LinkedHashSet<String> persistedLangs = optionsService.getOptions(testUser.getHealthCode()).getOrderedStringSet(LANGUAGES);
+        LinkedHashSet<String> persistedLangs = optionsService
+                .getOptions(testUser.getStudyIdentifier(), testUser.getHealthCode()).getOrderedStringSet(LANGUAGES);
         assertEquals(LANGS, persistedLangs);
     }
     
@@ -470,11 +479,17 @@ public class AuthenticationServiceTest {
         Set<Roles> roles = Sets.newHashSet(Roles.DEVELOPER, Roles.RESEARCHER);
         StudyParticipant participant = new StudyParticipant.Builder()
                 .withEmail(email).withPassword(PASSWORD).withRoles(roles).build();
-        
-        IdentifierHolder idHolder = authService.signUp(study, participant, false);
-        
-        participant = participantService.getParticipant(study, idHolder.getIdentifier(), false);
-        assertTrue(participant.getRoles().isEmpty());
+        IdentifierHolder holder = null;
+        try {
+            holder = authService.signUp(study, participant, false);
+            
+            participant = participantService.getParticipant(study, holder.getIdentifier(), false);
+            assertTrue(participant.getRoles().isEmpty());
+        } finally {
+            if (holder != null) {
+                userAdminService.deleteUser(study, holder.getIdentifier());
+            }
+        }
     }
     
     @Test

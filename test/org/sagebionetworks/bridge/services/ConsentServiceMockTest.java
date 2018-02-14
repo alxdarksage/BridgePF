@@ -216,7 +216,8 @@ public class ConsentServiceMockTest {
     @Test
     public void noActivityEventIfDaoFails() {
         try {
-            consentService.consentToResearch(study, SubpopulationGuid.create("badGuid"), participant, consentSignature, SharingScope.NO_SHARING, false);
+            consentService.consentToResearch(study, SubpopulationGuid.create("badGuid"), participant, consentSignature,
+                    SharingScope.NO_SHARING, false);
             fail("Exception expected.");
         } catch(Throwable e) {
             verifyNoMoreInteractions(activityEventService);
@@ -232,7 +233,8 @@ public class ConsentServiceMockTest {
         
         doReturn(participant.getHealthCode()).when(account).getHealthCode();
         doReturn(account).when(accountDao).getAccount(AccountId.forId(study.getIdentifier(), participant.getId()));
-        doReturn(new ParticipantOptionsLookup(optionsMap)).when(optionsService).getOptions(participant.getHealthCode());
+        doReturn(new ParticipantOptionsLookup(optionsMap)).when(optionsService).getOptions(TestConstants.TEST_STUDY,
+                participant.getHealthCode());
         
         CriteriaContext context = new CriteriaContext.Builder().withUserId(participant.getId())
                 .withStudyIdentifier(study.getStudyIdentifier()).build();
@@ -291,7 +293,8 @@ public class ConsentServiceMockTest {
 
         doReturn(participant.getHealthCode()).when(account).getHealthCode();
         doReturn(account).when(accountDao).getAccount(AccountId.forId(study.getIdentifier(), participant.getId()));
-        doReturn(new ParticipantOptionsLookup(optionsMap)).when(optionsService).getOptions(participant.getHealthCode());
+        doReturn(new ParticipantOptionsLookup(optionsMap)).when(optionsService).getOptions(TestConstants.TEST_STUDY,
+                participant.getHealthCode());
         
         CriteriaContext context = new CriteriaContext.Builder()
                 .withUserId(participant.getId())
@@ -314,7 +317,8 @@ public class ConsentServiceMockTest {
 
         doReturn(participant.getHealthCode()).when(account).getHealthCode();
         doReturn(account).when(accountDao).getAccount(AccountId.forId(study.getIdentifier(), participant.getId()));
-        doReturn(new ParticipantOptionsLookup(optionsMap)).when(optionsService).getOptions(participant.getHealthCode());
+        doReturn(new ParticipantOptionsLookup(optionsMap)).when(optionsService).getOptions(TestConstants.TEST_STUDY,
+                participant.getHealthCode());
         
         CriteriaContext context = new CriteriaContext.Builder()
                 .withUserId(participant.getId())
@@ -347,7 +351,8 @@ public class ConsentServiceMockTest {
 
         doReturn(participant.getHealthCode()).when(account).getHealthCode();
         doReturn(account).when(accountDao).getAccount(AccountId.forId(study.getIdentifier(), participant.getId()));
-        doReturn(new ParticipantOptionsLookup(optionsMap)).when(optionsService).getOptions(participant.getHealthCode());
+        doReturn(new ParticipantOptionsLookup(optionsMap)).when(optionsService).getOptions(TestConstants.TEST_STUDY,
+                participant.getHealthCode());
         
         CriteriaContext context = new CriteriaContext.Builder()
                 .withUserId(participant.getId())

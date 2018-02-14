@@ -226,7 +226,7 @@ public class UserAdminServiceMockTest {
         doReturn("healthCode").when(account).getHealthCode();
         doReturn(account).when(accountDao).getAccount(accountId);
         
-        doReturn(lookup).when(participantOptionsService).getOptions("healthCode");
+        doReturn(lookup).when(participantOptionsService).getOptions(study.getStudyIdentifier(), "healthCode");
         doReturn("externalId").when(lookup).getString(EXTERNAL_IDENTIFIER);
         
         service.deleteUser(study, "userId");

@@ -307,7 +307,7 @@ public class UserProfileControllerTest {
         map.put(DATA_GROUPS.name(), "group1,group2");
         ParticipantOptionsLookup lookup = new ParticipantOptionsLookup(map);
         
-        when(optionsService.getOptions(HEALTH_CODE)).thenReturn(lookup);
+        when(optionsService.getOptions(TEST_STUDY, HEALTH_CODE)).thenReturn(lookup);
         
         Result result = controller.getDataGroups();
         TestUtils.assertResult(result, 200);

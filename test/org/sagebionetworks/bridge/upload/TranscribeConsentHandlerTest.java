@@ -11,7 +11,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.junit.Test;
-
+import org.sagebionetworks.bridge.TestConstants;
 import org.sagebionetworks.bridge.dao.ParticipantOption;
 import org.sagebionetworks.bridge.models.accounts.ParticipantOptionsLookup;
 import org.sagebionetworks.bridge.models.healthdata.HealthDataRecord;
@@ -26,7 +26,8 @@ public class TranscribeConsentHandlerTest {
     public void test() {
         // mock options service
         ParticipantOptionsService mockOptionsService = mock(ParticipantOptionsService.class);
-        when(mockOptionsService.getOptions(TEST_HEALTHCODE)).thenReturn(new ParticipantOptionsLookup(
+        when(mockOptionsService.getOptions(TestConstants.TEST_STUDY, TEST_HEALTHCODE)).thenReturn(
+            new ParticipantOptionsLookup(
             ImmutableMap.of(
                 ParticipantOption.SHARING_SCOPE.name(), ParticipantOption.SharingScope.SPONSORS_AND_PARTNERS.name(),
                 ParticipantOption.EXTERNAL_IDENTIFIER.name(), TEST_EXTERNAL_ID,
@@ -47,7 +48,8 @@ public class TranscribeConsentHandlerTest {
     public void testNoParticipantOptions() {
         // mock options service
         ParticipantOptionsService mockOptionsService = mock(ParticipantOptionsService.class);
-        when(mockOptionsService.getOptions(TEST_HEALTHCODE)).thenReturn(new ParticipantOptionsLookup(Maps.newHashMap()));
+        when(mockOptionsService.getOptions(TestConstants.TEST_STUDY, TEST_HEALTHCODE))
+                .thenReturn(new ParticipantOptionsLookup(Maps.newHashMap()));
 
         HealthDataRecord record = HealthDataRecord.create();
         HealthDataRecord outputRecord = setupContextAndRunHandler(record, mockOptionsService);
@@ -61,8 +63,8 @@ public class TranscribeConsentHandlerTest {
     @Test
     public void emptyStringSetConvertedCorrectly() {
         ParticipantOptionsService mockOptionsService = mock(ParticipantOptionsService.class);
-        when(mockOptionsService.getOptions(TEST_HEALTHCODE)).thenReturn(new ParticipantOptionsLookup(ImmutableMap.of(
-                ParticipantOption.DATA_GROUPS.name(), "")));
+        when(mockOptionsService.getOptions(TestConstants.TEST_STUDY, TEST_HEALTHCODE))
+                .thenReturn(new ParticipantOptionsLookup(ImmutableMap.of(ParticipantOption.DATA_GROUPS.name(), "")));
 
         HealthDataRecord record = HealthDataRecord.create();
         HealthDataRecord outputRecord = setupContextAndRunHandler(record, mockOptionsService);
@@ -73,8 +75,8 @@ public class TranscribeConsentHandlerTest {
     @Test
     public void setOfOneStringConvertedCorrectly() {
         ParticipantOptionsService mockOptionsService = mock(ParticipantOptionsService.class);
-        when(mockOptionsService.getOptions(TEST_HEALTHCODE)).thenReturn(new ParticipantOptionsLookup(
-                ImmutableMap.of(ParticipantOption.DATA_GROUPS.name(), "group1")));
+        when(mockOptionsService.getOptions(TestConstants.TEST_STUDY, TEST_HEALTHCODE)).thenReturn(
+                new ParticipantOptionsLookup(ImmutableMap.of(ParticipantOption.DATA_GROUPS.name(), "group1")));
 
         HealthDataRecord record = HealthDataRecord.create();
         HealthDataRecord outputRecord = setupContextAndRunHandler(record, mockOptionsService);
@@ -91,6 +93,7 @@ public class TranscribeConsentHandlerTest {
         UploadValidationContext context = new UploadValidationContext();
         context.setHealthCode(TEST_HEALTHCODE);
         context.setHealthDataRecord(record);
+        context.setStudy(TestConstants.TEST_STUDY);
 
         // execute
         handler.handle(context);

@@ -15,6 +15,8 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -23,14 +25,19 @@ import static org.mockito.Mockito.when;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
-
-import org.sagebionetworks.bridge.BridgeUtils;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.sagebionetworks.bridge.TestUtils;
+import org.sagebionetworks.bridge.dao.AccountDao;
 import org.sagebionetworks.bridge.dao.ParticipantOption;
 import org.sagebionetworks.bridge.dao.ParticipantOption.SharingScope;
 import org.sagebionetworks.bridge.dao.ParticipantOptionsDao;
 import org.sagebionetworks.bridge.dynamodb.DynamoStudy;
-import org.sagebionetworks.bridge.models.accounts.AllParticipantOptionsLookup;
+import org.sagebionetworks.bridge.hibernate.HibernateAccountDao;
+import org.sagebionetworks.bridge.models.accounts.Account;
 import org.sagebionetworks.bridge.models.accounts.ExternalIdentifier;
 import org.sagebionetworks.bridge.models.accounts.ParticipantOptionsLookup;
 import org.sagebionetworks.bridge.models.studies.Study;
@@ -38,18 +45,31 @@ import org.sagebionetworks.bridge.models.studies.Study;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ParticipantOptionsServiceTest {
     
     private static final String HEALTH_CODE = "AAA";
     
     private ParticipantOptionsService service;
+    
+    @Mock
     private ParticipantOptionsDao mockDao;
+    @Mock
+    private AccountDao mockAccountDao;
+    @Mock
+    private Account mockAccount;
+    @Captor
+    private ArgumentCaptor<Account> accountCaptor;
     
     @Before
     public void before() {
         service = new ParticipantOptionsService();
         mockDao = mock(ParticipantOptionsDao.class);
+        mockAccountDao = mock(AccountDao.class);
         service.setParticipantOptionsDao(mockDao);
+        service.setAccountDao(mockAccountDao);
+        
+        when(mockAccountDao.getAccount(any())).thenReturn(mockAccount);
         
         Study study = new DynamoStudy();
         study.setDataGroups(Sets.newHashSet("A","B","group1","group2","group3"));
@@ -59,22 +79,24 @@ public class ParticipantOptionsServiceTest {
     public void setBoolean() {
         service.setBoolean(TEST_STUDY, HEALTH_CODE, EMAIL_NOTIFICATIONS, true);
 
-        verify(mockDao).setOption(TEST_STUDY, HEALTH_CODE, EMAIL_NOTIFICATIONS, Boolean.TRUE.toString());
-        verifyNoMoreInteractions(mockDao);
+        verify(mockAccountDao).updateAccount(accountCaptor.capture(), eq(false));
+        verify(mockAccount).setNotifyByEmail(Boolean.TRUE);
     }
     
     @Test
     public void getBoolean() {
+        when(mockAccount.getNotifyByEmail()).thenReturn(Boolean.TRUE);
         when(mockDao.getOptions(HEALTH_CODE)).thenReturn(new ParticipantOptionsLookup(map(EMAIL_NOTIFICATIONS, "true")));
         
-        assertTrue(service.getOptions(HEALTH_CODE).getBoolean(EMAIL_NOTIFICATIONS));
+        assertTrue(service.getOptions(TEST_STUDY, HEALTH_CODE).getBoolean(EMAIL_NOTIFICATIONS));
     }
     
     @Test
     public void getBooleanNull() {
+        when(mockAccount.getNotifyByEmail()).thenReturn(null);
         when(mockDao.getOptions(HEALTH_CODE)).thenReturn(new ParticipantOptionsLookup(map(EMAIL_NOTIFICATIONS, null)));
         
-        assertTrue(service.getOptions(HEALTH_CODE).getBoolean(EMAIL_NOTIFICATIONS));
+        assertTrue(service.getOptions(TEST_STUDY, HEALTH_CODE).getBoolean(EMAIL_NOTIFICATIONS));
     }
     
     @Test
@@ -83,23 +105,23 @@ public class ParticipantOptionsServiceTest {
         
         service.setString(TEST_STUDY, HEALTH_CODE, EXTERNAL_IDENTIFIER, externalId.getIdentifier());
         
-        verify(mockDao).setOption(TEST_STUDY, HEALTH_CODE, EXTERNAL_IDENTIFIER, "BBB");
-        verifyNoMoreInteractions(mockDao);
+        verify(mockAccountDao).updateAccount(accountCaptor.capture(), eq(true));
+        verify(mockAccount).setExternalId("BBB");
     }
     
     @Test
     public void getString() {
         when(mockDao.getOptions(HEALTH_CODE)).thenReturn(new ParticipantOptionsLookup(map(EXTERNAL_IDENTIFIER, "BBB")));
         
-        assertEquals("BBB", service.getOptions(HEALTH_CODE).getString(EXTERNAL_IDENTIFIER));
+        assertEquals("BBB", service.getOptions(TEST_STUDY, HEALTH_CODE).getString(EXTERNAL_IDENTIFIER));
     }
     
     @Test
     public void setEnum() {
         service.setEnum(TEST_STUDY, HEALTH_CODE, SHARING_SCOPE, SharingScope.SPONSORS_AND_PARTNERS);
         
-        verify(mockDao).setOption(TEST_STUDY, HEALTH_CODE, SHARING_SCOPE, "SPONSORS_AND_PARTNERS");
-        verifyNoMoreInteractions(mockDao);
+        verify(mockAccountDao).updateAccount(accountCaptor.capture(), eq(false));
+        verify(mockAccount).setSharingScope(SharingScope.SPONSORS_AND_PARTNERS);
     }
     
     @Test
@@ -107,24 +129,17 @@ public class ParticipantOptionsServiceTest {
         DateTimeZone zone = DateTimeZone.forOffsetHours(-8);
         
         service.setDateTimeZone(TEST_STUDY, HEALTH_CODE, TIME_ZONE, zone);
-        verify(mockDao).setOption(TEST_STUDY, HEALTH_CODE, TIME_ZONE, "-08:00");
-        verifyNoMoreInteractions(mockDao);
+        
+        verify(mockAccountDao).updateAccount(accountCaptor.capture(), eq(false));
+        verify(mockAccount).setTimeZone(DateTimeZone.forOffsetHours(-8));
     }
     
     @Test
     public void setTimeZoneUTC() {
         service.setDateTimeZone(TEST_STUDY, HEALTH_CODE, TIME_ZONE, DateTimeZone.UTC);
-        verify(mockDao).setOption(TEST_STUDY, HEALTH_CODE, TIME_ZONE, "+00:00");
-        verifyNoMoreInteractions(mockDao);
-    }
-    
-    @Test
-    public void setAllOptions() {
-        Map<ParticipantOption,String> options = Maps.newHashMap();
-        service.setAllOptions(TEST_STUDY, HEALTH_CODE, options);
         
-        verify(mockDao).setAllOptions(TEST_STUDY, HEALTH_CODE, options);
-        verifyNoMoreInteractions(mockDao);
+        verify(mockAccountDao).updateAccount(accountCaptor.capture(), eq(false));
+        verify(mockAccount).setTimeZone(DateTimeZone.UTC);
     }
     
     @Test
@@ -132,14 +147,14 @@ public class ParticipantOptionsServiceTest {
         when(mockDao.getOptions(HEALTH_CODE))
                 .thenReturn(new ParticipantOptionsLookup(map(SHARING_SCOPE, "SPONSORS_AND_PARTNERS")));
         
-        assertEquals(SharingScope.SPONSORS_AND_PARTNERS, service.getOptions(HEALTH_CODE).getEnum(SHARING_SCOPE, SharingScope.class));
+        assertEquals(SharingScope.SPONSORS_AND_PARTNERS, service.getOptions(TEST_STUDY, HEALTH_CODE).getEnum(SHARING_SCOPE, SharingScope.class));
     }
     
     @Test
     public void getEnumNull() {
         when(mockDao.getOptions(HEALTH_CODE)).thenReturn(new ParticipantOptionsLookup(map(SHARING_SCOPE, null)));
         
-        assertEquals(SharingScope.NO_SHARING, service.getOptions(HEALTH_CODE).getEnum(SHARING_SCOPE, SharingScope.class));
+        assertEquals(SharingScope.NO_SHARING, service.getOptions(TEST_STUDY, HEALTH_CODE).getEnum(SHARING_SCOPE, SharingScope.class));
     }
     
     @Test
@@ -149,8 +164,8 @@ public class ParticipantOptionsServiceTest {
         service.setStringSet(TEST_STUDY, HEALTH_CODE, DATA_GROUPS, dataGroups);
         
         // Order of the set when serialized is indeterminate, it's a set
-        verify(mockDao).setOption(TEST_STUDY, HEALTH_CODE, DATA_GROUPS, BridgeUtils.setToCommaList(dataGroups));
-        verifyNoMoreInteractions(mockDao);
+        verify(mockAccountDao).updateAccount(accountCaptor.capture(), eq(false));
+        verify(mockAccount).setDataGroups(dataGroups);
     }
     
     @Test
@@ -160,7 +175,7 @@ public class ParticipantOptionsServiceTest {
         
         Set<String> dataGroups = Sets.newHashSet("group1", "group2", "group3");
         
-        assertEquals(dataGroups, service.getOptions(HEALTH_CODE).getStringSet(DATA_GROUPS));
+        assertEquals(dataGroups, service.getOptions(TEST_STUDY, HEALTH_CODE).getStringSet(DATA_GROUPS));
     }
     
     @Test
@@ -168,7 +183,7 @@ public class ParticipantOptionsServiceTest {
         when(mockDao.getOptions(HEALTH_CODE)).thenReturn(
                 new ParticipantOptionsLookup(map(DATA_GROUPS, null)));
         
-        assertEquals(Sets.newHashSet(), service.getOptions(HEALTH_CODE).getStringSet(DATA_GROUPS));
+        assertEquals(Sets.newHashSet(), service.getOptions(TEST_STUDY, HEALTH_CODE).getStringSet(DATA_GROUPS));
     }
     
     @
@@ -177,7 +192,7 @@ public class ParticipantOptionsServiceTest {
         when(mockDao.getOptions(HEALTH_CODE)).thenReturn(
                 new ParticipantOptionsLookup(map(TIME_ZONE, "-08:00")));
         
-        assertEquals(DateTimeZone.forOffsetHours(-8), service.getOptions(HEALTH_CODE).getTimeZone(TIME_ZONE));
+        assertEquals(DateTimeZone.forOffsetHours(-8), service.getOptions(TEST_STUDY, HEALTH_CODE).getTimeZone(TIME_ZONE));
     }
 
     @Test
@@ -189,14 +204,6 @@ public class ParticipantOptionsServiceTest {
     }
     
     @Test
-    public void deleteOption() {
-        service.deleteOption(HEALTH_CODE, DATA_GROUPS);
-        
-        verify(mockDao).deleteOption(HEALTH_CODE, DATA_GROUPS);
-        verifyNoMoreInteractions(mockDao);
-    }
-
-    @Test
     public void getAllParticipantOptions() {
         Map<String,String> map = Maps.newHashMap();
         map.put(DATA_GROUPS.name(), "a,b,c");
@@ -205,7 +212,7 @@ public class ParticipantOptionsServiceTest {
         
         when(mockDao.getOptions(HEALTH_CODE)).thenReturn(lookup);
         
-        ParticipantOptionsLookup result = service.getOptions(HEALTH_CODE);
+        ParticipantOptionsLookup result = service.getOptions(TEST_STUDY, HEALTH_CODE);
         assertEquals(lookup.getStringSet(DATA_GROUPS), result.getStringSet(DATA_GROUPS));
         
         verify(mockDao).getOptions(HEALTH_CODE);
@@ -213,31 +220,21 @@ public class ParticipantOptionsServiceTest {
     }
     
     @Test
-    public void getOptionForAllStudyParticipants() {
-        AllParticipantOptionsLookup allLookup = new AllParticipantOptionsLookup();
-        when(mockDao.getOptionsForAllParticipants(TEST_STUDY)).thenReturn(allLookup);
-        
-        AllParticipantOptionsLookup result = service.getOptionsForAllParticipants(TEST_STUDY);
-        assertEquals(allLookup, result);
-        
-        verify(mockDao).getOptionsForAllParticipants(TEST_STUDY);
-        verifyNoMoreInteractions(mockDao);
-    }
-    
-    @Test
     public void canSetLinkedHashSet() {
-        when(mockDao.getOptions(HEALTH_CODE)).thenReturn(new ParticipantOptionsLookup(map(LANGUAGES, "en,fr")));
+        LinkedHashSet<String> langs = TestUtils.newLinkedHashSet("fr","en","kl");
         
-        LinkedHashSet<String> langs = service.getOptions(HEALTH_CODE).getOrderedStringSet(LANGUAGES);
-        Iterator<String> i = langs.iterator();
-        assertEquals("en", i.next());
+        when(mockAccount.getLanguages()).thenReturn(langs);
+        when(mockAccount.getMigrationVersion()).thenReturn(HibernateAccountDao.CURRENT_MIGRATION_VERSION);
+        
+        LinkedHashSet<String> result = service.getOptions(TEST_STUDY, HEALTH_CODE).getOrderedStringSet(LANGUAGES);
+        Iterator<String> i = result.iterator();
         assertEquals("fr", i.next());
-        
-        langs = TestUtils.newLinkedHashSet("fr","en","kl");
+        assertEquals("en", i.next());
         
         service.setOrderedStringSet(TEST_STUDY, HEALTH_CODE, LANGUAGES, langs);
         
-        verify(mockDao).setOption(TEST_STUDY, HEALTH_CODE, LANGUAGES, "fr,en,kl");
+        verify(mockAccountDao).updateAccount(accountCaptor.capture(), eq(false));
+        verify(mockAccount).setLanguages(langs);
     }
     
     private Map<String,String> map(ParticipantOption option, String value) {
