@@ -208,8 +208,7 @@ public class SharedModuleMetadataService {
         if (clause == null) {
             clause = new HqlWhereClause(false);
         }
-        //if (mostRecent && clause.getClause() != null) {
-        if (mostRecent && !clause.getParameters().isEmpty()) {
+        if (mostRecent && clause.getClause() != null) {
             // This is disallowed because of the confusion (both from Bridge developers and from Study managers) on
             // how this would actually work.
             throw new BadRequestException("mostrecent=true cannot be specified with where clause");

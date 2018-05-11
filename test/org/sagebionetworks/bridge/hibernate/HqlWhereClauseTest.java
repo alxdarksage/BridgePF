@@ -25,6 +25,10 @@ public class HqlWhereClauseTest {
     @Test
     public void equalsHashCode() {
         EqualsVerifier.forClass(HqlWhereClause.class).allFieldsShouldBeUsed().verify();
+        
+        // I tried using an ImmutableMap.Builder at one point, and it broke equality although
+        // EqualsVerifier was passing.
+        assertEquals(new HqlWhereClause(false), new HqlWhereClause(false));
     }
     
     @Test

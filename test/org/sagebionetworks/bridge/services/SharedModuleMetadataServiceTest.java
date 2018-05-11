@@ -388,8 +388,9 @@ public class SharedModuleMetadataServiceTest {
         when(mockDao.queryMetadata(expectedWhereClause)).thenReturn(daoOutputMetadataList);
 
         // execute and validate
-        List<SharedModuleMetadata> svcOutputMetadataList = svc.queryAllMetadata(false, published, inputWhereClause,
-                null);
+        List<SharedModuleMetadata> svcOutputMetadataList = svc.queryAllMetadata(
+                false, published, inputWhereClause, null);
+        
         assertSame(daoOutputMetadataList, svcOutputMetadataList);
     }
 

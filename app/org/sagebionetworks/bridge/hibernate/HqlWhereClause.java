@@ -1,6 +1,7 @@
 package org.sagebionetworks.bridge.hibernate;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,7 +18,7 @@ public final class HqlWhereClause {
     private static final Joiner AND_JOINER = Joiner.on(" AND ");
     private static final Joiner OR_JOINER = Joiner.on(" OR ");
     private final List<String> expressions = new ArrayList<>();
-    private final ImmutableMap.Builder<String,Object> parameters = new ImmutableMap.Builder<>();
+    private final Map<String,Object> parameters = new HashMap<>();
     private final boolean useOrOperator;
     
     public HqlWhereClause(boolean useOrOperator) {
@@ -52,7 +53,7 @@ public final class HqlWhereClause {
     }
     
     public Map<String,Object> getParameters() {
-        return parameters.build();
+        return parameters;
     }
     
     private String extractParameterName(String expr) {
