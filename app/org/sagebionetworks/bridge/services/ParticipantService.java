@@ -26,6 +26,7 @@ import org.sagebionetworks.bridge.Roles;
 import org.sagebionetworks.bridge.cache.CacheProvider;
 import org.sagebionetworks.bridge.dao.AccountDao;
 import org.sagebionetworks.bridge.dao.ScheduledActivityDao;
+import org.sagebionetworks.bridge.dynamodb.DynamoActivityEvent;
 import org.sagebionetworks.bridge.exceptions.BadRequestException;
 import org.sagebionetworks.bridge.exceptions.EntityNotFoundException;
 import org.sagebionetworks.bridge.exceptions.LimitExceededException;
@@ -45,6 +46,7 @@ import org.sagebionetworks.bridge.models.accounts.StudyParticipant;
 import org.sagebionetworks.bridge.models.accounts.UserConsentHistory;
 import org.sagebionetworks.bridge.models.accounts.Withdrawal;
 import org.sagebionetworks.bridge.models.activities.ActivityEvent;
+import org.sagebionetworks.bridge.models.activities.CustomActivityEventRequest;
 import org.sagebionetworks.bridge.models.notifications.NotificationMessage;
 import org.sagebionetworks.bridge.models.notifications.NotificationRegistration;
 import org.sagebionetworks.bridge.models.schedules.ActivityType;
@@ -531,6 +533,38 @@ public class ParticipantService {
         Account account = getAccountThrowingException(study, userId);
 
         return activityEventService.getActivityEventList(account.getHealthCode());
+    }
+    
+    public void deleteAllActivityEvents(Study study, String userId) {
+        Account account = getAccountThrowingException(study, userId);
+        
+        activityEventService.deleteActivityEvents(account.getHealthCode());
+    }
+
+    public void deleteActivityEvent(Study study, String userId, String eventId) {
+        Account account = getAccountThrowingException(study, userId);
+        
+        if (StringUtils.isBlank(eventId)) {
+            throw new BadRequestException("Event ID required");
+        }
+        activityEventService.deleteActivityEvent(account.getHealthCode(), eventId);
+    }
+
+    public void updateActivityEvent(Study study, String userId, CustomActivityEventRequest activityEvent) {
+        Account account = getAccountThrowingException(study, userId);
+        
+        if (activityEvent == null || StringUtils.isBlank(activityEvent.getEventKey())
+                || activityEvent.getTimestamp() == null) {
+            throw new BadRequestException("Invalid activity event");
+        }
+        // No type-safety here. If the user submits junk, it'll be ignored
+        DynamoActivityEvent event = new DynamoActivityEvent();
+        event.setHealthCode(account.getHealthCode());
+        event.setEventId(activityEvent.getEventKey());
+        event.setTimestamp(activityEvent.getTimestamp().getMillis());
+        event.setAnswerValue(activityEvent.getAnswerValue());
+        
+        activityEventService.publishActivityEvent(event);
     }
     
     public StudyParticipant updateIdentifiers(Study study, CriteriaContext context, IdentifierUpdate update) {

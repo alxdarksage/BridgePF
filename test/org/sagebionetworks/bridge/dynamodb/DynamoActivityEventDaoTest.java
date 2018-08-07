@@ -1,6 +1,7 @@
 package org.sagebionetworks.bridge.dynamodb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -85,6 +86,11 @@ public class DynamoActivityEventDaoTest {
         // an "either or" scheduling conflict. The user can only answer one way or another on a 
         // given question, even if the answer is updated.
         assertNull(map.get("question:DDD-EEE-FFF:answered=someAnswer"));
+        
+        assertTrue(map.containsKey("enrollment"));
+        activityEventDao.deleteActivityEvent(healthCode, "enrollment");
+        map = activityEventDao.getActivityEventMap(healthCode);
+        assertFalse(map.containsKey("enrollment"));
         
         activityEventDao.deleteActivityEvents(healthCode);
         

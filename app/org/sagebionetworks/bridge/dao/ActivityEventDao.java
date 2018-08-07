@@ -28,4 +28,9 @@ public interface ActivityEventDao {
      * delete this way.
      */
     void deleteActivityEvents(String healthCode);
+    
+    /**
+     * Delete a single activity event for this user. 
+     */
+    void deleteActivityEvent(String healthCode, String eventId);
 }

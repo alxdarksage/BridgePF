@@ -3,10 +3,14 @@ package org.sagebionetworks.bridge.services;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.sagebionetworks.bridge.BridgeUtils.COMMA_JOINER;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.common.collect.Lists;
+
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Period;
@@ -156,5 +160,14 @@ public class ActivityEventService {
         checkNotNull(healthCode);
         activityEventDao.deleteActivityEvents(healthCode);
     }
+    
+    public void deleteActivityEvent(String healthCode, String eventId) {
+        checkNotNull(healthCode);
 
+        if (StringUtils.isBlank(eventId)) {
+            throw new BadRequestException("Invalid event ID");
+        }
+        activityEventDao.deleteActivityEvent(healthCode, eventId);
+    }
+    
 }

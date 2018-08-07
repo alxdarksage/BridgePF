@@ -266,14 +266,24 @@ public class ActivityEventServiceTest {
         schActivity.setFinishedOn(finishedOn);
         schActivity.setHealthCode("BBB");
 
-
         activityEventService.publishActivityFinishedEvent(schActivity);
-        ArgumentCaptor<ActivityEvent> argument = ArgumentCaptor.forClass(ActivityEvent.class);
-        verify(activityEventDao).publishEvent(argument.capture());
+        ArgumentCaptor<ActivityEvent> eventCaptor = ArgumentCaptor.forClass(ActivityEvent.class);
+        verify(activityEventDao).publishEvent(eventCaptor.capture());
 
-        ActivityEvent event = argument.getValue();
+        ActivityEvent event = eventCaptor.getValue();
         assertEquals("BBB", event.getHealthCode());
         assertEquals("activity:AAA:finished", event.getEventId());
         assertEquals(finishedOn, event.getTimestamp().longValue());
+    }
+    
+    @Test
+    public void deleteActivityEvent() {
+        activityEventService.deleteActivityEvent("BBB", "eventId");
+        verify(activityEventDao).deleteActivityEvent("BBB", "eventId");
+    }
+    
+    @Test(expected = BadRequestException.class)
+    public void deleteActivityEventNoEventID() {
+        activityEventService.deleteActivityEvent("BBB", null);
     }
 }

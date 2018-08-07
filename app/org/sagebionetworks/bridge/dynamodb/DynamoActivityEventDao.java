@@ -97,6 +97,17 @@ public class DynamoActivityEventDao implements ActivityEventDao {
         }
     }
     
+    @Override
+    public void deleteActivityEvent(String healthCode, String eventId) {
+        checkNotNull(healthCode);
+        
+        DynamoActivityEvent hashKey = new DynamoActivityEvent();
+        hashKey.setHealthCode(healthCode);
+        hashKey.setEventId(eventId);
+        
+        mapper.delete(hashKey);
+    }
+    
     private boolean isEnrollment(ActivityEvent event) {
         return ENROLLMENT.name().toLowerCase().equals(event.getEventId());
     }
