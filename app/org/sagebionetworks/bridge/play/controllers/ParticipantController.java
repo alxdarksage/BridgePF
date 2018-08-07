@@ -439,12 +439,12 @@ public class ParticipantController extends BaseController {
         return okResult("Activity event deleted");
     }
     
-    public Result updateActivityEvent(String userId) {
+    public Result publishActivityEvent(String userId) {
         UserSession researcherSession = getAuthenticatedSession(Roles.RESEARCHER);
         Study study = studyService.getStudy(researcherSession.getStudyIdentifier());
         CustomActivityEventRequest activityEvent = parseJson(request(), CustomActivityEventRequest.class);
         
-        participantService.updateActivityEvent(study, userId, activityEvent);
+        participantService.publicActivityEvent(study, userId, activityEvent);
         return createdResult("Event recorded");
     }
     

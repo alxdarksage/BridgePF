@@ -42,7 +42,7 @@ public class DynamoActivityEventDao implements ActivityEventDao {
     }
     
     @Override
-    public void publishEvent(ActivityEvent event) {
+    public void publishEvent(ActivityEvent event, boolean enforceLater) {
         checkNotNull(event);
         
         DynamoActivityEvent hashKey = new DynamoActivityEvent();
@@ -50,7 +50,7 @@ public class DynamoActivityEventDao implements ActivityEventDao {
         hashKey.setEventId(event.getEventId());
         
         ActivityEvent savedEvent = mapper.load(hashKey);
-        if (isLaterNonEnrollmentEvent(savedEvent, event)) {
+        if (!enforceLater || isLaterNonEnrollmentEvent(savedEvent, event)) {
             mapper.save(event);
         }
     }

@@ -1224,15 +1224,15 @@ public class ParticipantControllerTest {
     }
     
     @Test
-    public void updateActivityEvent() throws Exception {
+    public void publishActivityEvent() throws Exception {
         CustomActivityEventRequest request = new CustomActivityEventRequest.Builder().withEventKey("enrollment")
                 .withTimestamp(DateTime.now()).build();
         TestUtils.mockPlayContextWithJson(request);
                 
-        Result result = controller.updateActivityEvent(ID);
+        Result result = controller.publishActivityEvent(ID);
         TestUtils.assertResult(result, 201, "Event recorded");
         
-        verify(mockParticipantService).updateActivityEvent(study, ID, request);
+        verify(mockParticipantService).publicActivityEvent(study, ID, request);
     }
     
     @Test

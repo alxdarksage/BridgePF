@@ -3,10 +3,8 @@ package org.sagebionetworks.bridge.services;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.sagebionetworks.bridge.BridgeUtils.COMMA_JOINER;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.google.common.collect.Lists;
 
@@ -57,7 +55,7 @@ public class ActivityEventService {
                 .withObjectType(ActivityEventObjectType.CUSTOM)
                 .withObjectId(eventKey)
                 .withTimestamp(timestamp).build();
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, true);
     }
 
     /**
@@ -74,7 +72,7 @@ public class ActivityEventService {
             .withHealthCode(healthCode)
             .withTimestamp(enrollment)
             .withObjectType(ActivityEventObjectType.ENROLLMENT).build();
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, true);
 
         // Create automatic events, as defined in the study
         for (Map.Entry<String, String> oneAutomaticEvent : study.getAutomaticCustomEvents().entrySet()) {
@@ -96,7 +94,7 @@ public class ActivityEventService {
             .withObjectId(answer.getQuestionGuid())
             .withEventType(ActivityEventType.ANSWERED)
             .withAnswerValue(COMMA_JOINER.join(answer.getAnswers())).build();
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, true);
     }
     
     public void publishActivityFinishedEvent(ScheduledActivity schActivity) {
@@ -115,7 +113,7 @@ public class ActivityEventService {
                 .withTimestamp(schActivity.getFinishedOn())
                 .build();
 
-            activityEventDao.publishEvent(event);
+            activityEventDao.publishEvent(event, true);
         }
     }
     
@@ -125,9 +123,9 @@ public class ActivityEventService {
      * edge cases (like answering a question or finishing a survey through the bulk import 
      * system).
      */
-    public void publishActivityEvent(ActivityEvent event) {
+    public void publishActivityEvent(ActivityEvent event, boolean enforceLater) {
         checkNotNull(event);
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, enforceLater);
     }
 
     /**

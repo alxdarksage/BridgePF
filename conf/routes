@@ -105,7 +105,7 @@ POST   /v3/participants/:userId/consents/:guid/resendConsent           @org.sage
 POST   /v3/participants/:userId/consents/:guid/withdraw                @org.sagebionetworks.bridge.play.controllers.ParticipantController.withdrawConsent(userId: String, guid: String)
 POST   /v3/participants/:userId/sendSmsMessage                         @org.sagebionetworks.bridge.play.controllers.ParticipantController.sendSmsMessage(userId: String)
 GET    /v3/participants/:userId/activityevents                         @org.sagebionetworks.bridge.play.controllers.ParticipantController.getActivityEvents(userId: String)
-POST   /v3/participants/:userId/activityevents                         @org.sagebionetworks.bridge.play.controllers.ParticipantController.updateActivityEvent(userId: String)
+POST   /v3/participants/:userId/activityevents                         @org.sagebionetworks.bridge.play.controllers.ParticipantController.publishActivityEvent(userId: String)
 DELETE /v3/participants/:userId/activityevents                         @org.sagebionetworks.bridge.play.controllers.ParticipantController.deleteAllActivityEvents(userId: String)
 DELETE /v3/participants/:userId/activityevents/:eventId                @org.sagebionetworks.bridge.play.controllers.ParticipantController.deleteActivityEvent(userId: String, eventId: String)
 

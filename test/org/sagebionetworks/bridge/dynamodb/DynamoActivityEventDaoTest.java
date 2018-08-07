@@ -51,13 +51,13 @@ public class DynamoActivityEventDaoTest {
         // This is an answer event. It's key should be "question:CCC:answered" with a value column
         // the activity event map should create a key with the value, such as "question:CCC:answered=value"
         ActivityEvent event = getEnrollmentEvent(time1);
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, true);
         event = getSurveyFinishedEvent(time2);
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, true);
         event = getQuestionAnsweredEvent(time3, "someValue");
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, true);
         event = getScheduledActivityFinishedEvent(time6);
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, true);
         
         Map<String,DateTime> map = activityEventDao.getActivityEventMap(healthCode);
         assertEquals(6, map.size());
@@ -70,14 +70,14 @@ public class DynamoActivityEventDaoTest {
         
         // Update timestamp of answer event while keeping same answer
         event = getQuestionAnsweredEvent(time4, "someValue");
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, true);
         
         map = activityEventDao.getActivityEventMap(healthCode);
         assertEquals(time4.withZone(DateTimeZone.UTC), map.get("question:DDD-EEE-FFF:answered=someValue"));
         
         // Update answer event with different answer and later timestamp
         event = getQuestionAnsweredEvent(time5, "anotherAnswer");
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, true);
         
         // Creates a different key in activity event map. Researchers schedule against specific answers.
         map = activityEventDao.getActivityEventMap(healthCode);
@@ -109,14 +109,19 @@ public class DynamoActivityEventDaoTest {
         final DateTime firstEvent = DateTime.now();
         
         ActivityEvent event = getEnrollmentEvent(firstEvent);
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, true);
         
         // This does not work. You can't do this.
         event = getEnrollmentEvent(firstEvent.plusHours(2));
-        activityEventDao.publishEvent(event);
+        activityEventDao.publishEvent(event, true);
         
         Map<String,DateTime> eventMap = activityEventDao.getActivityEventMap(healthCode);
         assertEquals(firstEvent.withZone(DateTimeZone.UTC), eventMap.get("enrollment"));
+        
+        // Now change the flag, and you can update the enrollment event
+        activityEventDao.publishEvent(event, false);
+        eventMap = activityEventDao.getActivityEventMap(healthCode);
+        assertEquals(firstEvent.withZone(DateTimeZone.UTC).plusHours(2), eventMap.get("enrollment"));
         
         activityEventDao.deleteActivityEvents(healthCode);
     }

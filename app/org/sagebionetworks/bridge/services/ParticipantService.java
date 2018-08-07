@@ -550,7 +550,7 @@ public class ParticipantService {
         activityEventService.deleteActivityEvent(account.getHealthCode(), eventId);
     }
 
-    public void updateActivityEvent(Study study, String userId, CustomActivityEventRequest activityEvent) {
+    public void publicActivityEvent(Study study, String userId, CustomActivityEventRequest activityEvent) {
         Account account = getAccountThrowingException(study, userId);
         
         if (activityEvent == null || StringUtils.isBlank(activityEvent.getEventKey())
@@ -564,7 +564,7 @@ public class ParticipantService {
         event.setTimestamp(activityEvent.getTimestamp().getMillis());
         event.setAnswerValue(activityEvent.getAnswerValue());
         
-        activityEventService.publishActivityEvent(event);
+        activityEventService.publishActivityEvent(event, false);
     }
     
     public StudyParticipant updateIdentifiers(Study study, CriteriaContext context, IdentifierUpdate update) {

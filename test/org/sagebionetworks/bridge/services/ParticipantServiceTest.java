@@ -1651,7 +1651,7 @@ public class ParticipantServiceTest {
     }
 
     @Test
-    public void updateActivityEvent() {
+    public void publishActivityEvent() {
         mockHealthCodeAndAccountRetrieval();
         
         CustomActivityEventRequest request = new CustomActivityEventRequest.Builder()
@@ -1659,9 +1659,9 @@ public class ParticipantServiceTest {
                 .withTimestamp(EVENT_TIMESTAMP)
                 .withAnswerValue("answer").build();
 
-        participantService.updateActivityEvent(STUDY, ID, request);
+        participantService.publicActivityEvent(STUDY, ID, request);
         
-        verify(activityEventService).publishActivityEvent(eventCaptor.capture());
+        verify(activityEventService).publishActivityEvent(eventCaptor.capture(), eq(false));
         
         ActivityEvent event = eventCaptor.getValue();
         assertEquals(EVENT_ID, event.getEventId());
@@ -1679,7 +1679,7 @@ public class ParticipantServiceTest {
     @Test(expected = BadRequestException.class)
     public void updateActivityEventNoEvent() {
         mockHealthCodeAndAccountRetrieval();
-        participantService.updateActivityEvent(STUDY, ID, null);
+        participantService.publicActivityEvent(STUDY, ID, null);
     }
 
     @Test(expected = BadRequestException.class)
@@ -1687,7 +1687,7 @@ public class ParticipantServiceTest {
         mockHealthCodeAndAccountRetrieval();
         CustomActivityEventRequest request = new CustomActivityEventRequest.Builder()
                 .withTimestamp(EVENT_TIMESTAMP).build();
-        participantService.updateActivityEvent(STUDY, ID, request);
+        participantService.publicActivityEvent(STUDY, ID, request);
     }
     
     @Test(expected = BadRequestException.class)
@@ -1695,7 +1695,7 @@ public class ParticipantServiceTest {
         mockHealthCodeAndAccountRetrieval();
         CustomActivityEventRequest request = new CustomActivityEventRequest.Builder()
                 .withEventKey(EVENT_ID).build();
-        participantService.updateActivityEvent(STUDY, ID, request);
+        participantService.publicActivityEvent(STUDY, ID, request);
     }
     
     // There's no actual vs expected here because either we don't set it, or we set it and that's what we're verifying,

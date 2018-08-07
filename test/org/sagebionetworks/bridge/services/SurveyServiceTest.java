@@ -370,7 +370,6 @@ public class SurveyServiceTest {
         // Get all surveys of a version
         surveys = surveyService.getSurveyAllVersions(TEST_STUDY, survey.getGuid(), false);
         assertEquals("All surveys are returned", 2, surveys.size());
-        int totalCount = surveys.size();
 
         Survey version1 = surveys.get(0);
         Survey version2 = surveys.get(1);
