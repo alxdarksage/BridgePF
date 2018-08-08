@@ -7,6 +7,8 @@ import static org.sagebionetworks.bridge.models.activities.ActivityEventObjectTy
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 
@@ -67,11 +69,18 @@ public class DynamoActivityEventDao implements ActivityEventDao {
         PaginatedQueryList<DynamoActivityEvent> queryResults = mapper.query(DynamoActivityEvent.class, query);
         
         Builder<String,DateTime> builder = ImmutableMap.<String,DateTime>builder();
+        
+        Set<String> eventIds = queryResults.stream().map(DynamoActivityEvent::getEventId).collect(Collectors.toSet());
+        
         for (DynamoActivityEvent event : queryResults) {
             builder.put(getEventMapKey(event), new DateTime(event.getTimestamp(), DateTimeZone.UTC));
             if (isEnrollment(event)) {
-                builder.put(TWO_WEEKS, new DateTime(event.getTimestamp(), DateTimeZone.UTC).minusWeeks(2));
-                builder.put(TWO_MONTHS, new DateTime(event.getTimestamp(), DateTimeZone.UTC).minusMonths(2));
+                if (!eventIds.contains(TWO_WEEKS)) {
+                    builder.put(TWO_WEEKS, new DateTime(event.getTimestamp(), DateTimeZone.UTC).minusWeeks(2));    
+                }
+                if (!eventIds.contains(TWO_MONTHS)) {
+                    builder.put(TWO_MONTHS, new DateTime(event.getTimestamp(), DateTimeZone.UTC).minusMonths(2));    
+                }
             }
         }
         return builder.build();
