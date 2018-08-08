@@ -444,7 +444,7 @@ public class ParticipantController extends BaseController {
         Study study = studyService.getStudy(researcherSession.getStudyIdentifier());
         CustomActivityEventRequest activityEvent = parseJson(request(), CustomActivityEventRequest.class);
         
-        participantService.publicActivityEvent(study, userId, activityEvent);
+        participantService.publishActivityEvent(study, userId, activityEvent);
         return createdResult("Event recorded");
     }
     

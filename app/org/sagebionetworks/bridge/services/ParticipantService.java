@@ -5,6 +5,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.sagebionetworks.bridge.Roles.ADMINISTRATIVE_ROLES;
 import static org.sagebionetworks.bridge.Roles.CAN_BE_EDITED_BY;
+import static org.sagebionetworks.bridge.models.activities.ActivityEventObjectType.TWO_MONTHS_BEFORE_ENROLLMENT;
+import static org.sagebionetworks.bridge.models.activities.ActivityEventObjectType.TWO_WEEKS_BEFORE_ENROLLMENT;
 
 import java.util.Collections;
 import java.util.List;
@@ -67,6 +69,8 @@ import org.sagebionetworks.bridge.validators.Validate;
 @Component
 public class ParticipantService {
     private static Logger LOG = LoggerFactory.getLogger(ParticipantService.class);
+    private static final String TWO_WEEKS = TWO_WEEKS_BEFORE_ENROLLMENT.name().toLowerCase();
+    private static final String TWO_MONTHS = TWO_MONTHS_BEFORE_ENROLLMENT.name().toLowerCase();
 
     private AccountDao accountDao;
 
@@ -550,12 +554,23 @@ public class ParticipantService {
         activityEventService.deleteActivityEvent(account.getHealthCode(), eventId);
     }
 
-    public void publicActivityEvent(Study study, String userId, CustomActivityEventRequest activityEvent) {
+    public void publishActivityEvent(Study study, String userId, CustomActivityEventRequest activityEvent) {
         Account account = getAccountThrowingException(study, userId);
         
         if (activityEvent == null || StringUtils.isBlank(activityEvent.getEventKey())
                 || activityEvent.getTimestamp() == null) {
-            throw new BadRequestException("Invalid activity event");
+            throw new BadRequestException("Invalid activity event (missing fields)");
+        }
+        
+        // Dependent (calculated) keys are immutable. Do not change them.
+        String eventId = activityEvent.getEventKey();
+        if (eventId.equals(TWO_WEEKS) || eventId.equals(TWO_MONTHS)) {
+            throw new BadRequestException("Activity event key '"+eventId+"' is immutable");    
+        }
+        for (String customKey : study.getAutomaticCustomEvents().keySet()) {
+             if (eventId.equals(customKey) || activityEvent.getEventKey().equals("custom:" + customKey)) {
+                throw new BadRequestException("Activity event key '"+eventId+"' is immutable");
+            }
         }
         // No type-safety here. If the user submits junk, it'll be ignored
         DynamoActivityEvent event = new DynamoActivityEvent();

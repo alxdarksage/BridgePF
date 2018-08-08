@@ -1232,7 +1232,7 @@ public class ParticipantControllerTest {
         Result result = controller.publishActivityEvent(ID);
         TestUtils.assertResult(result, 201, "Event recorded");
         
-        verify(mockParticipantService).publicActivityEvent(study, ID, request);
+        verify(mockParticipantService).publishActivityEvent(study, ID, request);
     }
     
     @Test

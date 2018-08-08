@@ -1659,7 +1659,7 @@ public class ParticipantServiceTest {
                 .withTimestamp(EVENT_TIMESTAMP)
                 .withAnswerValue("answer").build();
 
-        participantService.publicActivityEvent(STUDY, ID, request);
+        participantService.publishActivityEvent(STUDY, ID, request);
         
         verify(activityEventService).publishActivityEvent(eventCaptor.capture(), eq(false));
         
@@ -1679,7 +1679,7 @@ public class ParticipantServiceTest {
     @Test(expected = BadRequestException.class)
     public void updateActivityEventNoEvent() {
         mockHealthCodeAndAccountRetrieval();
-        participantService.publicActivityEvent(STUDY, ID, null);
+        participantService.publishActivityEvent(STUDY, ID, null);
     }
 
     @Test(expected = BadRequestException.class)
@@ -1687,7 +1687,7 @@ public class ParticipantServiceTest {
         mockHealthCodeAndAccountRetrieval();
         CustomActivityEventRequest request = new CustomActivityEventRequest.Builder()
                 .withTimestamp(EVENT_TIMESTAMP).build();
-        participantService.publicActivityEvent(STUDY, ID, request);
+        participantService.publishActivityEvent(STUDY, ID, request);
     }
     
     @Test(expected = BadRequestException.class)
@@ -1695,7 +1695,7 @@ public class ParticipantServiceTest {
         mockHealthCodeAndAccountRetrieval();
         CustomActivityEventRequest request = new CustomActivityEventRequest.Builder()
                 .withEventKey(EVENT_ID).build();
-        participantService.publicActivityEvent(STUDY, ID, request);
+        participantService.publishActivityEvent(STUDY, ID, request);
     }
     
     // There's no actual vs expected here because either we don't set it, or we set it and that's what we're verifying,

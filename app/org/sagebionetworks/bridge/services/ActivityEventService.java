@@ -125,6 +125,7 @@ public class ActivityEventService {
      */
     public void publishActivityEvent(ActivityEvent event, boolean enforceLater) {
         checkNotNull(event);
+        
         activityEventDao.publishEvent(event, enforceLater);
     }
 
