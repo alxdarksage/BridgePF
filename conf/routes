@@ -61,6 +61,7 @@ POST   /v3/users/self/unsubscribeEmail    @org.sagebionetworks.bridge.play.contr
 POST   /v3/users/self/dataSharing         @org.sagebionetworks.bridge.play.controllers.ConsentController.changeSharingScope
 GET    /v3/users/self/dataGroups          @org.sagebionetworks.bridge.play.controllers.UserProfileController.getDataGroups
 POST   /v3/users/self/dataGroups          @org.sagebionetworks.bridge.play.controllers.UserProfileController.updateDataGroups
+# Deprecated. Don't add any further to /v3/users, add to /v3/participants/self
 GET    /v3/users/self/reports/:identifier @org.sagebionetworks.bridge.play.controllers.ParticipantReportController.getParticipantReportForSelf(identifier: String, startDate: String ?= null, endDate: String ?= null)
 POST   /v3/users/self/reports/:identifier @org.sagebionetworks.bridge.play.controllers.ParticipantReportController.saveParticipantReportForSelf(identifier: String)
 GET    /v4/users/self/reports/:identifier @org.sagebionetworks.bridge.play.controllers.ParticipantReportController.getParticipantReportForSelfV4(identifier: String, startTime: String ?= null, endTime: String ?= null, offsetKey: String ?= null, pageSize: String ?= null)
@@ -77,6 +78,10 @@ DELETE /v3/participants/:userId/reports/:identifier/:date @org.sagebionetworks.b
 GET    /v4/participants/:userId/reports/:identifier       @org.sagebionetworks.bridge.play.controllers.ParticipantReportController.getParticipantReportV4(userId: String, identifier: String, startTime: String ?= null, endTime: String ?= null, offsetKey: String ?= null, pageSize: String ?= null)
 POST   /v4/participants/:userId/reports/:identifier       @org.sagebionetworks.bridge.play.controllers.ParticipantReportController.saveParticipantReport(userId: String, identifier: String)
 DELETE /v4/participants/:userId/reports/:identifier       @org.sagebionetworks.bridge.play.controllers.ParticipantReportController.deleteParticipantReport(userId: String, identifier: String)
+GET    /v3/participants/self/reports/:identifier          @org.sagebionetworks.bridge.play.controllers.ParticipantReportController.getParticipantReportForSelf(identifier: String, startDate: String ?= null, endDate: String ?= null)
+POST   /v3/participants/self/reports/:identifier          @org.sagebionetworks.bridge.play.controllers.ParticipantReportController.saveParticipantReportForSelf(identifier: String)
+GET    /v4/participants/self/reports/:identifier          @org.sagebionetworks.bridge.play.controllers.ParticipantReportController.getParticipantReportForSelfV4(identifier: String, startTime: String ?= null, endTime: String ?= null, offsetKey: String ?= null, pageSize: String ?= null)
+POST   /v4/participants/self/reports/:identifier          @org.sagebionetworks.bridge.play.controllers.ParticipantReportController.saveParticipantReportForSelf(identifier: String)
 
 # Participants Researcher APIs
 GET    /v3/participants                  @org.sagebionetworks.bridge.play.controllers.ParticipantController.getParticipants(offsetBy: String ?= null, pageSize: String ?= null, emailFilter: String ?= null, phoneFilter: String ?= null, startDate: String ?= null, endDate: String ?= null, startTime: String ?= null, endTime: String ?= null)
