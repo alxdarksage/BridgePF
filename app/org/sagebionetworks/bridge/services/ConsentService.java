@@ -74,6 +74,7 @@ public class ConsentService {
     private String xmlTemplateWithSignatureBlock;
     private S3Helper s3Helper;
     private UrlShortenerService urlShortenerService;
+    private ExternalIdService externalIdService;
     
     @Value("classpath:study-defaults/consent-page.xhtml")
     final void setConsentTemplate(org.springframework.core.io.Resource resource) throws IOException {
@@ -110,6 +111,10 @@ public class ConsentService {
     @Autowired
     final void setUrlShortenerService(UrlShortenerService urlShortenerService) {
         this.urlShortenerService = urlShortenerService;
+    }
+    @Autowired
+    final void setExternalIdService(ExternalIdService externalIdService) {
+        this.externalIdService = externalIdService;
     }
     
     /**
@@ -306,7 +311,10 @@ public class ConsentService {
             withdrawSignatures(account, subpopGuid, withdrewOn);
         }
         sendWithdrawEmail(study, participant.getExternalId(), account, withdrawal, withdrewOn);
-        
+
+        if (account.getExternalId() != null) {
+            externalIdService.unassignExternalId(study, account.getExternalId(), account.getHealthCode());    
+        }        
         // Forget this person. If the user registers again at a later date, it is as if they have created
         // a new account. But we hold on to this record so we can still retrieve the consent records for a 
         // given healthCode.

@@ -115,6 +115,8 @@ public class ConsentServiceMockTest {
     private Subpopulation subpopulation;
     @Mock
     private StudyConsentView studyConsentView;
+    @Mock
+    private ExternalIdService externalIdService;
     @Captor
     private ArgumentCaptor<BasicEmailProvider> emailCaptor;
     @Captor
@@ -142,6 +144,7 @@ public class ConsentServiceMockTest {
         consentService.setUrlShortenerService(urlShortenerService);
         consentService.setNotificationsService(notificationsService);
         consentService.setConsentTemplate(new ByteArrayResource((documentString).getBytes()));
+        consentService.setExternalIdService(externalIdService);
         
         study = TestUtils.getValidStudy(ConsentServiceMockTest.class);
 
@@ -388,6 +391,28 @@ public class ConsentServiceMockTest {
         }
 
         verify(notificationsService).deleteAllRegistrations(study.getStudyIdentifier(), HEALTH_CODE);
+    }
+    
+    @Test
+    public void withdrawFromStudyWithExternalId() throws Exception {
+        setupWithdrawTest();
+        account.setExternalId(EXTERNAL_ID);
+        account.setHealthCode(HEALTH_CODE);
+        TestUtils.mockEditAccount(accountDao, account);
+        
+        consentService.withdrawFromStudy(study, PARTICIPANT, WITHDRAWAL, SIGNED_ON);
+
+        verify(externalIdService).unassignExternalId(study, EXTERNAL_ID, HEALTH_CODE);        
+    }
+    
+    @Test
+    public void withdrawFromStudyWithoutExternalId() throws Exception {
+        setupWithdrawTest();
+        TestUtils.mockEditAccount(accountDao, account);
+        
+        consentService.withdrawFromStudy(study, PARTICIPANT, WITHDRAWAL, SIGNED_ON);
+
+        verify(externalIdService, never()).unassignExternalId(any(), any(), any());        
     }
     
     @Test
