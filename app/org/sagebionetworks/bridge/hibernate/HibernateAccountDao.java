@@ -35,7 +35,6 @@ import org.sagebionetworks.bridge.cache.CacheKey;
 import org.sagebionetworks.bridge.cache.CacheProvider;
 import org.sagebionetworks.bridge.dao.AccountDao;
 import org.sagebionetworks.bridge.exceptions.AccountDisabledException;
-import org.sagebionetworks.bridge.exceptions.BadRequestException;
 import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
 import org.sagebionetworks.bridge.exceptions.ConcurrentModificationException;
 import org.sagebionetworks.bridge.exceptions.ConstraintViolationException;
@@ -462,14 +461,16 @@ public class HibernateAccountDao implements AccountDao {
     }
     
     private RuntimeException convertPersistenceException(PersistenceException exception, String userId) {
+        // The sequence of type-checking and unwrapping of this exception is significant as unfortunately, 
+        // the hierarchy of wrapped exceptions is very specific. 
         if (exception instanceof OptimisticLockException) {
             return new ConcurrentModificationException(
                     "Account has the wrong version number; it may have been saved in the background.");
         }
-        Throwable cause = Throwables.getRootCause(exception);//exception.getCause();
-        if (cause instanceof org.hibernate.exception.ConstraintViolationException) {
+        if (exception.getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
             // The specific error message is buried in the root MySQLIntegrityConstraintViolationException
-            String message = Throwables.getRootCause(exception).getMessage();
+            Throwable cause = Throwables.getRootCause(exception);
+            String message = cause.getMessage();
             if (message != null && userId != null) {
                 Map<String,Object> entityKeys = ImmutableMap.of("userId", userId);
                 
@@ -487,8 +488,7 @@ public class HibernateAccountDao implements AccountDao {
             }
             return cveBuilder.build();
         }
-        // If it's a PersistenceException, it always appears to be due errors in user submissions
-        return new BridgeServiceException(cause);
+        return new BridgeServiceException(exception);
     }
 
     private HibernateAccount fetchHibernateAccount(SignIn signIn) {
