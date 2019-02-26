@@ -307,7 +307,7 @@ public class StudyControllerTest {
     
     @Test
     public void getEmailStatus() throws Exception {
-        doReturn(mockSession).when(controller).getAuthenticatedSession(DEVELOPER, RESEARCHER);
+        doReturn(mockSession).when(controller).getAuthenticatedSession(DEVELOPER);
         
         Result result = controller.getEmailStatus();
         TestUtils.assertResult(result, 200);

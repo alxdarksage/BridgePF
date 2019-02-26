@@ -127,8 +127,6 @@ public class SchedulePlanControllerMockTest {
     
     @Test
     public void getSchedulePlans() throws Exception {
-        doReturn(mockUserSession).when(controller).getAuthenticatedSession(Roles.DEVELOPER, Roles.RESEARCHER);
-        
         List<SchedulePlan> plans = Lists.newArrayList(TestUtils.getSimpleSchedulePlan(TestConstants.TEST_STUDY));
         
         when(mockSchedulePlanService.getSchedulePlans(any(), eq(study.getStudyIdentifier()), eq(false))).thenReturn(plans);

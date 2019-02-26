@@ -28,7 +28,7 @@ public class ExportController extends BaseController {
     /** Kicks off an on-demand export for the given study. */
     @BodyParser.Of(BodyParser.Empty.class)
     public Result startOnDemandExport() throws JsonProcessingException {
-        UserSession session = getAuthenticatedSession(DEVELOPER, RESEARCHER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         StudyIdentifier studyId = session.getStudyIdentifier();
         exportService.startOnDemandExport(studyId);
         return acceptedResult("Request submitted.");

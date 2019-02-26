@@ -17,6 +17,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.sagebionetworks.bridge.Roles.ADMIN;
 import static org.sagebionetworks.bridge.Roles.DEVELOPER;
+import static org.sagebionetworks.bridge.Roles.RESEARCHER;
 import static org.sagebionetworks.bridge.Roles.WORKER;
 import static org.sagebionetworks.bridge.TestConstants.TEST_STUDY;
 
@@ -174,6 +175,7 @@ public class SurveyControllerTest {
         controller.getSurveyMostRecentlyPublishedVersionForUser(SURVEY_GUID);
         
         verify(service, times(1)).getSurveyMostRecentlyPublishedVersion(API_STUDY_ID, SURVEY_GUID, true);
+        verify(controller, times(2)).getAuthenticatedAndConsentedSession();
         verifyNoMoreInteractions(service);
     }
 
@@ -186,6 +188,7 @@ public class SurveyControllerTest {
         controller.getAllSurveysMostRecentVersion(null);
         
         verify(service).getAllSurveysMostRecentVersion(API_STUDY_ID, false);
+        verify(controller).getAuthenticatedSession(DEVELOPER, RESEARCHER);
         verifyNoMoreInteractions(service);
     }
     
@@ -198,6 +201,7 @@ public class SurveyControllerTest {
         controller.getAllSurveysMostRecentVersion("false");
         
         verify(service).getAllSurveysMostRecentVersion(API_STUDY_ID, false);
+        verify(controller).getAuthenticatedSession(DEVELOPER, RESEARCHER);
         verifyNoMoreInteractions(service);
     }
     
@@ -210,6 +214,7 @@ public class SurveyControllerTest {
         controller.getAllSurveysMostRecentVersion("true");
         
         verify(service).getAllSurveysMostRecentVersion(API_STUDY_ID, true);
+        verify(controller).getAuthenticatedSession(DEVELOPER, RESEARCHER);
         verifyNoMoreInteractions(service);
     }
     
@@ -222,6 +227,7 @@ public class SurveyControllerTest {
         controller.getAllSurveysMostRecentlyPublishedVersion(null);
         
         verify(service).getAllSurveysMostRecentlyPublishedVersion(API_STUDY_ID, false);
+        verify(controller).getAuthenticatedSession(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
 
@@ -234,6 +240,7 @@ public class SurveyControllerTest {
         controller.getAllSurveysMostRecentlyPublishedVersion("false");
         
         verify(service).getAllSurveysMostRecentlyPublishedVersion(API_STUDY_ID, false);
+        verify(controller).getAuthenticatedSession(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
     
@@ -246,6 +253,7 @@ public class SurveyControllerTest {
         controller.getAllSurveysMostRecentlyPublishedVersion("true");
         
         verify(service).getAllSurveysMostRecentlyPublishedVersion(API_STUDY_ID, true);
+        verify(controller).getAuthenticatedSession(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
     
@@ -270,6 +278,8 @@ public class SurveyControllerTest {
         assertEquals(2, resultSurveyList.size());
         assertEquals("survey-0", resultSurveyList.get(0).getGuid());
         assertEquals("survey-1", resultSurveyList.get(1).getGuid());
+        
+        verify(controller).getAuthenticatedSession(Roles.WORKER);
     }
 
     @Test
@@ -281,6 +291,7 @@ public class SurveyControllerTest {
         controller.getSurvey(SURVEY_GUID, CREATED_ON.toString());
         
         verify(service).getSurvey(TestConstants.TEST_STUDY, KEYS, true, true);
+        verify(controller).getSessionEitherConsentedOrInRole(WORKER, DEVELOPER);
         verifyNoMoreInteractions(service);
     }
 
@@ -293,6 +304,7 @@ public class SurveyControllerTest {
         controller.getSurveyMostRecentlyPublishedVersionForUser(SURVEY_GUID);
         
         verify(service).getSurveyMostRecentlyPublishedVersion(API_STUDY_ID, SURVEY_GUID, true);
+        verify(controller).getAuthenticatedAndConsentedSession();
         verifyNoMoreInteractions(service);
     }
     
@@ -305,6 +317,7 @@ public class SurveyControllerTest {
         controller.getSurvey(SURVEY_GUID, CREATED_ON.toString());
         
         verify(service).getSurvey(TestConstants.TEST_STUDY, KEYS, true, true);
+        verify(controller).getSessionEitherConsentedOrInRole(WORKER, DEVELOPER);
         verifyNoMoreInteractions(service);
     }
 
@@ -324,6 +337,8 @@ public class SurveyControllerTest {
         String resultStr = Helpers.contentAsString(result);
         Survey resultSurvey = BridgeObjectMapper.get().readValue(resultStr, Survey.class);
         assertEquals("test-survey", resultSurvey.getGuid());
+        
+        verify(controller).getSessionEitherConsentedOrInRole(WORKER, DEVELOPER);
     }
 
     @Test
@@ -336,6 +351,7 @@ public class SurveyControllerTest {
         TestUtils.assertResult(result, 200);
 
         verify(service).getSurveyMostRecentVersion(API_STUDY_ID, SURVEY_GUID);
+        verify(controller).getAuthenticatedSession(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
 
@@ -349,6 +365,7 @@ public class SurveyControllerTest {
         TestUtils.assertResult(result, 200);
 
         verify(service).getSurveyMostRecentlyPublishedVersion(API_STUDY_ID, SURVEY_GUID, true);
+        verify(controller).getSessionEitherConsentedOrInRole(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
     
@@ -364,6 +381,7 @@ public class SurveyControllerTest {
         
         verify(service).getSurvey(TestConstants.TEST_STUDY, KEYS, false, false);
         verify(service).deleteSurvey(TestConstants.TEST_STUDY, survey);
+        verify(controller).getAuthenticatedSession(DEVELOPER, ADMIN);
         verifyNoMoreInteractions(service);
     }
     
@@ -379,6 +397,7 @@ public class SurveyControllerTest {
         
         verify(service).getSurvey(TestConstants.TEST_STUDY, KEYS, false, false);
         verify(service).deleteSurvey(TestConstants.TEST_STUDY, survey);
+        verify(controller).getAuthenticatedSession(DEVELOPER, ADMIN);
         verifyNoMoreInteractions(service);
     }
     
@@ -394,6 +413,7 @@ public class SurveyControllerTest {
         
         verify(service).getSurvey(TestConstants.TEST_STUDY, KEYS, false, false);
         verify(service).deleteSurvey(TestConstants.TEST_STUDY, survey);
+        verify(controller).getAuthenticatedSession(DEVELOPER, ADMIN);
         verifyNoMoreInteractions(service);
     }
     
@@ -401,7 +421,10 @@ public class SurveyControllerTest {
     public void workerCannotDelete() throws Exception {
         setupContext(API_STUDY_ID, WORKER, UNCONSENTED);
         TestUtils.mockPlay().mock();
+        
         controller.deleteSurvey(SURVEY_GUID, CREATED_ON.toString(), "false");
+        
+        verify(controller).getAuthenticatedSession(DEVELOPER, ADMIN);
     }
     
     @Test
@@ -417,6 +440,7 @@ public class SurveyControllerTest {
 
         verify(service).getSurvey(TestConstants.TEST_STUDY, KEYS, false, false);
         verify(service).deleteSurvey(TestConstants.TEST_STUDY, survey);
+        verify(controller).getAuthenticatedSession(DEVELOPER, ADMIN);
         verifyNoMoreInteractions(service);
     }
     
@@ -432,6 +456,7 @@ public class SurveyControllerTest {
         
         verify(service).getSurvey(TestConstants.TEST_STUDY, KEYS, false, false);
         verify(service).deleteSurvey(TestConstants.TEST_STUDY, survey);
+        verify(controller).getAuthenticatedSession(DEVELOPER, ADMIN);
         verifyNoMoreInteractions(service);
     }
     
@@ -446,6 +471,7 @@ public class SurveyControllerTest {
         
         verify(service).getSurvey(TestConstants.TEST_STUDY, KEYS, true, true);
         verify(service).deleteSurveyPermanently(API_STUDY_ID, survey);
+        verify(controller).getAuthenticatedSession(DEVELOPER, ADMIN);
         verifyNoMoreInteractions(service);
     }
     
@@ -456,6 +482,8 @@ public class SurveyControllerTest {
         when(service.getSurvey(TestConstants.TEST_STUDY, KEYS, false, false)).thenReturn(null);
         
         controller.deleteSurvey(SURVEY_GUID, CREATED_ON.toString(), "false");
+        
+        verify(controller).getAuthenticatedSession(DEVELOPER, ADMIN);
     }
     
     @Test
@@ -468,6 +496,7 @@ public class SurveyControllerTest {
         TestUtils.assertResult(result, 200);
         
         verify(service).getSurveyAllVersions(API_STUDY_ID, SURVEY_GUID, false);
+        verify(controller).getAuthenticatedSession(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
     
@@ -481,6 +510,7 @@ public class SurveyControllerTest {
         TestUtils.assertResult(result, 200);
         
         verify(service).getSurveyAllVersions(API_STUDY_ID, SURVEY_GUID, false);
+        verify(controller).getAuthenticatedSession(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
     
@@ -494,6 +524,7 @@ public class SurveyControllerTest {
         TestUtils.assertResult(result, 200);
         
         verify(service).getSurveyAllVersions(API_STUDY_ID, SURVEY_GUID, true);
+        verify(controller).getAuthenticatedSession(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
     
@@ -511,6 +542,7 @@ public class SurveyControllerTest {
         TestUtils.assertResult(result, 201);
 
         verify(service).createSurvey(any(Survey.class));
+        verify(controller).getAuthenticatedSession(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
     
@@ -544,6 +576,7 @@ public class SurveyControllerTest {
         TestUtils.assertResult(result, 200);
         
         verify(service).updateSurvey(eq(TestConstants.TEST_STUDY), any(Survey.class));
+        verify(controller).getAuthenticatedSession(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
     
@@ -558,6 +591,7 @@ public class SurveyControllerTest {
         TestUtils.assertResult(result, 200);
         
         verify(service).publishSurvey(TEST_STUDY, KEYS, false);
+        verify(controller).getAuthenticatedSession(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
 
@@ -572,6 +606,7 @@ public class SurveyControllerTest {
         TestUtils.assertResult(result, 200);
         
         verify(service).publishSurvey(TEST_STUDY, KEYS, true);
+        verify(controller).getAuthenticatedSession(DEVELOPER);
         verifyNoMoreInteractions(service);
     }
 

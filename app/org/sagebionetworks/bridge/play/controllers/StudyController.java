@@ -179,7 +179,7 @@ public class StudyController extends BaseController {
     }
 
     public Result getEmailStatus() throws Exception {
-        UserSession session = getAuthenticatedSession(DEVELOPER, RESEARCHER);
+        UserSession session = getAuthenticatedSession(DEVELOPER);
         Study study = studyService.getStudy(session.getStudyIdentifier());
 
         EmailVerificationStatus status = emailVerificationService.getEmailStatus(study.getSupportEmail());
