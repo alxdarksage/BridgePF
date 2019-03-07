@@ -402,7 +402,7 @@ public class DynamoExternalIdDaoMockTest {
 
         dao.unassignExternalId(account, ID);
 
-        assertNull(account.getExternalId());
+        assertEquals(ID, account.getExternalId());
         assertTrue(account.getAccountSubstudies().isEmpty());
     }
 
@@ -444,8 +444,10 @@ public class DynamoExternalIdDaoMockTest {
 
         dao.unassignExternalId(account, ID);
 
+        // This is no longer changed
+        assertEquals(ID, account.getExternalId());
+        
         verify(mapper, never()).save(any());
-        assertNull(account.getExternalId());
         assertTrue(account.getAccountSubstudies().isEmpty());
     }
 

@@ -377,6 +377,11 @@ public class ParticipantService {
                 throw new BridgeServiceException("Error creating password: " + ex.getMessage(), ex);
             }
         }
+        // If this is not a managed ID we capture it, and it is readonly thereafter
+        if (!study.isExternalIdValidationEnabled()) {
+            account.setExternalId(participant.getExternalId());
+        }
+        
         updateAccountAndRoles(study, account, participant, true);
 
         // enabled unless we need any kind of verification
@@ -471,18 +476,13 @@ public class ParticipantService {
         // this as a "simple add." A researcher can assign an external ID to any user if it has not yet 
         // been assigned (if it has been assigned, beginAssignExternalId() throws an exception and 
         // aborts this entire call).
-        
-        boolean isSimpleAdd = allExternalIds.isEmpty() && participant.getExternalId() != null;
-        boolean isResearcherAdd = callerRoles.contains(Roles.RESEARCHER)
+        // On update, researchers can add an external ID if it has not already been associated to the
+        // account (if we're managing IDs).
+        boolean assigningExternalId = study.isExternalIdValidationEnabled() 
+                && callerRoles.contains(Roles.RESEARCHER)
                 && !allExternalIds.contains(participant.getExternalId())
                 && participant.getExternalId() != null;
-        boolean assigningExternalId = isSimpleAdd || isResearcherAdd;
         
-        // The last change made to the external ID collection is always reflected in the 
-        // singular external ID field to ensure backwards compatibility during migration.
-        if  (assigningExternalId) {
-            account.setExternalId(participant.getExternalId());
-        }
         updateAccountAndRoles(study, account, participant, false);
         
         // Allow admin and worker accounts to toggle status; in particular, to disable/enable accounts.

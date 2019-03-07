@@ -978,7 +978,7 @@ public class ParticipantServiceTest {
         mockHealthCodeAndAccountRetrieval();
         when(externalIdService.getExternalId(TestConstants.TEST_STUDY, EXTERNAL_ID)).thenReturn(Optional.of(extId));
 
-        account.setExternalId(null); // account can be updated because it's null
+        account.setExternalId(null); // this is not changed, it remains null
 
         participantService.updateParticipant(STUDY, PARTICIPANT);
         
@@ -997,7 +997,7 @@ public class ParticipantServiceTest {
         assertEquals(Boolean.TRUE, account.getNotifyByEmail());
         assertEquals(Sets.newHashSet("group1","group2"), account.getDataGroups());
         assertEquals(ImmutableList.of("de","fr"), account.getLanguages());
-        assertEquals(EXTERNAL_ID, account.getExternalId());
+        assertNull(account.getExternalId());
         assertNull(account.getTimeZone());
     }
 
@@ -2003,6 +2003,7 @@ public class ParticipantServiceTest {
     @Test
     public void updateParticipantWithNoExternalIdDoesNotChangeExistingId() {
         mockHealthCodeAndAccountRetrieval();
+        STUDY.setExternalIdValidationEnabled(true);
 
         // Participant has no external ID, so externalIdService is not called
         StudyParticipant participant = new StudyParticipant.Builder().copyOf(PARTICIPANT)
@@ -2774,6 +2775,7 @@ public class ParticipantServiceTest {
     
     @Test
     public void rollbackUpdateParticipantWhenAccountUpdateFails() {
+        STUDY.setExternalIdValidationEnabled(true);
         when(accountDao.getAccount(ACCOUNT_ID)).thenReturn(account);
         when(externalIdService.getExternalId(STUDY.getStudyIdentifier(), EXTERNAL_ID)).thenReturn(Optional.of(extId));
         doThrow(new ConcurrentModificationException("")).when(accountDao).updateAccount(eq(account), any());

@@ -105,15 +105,17 @@ public class AccountPersistenceExceptionConverterTest {
 
     @Test
     public void entityAlreadyExistsForExternalId() {
+        AccountSubstudy as = AccountSubstudy.create(TestConstants.TEST_STUDY_IDENTIFIER, "substudyId", "userId");
+        as.setExternalId("ext");
+        
         HibernateAccount account = new HibernateAccount();
         account.setStudyId(TestConstants.TEST_STUDY_IDENTIFIER);
-        account.setExternalId("ext");
-        account.setAccountSubstudies(ImmutableSet.of());
-        
+        account.setAccountSubstudies(ImmutableSet.of(as));
+
         Account existing = Account.create();
         existing.setId("userId");
         existing.setStudyId(TestConstants.TEST_STUDY_IDENTIFIER);
-        existing.setExternalId("ext");
+        existing.setAccountSubstudies(ImmutableSet.of(as)); // cheating here and reusing the same AcountSubstudy
         
         when(accountDao.getAccount(AccountId.forExternalId(TestConstants.TEST_STUDY_IDENTIFIER, "ext"))).thenReturn(existing);
         
@@ -121,7 +123,7 @@ public class AccountPersistenceExceptionConverterTest {
                 "Duplicate entry 'testStudy-ext' for key 'Accounts-StudyId-ExternalId-Index'", null, null);
         PersistenceException pe = new PersistenceException(cve);
         
-        RuntimeException result = converter.convert(pe, account);
+        RuntimeException result = converter.convert(pe, existing);
         assertEquals(EntityAlreadyExistsException.class, result.getClass());
         assertEquals("External ID has already been used by another account.", result.getMessage());
         assertEquals("userId", ((EntityAlreadyExistsException)result).getEntityKeys().get("userId"));

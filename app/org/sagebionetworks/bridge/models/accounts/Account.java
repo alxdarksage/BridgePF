@@ -193,7 +193,8 @@ public interface Account extends BridgeEntity {
     Boolean getNotifyByEmail();
     void setNotifyByEmail(Boolean notifyByEmail);
     
-    /** The external ID that has been assigned to this account. */
+    /** The external ID that has been assigned to this account. This is now a simple property that 
+     * is no longer managed, for backwards compatibility with a few studies that treat it this way. */
     String getExternalId();
     void setExternalId(String externalId);
     
