@@ -544,13 +544,13 @@ public class BridgeSpringConfig {
         BridgeConfig config = bridgeConfig();
         props.put("hibernate.connection.password", config.get("hibernate.connection.password"));
         props.put("hibernate.connection.username", config.get("hibernate.connection.username"));
-
         
         String url = config.get("hibernate.connection.url");
         
         // Append SSL props to URL
         boolean useSsl = Boolean.valueOf(config.get("hibernate.connection.useSSL"));
-        url += "?requireSSL="+useSsl+"&useSSL="+useSsl+"&verifyServerCertificate="+useSsl;
+        url += (url.contains("?")) ? "&" : "?";
+        url += "requireSSL="+useSsl+"&useSSL="+useSsl+"&verifyServerCertificate="+useSsl;
         
         props.put("hibernate.connection.url", url);
 
