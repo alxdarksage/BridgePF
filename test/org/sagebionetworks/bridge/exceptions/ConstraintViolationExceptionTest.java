@@ -41,7 +41,6 @@ public class ConstraintViolationExceptionTest {
         
         ExceptionInterceptor interceptor = new ExceptionInterceptor();
         
-        TestUtils.mockPlay().mock();
         doThrow(e).when(invocation).proceed();
         
         Result result = (Result)interceptor.invoke(invocation);
@@ -80,7 +79,6 @@ public class ConstraintViolationExceptionTest {
         
         ExceptionInterceptor interceptor = new ExceptionInterceptor();
         
-        TestUtils.mockPlay().mock();
         doThrow(e).when(invocation).proceed();
         
         Result result = (Result)interceptor.invoke(invocation);

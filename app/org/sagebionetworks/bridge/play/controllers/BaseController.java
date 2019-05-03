@@ -52,7 +52,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import play.cache.Cache;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -173,7 +172,7 @@ public abstract class BaseController extends Controller {
         
         // Update request context with security-related information about the user. This will be
         // immediately removed from the thread local if an exception is thrown.
-        String requestId = RequestUtils.getRequestId(request());
+        String requestId = BridgeUtils.getRequestContext().getRequestId();
         RequestContext.Builder builder = new RequestContext.Builder().withRequestId(requestId);
         builder.withCallerStudyId(session.getStudyIdentifier());
         builder.withCallerSubstudies(session.getParticipant().getSubstudyIds());
@@ -411,13 +410,12 @@ public abstract class BaseController extends Controller {
      * Retrieves the metrics object from the cache. Can be null if the metrics is not in the cache.
      */
     Metrics getMetrics() {
-        final String cacheKey = Metrics.getCacheKey(getRequestId());
-        return (Metrics)Cache.get(cacheKey);
+        return BridgeUtils.getRequestContext().getMetrics();
     }
 
     /** Helper method which abstracts away getting the request ID from the request. */
     protected String getRequestId() {
-        return RequestUtils.getRequestId(request());
+        return BridgeUtils.getRequestContext().getRequestId();
     }
 
     /** The user's IP Address, as reported by Amazon. Package-scoped for unit tests. */

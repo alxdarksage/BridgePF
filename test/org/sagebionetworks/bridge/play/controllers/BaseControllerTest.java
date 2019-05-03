@@ -706,7 +706,7 @@ public class BaseControllerTest {
     @Test
     public void getSessionPopulatesTheRequestContext() {
         RequestContext context = BridgeUtils.getRequestContext();
-        assertNull(context.getId());
+        assertNull(context.getRequestId());
         assertNull(context.getCallerStudyId());
         assertEquals(ImmutableSet.of(), context.getCallerSubstudies());
         assertEquals(ImmutableSet.of(), context.getCallerRoles());
@@ -727,7 +727,7 @@ public class BaseControllerTest {
         controller.getAuthenticatedSession(false);
         
         context = BridgeUtils.getRequestContext();
-        assertNotNull(context.getId());
+        assertNotNull(context.getRequestId());
         assertEquals(TestConstants.TEST_STUDY_IDENTIFIER, context.getCallerStudyId());
         assertEquals(substudyIds, context.getCallerSubstudies());
         assertEquals(roles, context.getCallerRoles());
@@ -955,9 +955,12 @@ public class BaseControllerTest {
 
     @Test
     public void testGetRequestId() throws Exception {
-        TestUtils.mockPlay().withHeader(BridgeConstants.X_REQUEST_ID_HEADER, "dummy-request-id").mock();
+        BridgeUtils.setRequestContext(new RequestContext.Builder().withRequestId("dummy-request-id").build());
         BaseController controller = new SchedulePlanController();
         assertEquals("dummy-request-id", controller.getRequestId());
+        
+        BridgeUtils.setRequestContext(null);
+        assertNull(controller.getRequestId());
     }
 
     @Test

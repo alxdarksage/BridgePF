@@ -72,11 +72,11 @@
         <property name="proxyTargetClass" value="true"/>
         <property name="interceptorNames">
             <list>
+                <value>requestInterceptor</value>
                 <value>metricsInterceptor</value>
                 <value>deprecationInterceptor</value>
                 <value>staticHeadersInterceptor</value>
                 <value>exceptionInterceptor</value>
-                <value>requestInterceptor</value>
             </list>
         </property>
     </bean>

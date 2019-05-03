@@ -6,6 +6,8 @@ import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughputExceededExce
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.StringUtils;
+
+import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.exceptions.BridgeServiceException;
 import org.sagebionetworks.bridge.exceptions.ConsentRequiredException;
 import org.sagebionetworks.bridge.exceptions.NoStackTraceException;
@@ -21,8 +23,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Sets;
 
-import play.mvc.Http;
-import play.mvc.Http.Request;
 import play.mvc.Result;
 import play.mvc.Results;
 
@@ -48,8 +48,7 @@ public class ExceptionInterceptor implements MethodInterceptor {
     }
 
     private void logException(final Throwable throwable) {
-        final Request request = Http.Context.current().request();
-        final String requestId = RequestUtils.getRequestId(request);
+        final String requestId = BridgeUtils.getRequestContext().getRequestId();
         final String msg = "request: " + requestId + " " + throwable.getMessage();
         if (throwable.getClass().isAnnotationPresent(NoStackTraceException.class)) {
             logger.info(msg);

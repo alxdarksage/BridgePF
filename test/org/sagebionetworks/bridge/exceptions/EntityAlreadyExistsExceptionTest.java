@@ -62,7 +62,6 @@ public class EntityAlreadyExistsExceptionTest {
         
         ExceptionInterceptor interceptor = new ExceptionInterceptor();
         
-        TestUtils.mockPlay().mock();
         doThrow(e).when(invocation).proceed();
         
         Result result = (Result)interceptor.invoke(invocation);

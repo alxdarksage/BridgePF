@@ -549,8 +549,7 @@ public class BridgeSpringConfig {
         
         // Append SSL props to URL
         boolean useSsl = Boolean.valueOf(config.get("hibernate.connection.useSSL"));
-        url += (url.contains("?")) ? "&" : "?";
-        url += "requireSSL="+useSsl+"&useSSL="+useSsl+"&verifyServerCertificate="+useSsl;
+        url += "?serverTimezone=UTC&requireSSL="+useSsl+"&useSSL="+useSsl+"&verifyServerCertificate="+useSsl;
         
         props.put("hibernate.connection.url", url);
 

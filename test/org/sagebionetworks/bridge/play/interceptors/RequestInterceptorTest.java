@@ -25,7 +25,7 @@ public class RequestInterceptorTest {
     @Test
     public void testWithNoSession() throws Throwable {
         assertRequestContext(null, (context) -> {
-            assertEquals(REQUEST_ID, context.getId());
+            assertEquals(REQUEST_ID, context.getRequestId());
         });
     }
     

@@ -5,6 +5,7 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.stereotype.Component;
 import play.mvc.Http;
 
+import org.sagebionetworks.bridge.BridgeConstants;
 import org.sagebionetworks.bridge.BridgeUtils;
 import org.sagebionetworks.bridge.RequestContext;
 
@@ -22,9 +23,15 @@ public class RequestInterceptor implements MethodInterceptor {
         // was intercepted retrieves the user's session (this code is consolidated in the 
         // BaseController). For unauthenticated/public requests, we do *not* want a 
         // Bridge-Session header changing the security context of the call.
-       
+
         Http.Request request = Http.Context.current().request();
-        String requestId = RequestUtils.getRequestId(request);
+        // This replaces a call that would substitute the requests's hashCode if there was 
+        // no X-Request-Id header... so we use a GUID in this situation (never occurs on 
+        // EBS instances because of the load balancer).
+        String requestId = request.getHeader(BridgeConstants.X_REQUEST_ID_HEADER);
+        if (requestId == null) {
+            requestId = BridgeUtils.generateGuid();
+        }
         RequestContext.Builder builder = new RequestContext.Builder().withRequestId(requestId);
         BridgeUtils.setRequestContext(builder.build());
 
